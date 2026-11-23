@@ -401,9 +401,39 @@ for i in {1..60}; do
 done
 
 # ──────────────────────────────────────────────
-# PHASE 7: GENERATE STILLS (PARALLEL WITH RENDER PREP)
+# PHASE 7: GENERATE STILLS (SDXL + InsightFace)
 # ──────────────────────────────────────────────
 phase "PHASE 7: GENERATE STILLS (SDXL + InsightFace)"
+
+# The SDXL base model is only needed for stills, so fetch it here rather
+# than in the Wan model phase.
+SDXL_DIR="$MODEL_CACHE/Juggernaut-XL-v9"
+SDXL_FILE="$SDXL_DIR/Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors"
+if [[ ! -f "$SDXL_FILE" ]]; then
+    log "Downloading SDXL base model (Juggernaut XL v9)..."
+    mkdir -p "$SDXL_DIR"
+    uv run python - "$SDXL_DIR" <<'PY'
+import sys
+from huggingface_hub import hf_hub_download
+dest = sys.argv[1]
+path = hf_hub_download(
+    repo_id="RunDiffusion/Juggernaut-XL-v9",
+    filename="Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors",
+    local_dir=dest,
+)
+print("sdxl:", path)
+PY
+fi
+[[ -f "$SDXL_FILE" ]] || { error "SDXL base model missing at $SDXL_FILE"; exit 1; }
+success "SDXL base model ready"
+
+# Character reference faces drive the InsightFace swap. Without them the
+# stills are generated but identity is not enforced, so warn clearly.
+if [[ ! -f references/faiz_ref.jpg || ! -f references/juv_ref.jpg ]]; then
+    warn "references/faiz_ref.jpg and/or references/juv_ref.jpg missing."
+    warn "Stills will generate without identity enforcement."
+    warn "Add both files to references/ for the face swap to work."
+fi
 
 log "Generating start frames with trained LoRAs..."
 uv run python scripts/generate_stills.py \
@@ -411,14 +441,19 @@ uv run python scripts/generate_stills.py \
     --output startframes \
     --references references \
     --loras "$MODEL_CACHE/loras/trained" \
-    --sdxl-model "$MODEL_CACHE/Juggernaut-XL-v9/Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors" \
+    --sdxl-model "$SDXL_FILE" \
     --negative negatives/artifact_neg.txt \
     --width 832 --height 480 \
     --steps 30 --guidance 7.0 \
     --device cuda --dtype fp16 \
     2>&1 | tail -20
 
-success "Start frames generated"
+FRAME_COUNT=$(find startframes -name "c*.png" 2>/dev/null | wc -l)
+if [[ "$FRAME_COUNT" -eq 0 ]]; then
+    error "No start frames were generated - the render cannot proceed."
+    exit 1
+fi
+success "Start frames generated ($FRAME_COUNT)"
 
 # ──────────────────────────────────────────────
 # PHASE 8: RENDER CLIPS (MAIN PRODUCTION)
@@ -456,17 +491,36 @@ fi
 # ──────────────────────────────────────────────
 phase "PHASE 9: FACE SWAP VIDEO (InsightFace)"
 
-log "Running face swap on rendered clips..."
-uv run python scripts/face_swap_video.py \
-    --input renders \
-    --output renders/face_swapped \
-    --references references \
-    --swapper-model "$MODEL_CACHE/insightface/inswapper_128.onnx" \
-    --swap-every 3 \
-    --threshold 0.40 \
-    2>&1 | tail -20
+SWAPPER="$MODEL_CACHE/insightface/inswapper_128.onnx"
+if [[ ! -f "$SWAPPER" ]]; then
+    log "Downloading InsightFace inswapper model..."
+    mkdir -p "$(dirname "$SWAPPER")"
+    if curl -fL --retry 3 -o "$SWAPPER.part" \
+        "https://huggingface.co/deepinsight/inswapper/resolve/main/inswapper_128.onnx"; then
+        mv "$SWAPPER.part" "$SWAPPER"
+    else
+        rm -f "$SWAPPER.part"
+        warn "Could not download inswapper_128.onnx - skipping face swap"
+    fi
+fi
 
-success "Face swap complete"
+if [[ -f "$SWAPPER" && -f references/faiz_ref.jpg && -f references/juv_ref.jpg ]]; then
+    log "Running face swap on rendered clips..."
+    uv run python scripts/face_swap_video.py \
+        --input renders \
+        --output renders/face_swapped \
+        --references references \
+        --swapper-model "$SWAPPER" \
+        --swap-every 3 \
+        --threshold 0.40 \
+        2>&1 | tail -20
+    success "Face swap complete"
+    RENDER_SOURCE="renders/face_swapped"
+else
+    warn "Face swap skipped (missing swapper model or reference faces)."
+    warn "Using raw renders for the final cut."
+    RENDER_SOURCE="renders"
+fi
 
 # ──────────────────────────────────────────────
 # PHASE 10: ASSEMBLE FINAL DELIVERABLE
@@ -476,7 +530,7 @@ phase "PHASE 10: ASSEMBLE FINAL DELIVERABLE"
 log "Concatenating clips and creating deliverable..."
 uv run python scripts/assemble_final.py \
     --spec docs/beats.yaml \
-    --renders renders/face_swapped \
+    --renders "$RENDER_SOURCE" \
     --output output \
     --crossfade 0.5 \
     --crf 18 \
@@ -485,6 +539,10 @@ uv run python scripts/assemble_final.py \
     --include-frames \
     2>&1 | tail -10
 
+if [[ ! -f output/final.mp4 ]]; then
+    error "Final video was not produced. Check the assemble output above."
+    exit 1
+fi
 success "Final deliverable created"
 
 # ──────────────────────────────────────────────

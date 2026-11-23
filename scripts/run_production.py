@@ -32,7 +32,16 @@ from auto_model_selector import (
 from download_models import download_models, create_session, get_file_size
 from generate_workflow import generate_workflow, save_workflow
 from comfy_api import upload, server_default
-from render import inject, load_workflow, post, wait_for, last_frame, select_start_image, preceding_chained_frame
+from render import (
+    inject,
+    load_workflow,
+    post,
+    wait_for,
+    last_frame,
+    download_output,
+    select_start_image,
+    preceding_chained_frame,
+)
 
 
 @dataclass
@@ -191,13 +200,10 @@ def render_clip(
         chained_dir = Path("chained")
         prev_frame = last_frame(state.server, entry, chained_dir / f"{clip_id}.png")
 
-        # Find output video
-        outputs = entry.get("outputs", {})
-        video_path = None
-        for node_output in outputs.values():
-            for video in node_output.get("videos", []):
-                video_path = Path(video.get("filename", ""))
-                break
+        # Download the rendered clip so assembly has a real file to read.
+        renders_dir = Path("renders")
+        renders_dir.mkdir(parents=True, exist_ok=True)
+        video_path = download_output(state.server, entry, renders_dir / f"{clip_id}.mp4")
 
         duration = time.time() - clip_start
         state.total_gpu_seconds += duration

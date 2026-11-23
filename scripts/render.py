@@ -166,6 +166,30 @@ def wait_for(server: str, pid: str, timeout: int = 3600) -> dict:
     raise TimeoutError(f"{pid} did not finish in {timeout}s")
 
 
+def download_output(server: str, entry: dict, dest: Path) -> Path:
+    """Download the rendered video for a finished prompt to `dest`."""
+    items = [
+        item
+        for node in entry.get("outputs", {}).values()
+        for key in ("videos", "gifs")
+        for item in (node.get(key) or [])
+    ]
+    if not items:
+        raise RuntimeError("history entry carried no video output")
+    item = items[-1]
+    query = urllib.parse.urlencode(
+        {
+            "filename": item["filename"],
+            "subfolder": item.get("subfolder", ""),
+            "type": item.get("type", "output"),
+        }
+    )
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    with urllib.request.urlopen(f"{server}/view?{query}") as r:
+        dest.write_bytes(r.read())
+    return dest
+
+
 def last_frame(server: str, entry: dict, dest: Path) -> Path:
     items = [
         item
