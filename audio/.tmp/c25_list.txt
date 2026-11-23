@@ -1,2 +1,0 @@
-file 'C:/Users/FAIZ SAYYED/projects/wan22-production-pipeline/audio/.tmp/c25_00.mp3'
-file 'C:/Users/FAIZ SAYYED/projects/wan22-production-pipeline/audio/.tmp/c25_01.mp3'

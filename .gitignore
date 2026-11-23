@@ -107,3 +107,7 @@ recover/
 swap_test.png
 models/
 
+
+audio/
+renders/lipsync/
+
