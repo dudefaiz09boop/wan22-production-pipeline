@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import sys
 import time
@@ -188,7 +189,20 @@ def download_output(server: str, entry: dict, dest: Path) -> Path:
     return dest
 
 
+def load_env(path: Path = Path(".env")) -> None:
+    """Load .env so LIPSYNC_ENGINE and friends apply without exporting."""
+    if not path.is_file():
+        return
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        os.environ.setdefault(key.strip(), value.strip())
+
+
 def main() -> int:
+    load_env()
     ap = argparse.ArgumentParser(description="Audio-driven lipsync pass")
     ap.add_argument("--spec", default="docs/beats.yaml")
     ap.add_argument("--renders", default="renders")
@@ -196,8 +210,12 @@ def main() -> int:
     ap.add_argument("--audio", default="audio")
     ap.add_argument("--output", default="renders/lipsync")
     ap.add_argument("--server", default=None)
-    ap.add_argument("--engine", choices=["s2v", "infinitetalk"], default="s2v")
-    ap.add_argument("--steps", type=int, default=6)
+    ap.add_argument(
+        "--engine",
+        choices=["s2v", "infinitetalk"],
+        default=os.environ.get("LIPSYNC_ENGINE", "infinitetalk"),
+    )
+    ap.add_argument("--steps", type=int, default=int(os.environ.get("LIPSYNC_STEPS", "6")))
     ap.add_argument("--cfg", type=float, default=1.0)
     ap.add_argument("--seed", type=int, default=7000)
     ap.add_argument("--beats", nargs="+")
