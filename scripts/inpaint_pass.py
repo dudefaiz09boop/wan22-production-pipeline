@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """Stage or submit post-hoc still-frame inpaint passes for rendered beats.
 
 The named targets are the c26 tail and the c28 thighs, but beat ids are plain

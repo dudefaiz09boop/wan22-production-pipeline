@@ -237,6 +237,7 @@ def main() -> int:
     # Find clip files
     renders_dir = Path(args.renders)
     clip_files = []
+    missing = []
     for clip in clips:
         clip_id = clip["id"]
         video_files = list(renders_dir.glob(f"**/{clip_id}*.mp4"))
@@ -244,13 +245,18 @@ def main() -> int:
             video_files = list(renders_dir.glob(f"**/wan22/{clip_id}*.mp4"))
         if video_files:
             clip_files.append(video_files[0])
-                    print(f"  [OK] Found: {clip_id} -> {video_files[0].name}")
+            print(f"  [OK] Found: {clip_id} -> {video_files[0].name}")
         else:
-                    print(f"  [FAIL] Missing: {clip_id}")
+            missing.append(clip_id)
+            print(f"  [FAIL] Missing: {clip_id}")
 
     if not clip_files:
         print("No clips found!")
         return 1
+
+    if missing:
+        print(f"\nWARNING: {len(missing)} clip(s) missing: {', '.join(missing)}")
+        print("The final cut will contain only the clips that exist.")
 
     # Concatenate
     final_video = output_dir / "final.mp4"

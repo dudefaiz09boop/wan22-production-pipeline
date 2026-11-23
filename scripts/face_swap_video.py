@@ -190,7 +190,7 @@ def main() -> int:
         print("Loading swapper model...")
         swapper_session = load_swapper_model(swapper_path)
     else:
-            print(f"  [FAIL] Swapper model not found: {swapper_path}")
+        print(f"  [FAIL] Swapper model not found: {swapper_path}")
         print("  Download from: https://huggingface.co/deepinsight/inswapper/resolve/main/inswapper_128.onnx")
         swapper_session = None
 
@@ -202,9 +202,9 @@ def main() -> int:
             emb = get_face_embedding(app, full_path)
             if emb is not None:
                 ref_embeddings[char] = emb
-                    print(f"  [OK] Loaded reference for {char}")
+                print(f"  [OK] Loaded reference for {char}")
         else:
-                print(f"  [FAIL] Reference not found: {full_path}")
+            print(f"  [FAIL] Reference not found: {full_path}")
 
     # Determine input files
     if input_path.is_file():

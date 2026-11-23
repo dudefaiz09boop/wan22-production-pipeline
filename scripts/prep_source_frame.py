@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """Compose a 16:9 start plate from a portrait reference.
 
 The full portrait is preserved over a blurred, full-bleed copy of itself scaled

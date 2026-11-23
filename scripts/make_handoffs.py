@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """Backfill renders/handoffs/{shot_id}.png from already-rendered segments.
 
 For every chained shot in docs/beats.yaml whose previous shot has a rendered

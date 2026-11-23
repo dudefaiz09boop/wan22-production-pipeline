@@ -180,9 +180,9 @@ def load_sdxl_pipeline(
     for name, path in lora_paths.items():
         if Path(path).exists():
             pipe.load_lora_weights(path, adapter_name=name)
-                print(f"  [OK] Loaded LoRA: {name} from {path}")
+            print(f"  [OK] Loaded LoRA: {name} from {path}")
         else:
-                print(f"  [FAIL] LoRA not found: {path}")
+            print(f"  [FAIL] LoRA not found: {path}")
 
     return pipe
 
