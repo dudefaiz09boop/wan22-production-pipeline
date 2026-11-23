@@ -430,12 +430,31 @@ if [[ "$LORA_COUNT" -eq 0 ]]; then
     exit 1
 fi
 
-# Start ComfyUI in background with optimal flags
+# Start ComfyUI with VRAM-appropriate flags.
+#
+# --lowvram forces ComfyUI to offload model layers to CPU between steps. On a
+# 45 GB card holding a 26.62 GB UNET that is pure waste: it turns a fast
+# resident model into a per-step PCIe transfer and can triple render time.
+# Only use it when the card genuinely cannot hold the model.
+#
+# --disable-smart-memory and --cache-none are also avoided: they force a full
+# unload between jobs, which is right for a 16 GB T4 but wrong here.
+COMFY_VRAM_ARGS=()
+if [[ $VRAM_GB -lt 24 ]]; then
+    COMFY_VRAM_ARGS=(--lowvram)
+    log "VRAM ${VRAM_GB}GB < 24GB: using --lowvram"
+elif [[ $VRAM_GB -lt 40 ]]; then
+    COMFY_VRAM_ARGS=(--normalvram)
+    log "VRAM ${VRAM_GB}GB: using --normalvram"
+else
+    log "VRAM ${VRAM_GB}GB: keeping models resident (no offload flags)"
+fi
+
 cd "$COMFY_DIR"
 nohup python main.py \
     --listen 0.0.0.0 \
     --port $COMFYUI_PORT \
-    --lowvram \
+    "${COMFY_VRAM_ARGS[@]}" \
     --preview-method none \
     --disable-auto-launch \
     > /tmp/comfyui.log 2>&1 &

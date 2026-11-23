@@ -271,7 +271,9 @@ def main() -> int:
         res = meta.get("res_face") if shot.get("build") == "cf" else meta.get("res_base")
         width, height = (res[0], res[1]) if isinstance(res, list) and len(res) == 2 else (832, 480)
         duration = int(shot.get("duration") or 5)
-        frames = duration * 8 + 1
+        # 16 fps to match the render and the VHS_VideoCombine frame_rate.
+        # (length - 1) % 4 == 0 is required by WanImageToVideo.
+        frames = duration * 16 + 1
 
         try:
             image_name = upload(server, frames_dir / f"{sid}.png", uploads)

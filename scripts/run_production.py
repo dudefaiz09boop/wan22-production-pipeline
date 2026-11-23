@@ -66,6 +66,10 @@ class ProductionState:
     results: list[ClipResult] = field(default_factory=list)
     start_time: float = field(default_factory=time.time)
     total_gpu_seconds: float = 0.0
+    # Loaded once so the graph is not re-read per clip, and shared so start
+    # frames are uploaded once instead of on every clip.
+    base_workflow: dict = field(default_factory=dict)
+    uploads_cache: dict = field(default_factory=dict)
     # New pipeline stages
     trained_loras_downloaded: bool = False
     stills_generated: bool = False
@@ -174,14 +178,14 @@ def render_clip(
                 error=f"Start frame not found: {image_path}",
             )
 
-        # Upload image to ComfyUI
-        uploads_cache = {}
-        image = upload(state.server, image_path, uploads_cache)
+        # Upload image to ComfyUI. The cache must persist across clips: a fresh
+        # dict per clip re-uploads every start frame and every chained frame.
+        image = upload(state.server, image_path, state.uploads_cache)
 
-        # Load and inject workflow
-        base_workflow = load_workflow(state.workflow_path)
+        # Inject into a copy of the workflow loaded once at startup, so the
+        # model stays resident in ComfyUI instead of being re-resolved.
         wf = inject(
-            json.loads(json.dumps(base_workflow)),
+            json.loads(json.dumps(state.base_workflow)),
             prompt_text,
             state.negative_prompt,
             clip_cfg,
@@ -524,6 +528,7 @@ def main() -> int:
         negative_prompt=negative_prompt,
         lora_registry=lora_registry,
         clips=clips,
+        base_workflow=load_workflow(workflow_path),
     )
 
     if args.dry_run:

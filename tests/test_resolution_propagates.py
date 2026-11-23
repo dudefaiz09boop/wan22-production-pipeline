@@ -72,7 +72,10 @@ class ResolutionPropagatesTests(unittest.TestCase):
         node = out["8"]
         self.assertEqual(node["inputs"]["width"], 1280)
         self.assertEqual(node["inputs"]["height"], 720)
-        self.assertEqual(node["inputs"]["length"], 80)
+        # WanImageToVideo requires (length - 1) % 4 == 0. At 16 fps a 5s clip
+        # is 81 frames; 80 is rejected by the node's step=4 constraint.
+        self.assertEqual(node["inputs"]["length"], 81)
+        self.assertEqual((node["inputs"]["length"] - 1) % 4, 0)
         self.assertEqual(out["6"]["inputs"]["text"], "prompt body")
         self.assertEqual(out["7"]["inputs"]["text"], "negative body")
         self.assertEqual(out["5"]["inputs"]["image"], "frame.png")
