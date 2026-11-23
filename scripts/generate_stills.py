@@ -21,9 +21,20 @@ from PIL import Image
 
 # Character reference images for InsightFace
 CHARACTER_REFS = {
-    "faiz": "references/faiz_ref.jpg",
-    "juv": "references/juv_ref.jpg",
+    "faiz": "references/faiz_ref",
+    "juv": "references/juv_ref",
 }
+
+REF_EXTENSIONS = (".png", ".jpg", ".jpeg", ".webp")
+
+
+def resolve_ref(references_dir: Path, stem: str) -> Path | None:
+    """Find a reference image by stem, accepting any supported extension."""
+    for ext in REF_EXTENSIONS:
+        candidate = references_dir / f"{stem}{ext}"
+        if candidate.is_file():
+            return candidate
+    return None
 
 # Beat-to-character mapping (which character appears in each beat)
 BEAT_CHARACTERS = {
@@ -297,15 +308,15 @@ def main() -> int:
 
     # Load reference embeddings
     ref_embeddings = {}
-    for char, ref_path in CHARACTER_REFS.items():
-        full_path = Path(args.references) / ref_path
-        if full_path.exists():
+    for char, ref_stem in CHARACTER_REFS.items():
+        full_path = resolve_ref(Path(args.references), Path(ref_stem).name)
+        if full_path is not None:
             emb = get_face_embedding(app, full_path)
             if emb is not None:
                 ref_embeddings[char] = emb
-                print(f"  Loaded reference for {char}")
+                print(f"  Loaded reference for {char}: {full_path.name}")
         else:
-            print(f"  ✗ Reference not found: {full_path}")
+            print(f"  ✗ Reference not found for {char} in {args.references}")
 
     # Load LoRA paths
     lora_paths = {}

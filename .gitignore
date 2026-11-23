@@ -100,3 +100,6 @@ yarn-error.log*
 # Environment
 .env.local
 .env.production
+juv_out/
+recover/
+
