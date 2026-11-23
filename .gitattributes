@@ -1,0 +1,13 @@
+# Shell scripts must keep LF endings. A CRLF checkout breaks them on Linux
+# with "$'\r': command not found" and "set: pipefail: invalid option name".
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Python and JS are fine either way; let git normalize them.
+*.py text
+*.js text
+*.json text
+*.md text
+*.yaml text
+*.yml text
+*.toml text
