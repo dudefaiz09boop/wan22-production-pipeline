@@ -541,12 +541,12 @@ def main() -> int:
                 print(f"  {clip['id']}: MISSING PROMPT")
         return 0
 
-        # Download base models
-        if not args.skip_download:
-            token = args.hf_token or os.environ.get("HF_TOKEN")
-            if not download_all_models(state, token):
-                print("WARNING: Model download had issues, continuing with existing models...")
-                # Don't fail on download errors
+    # Download base models. This must run before the render stage; it used to
+    # sit after the dry-run return, which made it unreachable.
+    if not args.skip_download:
+        token = args.hf_token or os.environ.get("HF_TOKEN")
+        if not download_all_models(state, token):
+            print("WARNING: Model download had issues, continuing with existing models...")
 
     # ============================================================
     # PIPELINE STAGES

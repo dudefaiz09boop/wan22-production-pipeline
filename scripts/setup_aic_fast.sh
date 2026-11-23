@@ -638,6 +638,22 @@ else
 fi
 
 # ──────────────────────────────────────────────
+# PHASE 9a: NARRATION (must precede lipsync)
+# ──────────────────────────────────────────────
+phase "PHASE 9a: NARRATION (Edge TTS)"
+
+# Lipsync is audio-driven, so the narration has to exist before phase 9b.
+# The compiled prompts already carry the authored narration text, so this
+# only synthesises and fits each track to its clip duration.
+log "Generating narration audio..."
+if uv run python scripts/generate_narration.py --prompts prompts --output audio; then
+    NARRATION_COUNT=$(find audio -name "c*.wav" 2>/dev/null | wc -l)
+    success "Narration generated ($NARRATION_COUNT track(s))"
+else
+    warn "Narration generation failed - lipsync will be skipped and clips get silent audio"
+fi
+
+# ──────────────────────────────────────────────
 # PHASE 9b: LIPSYNC (audio-driven mouth)
 # ──────────────────────────────────────────────
 phase "PHASE 9b: LIPSYNC"
@@ -669,19 +685,9 @@ else
 fi
 
 # ──────────────────────────────────────────────
-# PHASE 10: NARRATION + AUDIO MUX + FINAL CUT
+# PHASE 10: AUDIO MUX + FINAL CUT
 # ──────────────────────────────────────────────
-phase "PHASE 10: NARRATION, AUDIO MUX, FINAL CUT"
-
-# 10a. Per-clip narration with Edge TTS. The compiled prompts already carry
-# the authored narration text, so this only synthesises and fits duration.
-log "Generating narration audio (Edge TTS)..."
-if uv run python scripts/generate_narration.py --prompts prompts --output audio; then
-    NARRATION_COUNT=$(find audio -name "c*.wav" 2>/dev/null | wc -l)
-    success "Narration generated ($NARRATION_COUNT track(s))"
-else
-    warn "Narration generation failed - clips will get silent audio tracks"
-fi
+phase "PHASE 10: AUDIO MUX, FINAL CUT"
 
 # 10b. Mux narration into each clip, then concatenate into one MP4 with a
 # single continuous audio stream. This is what makes the deliverable a real
