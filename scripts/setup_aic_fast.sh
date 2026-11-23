@@ -256,28 +256,40 @@ DOWNLOADED=$(find "$MODEL_CACHE" -name "*.safetensors" -o -name "*.gguf" | wc -l
 EXPECTED=$(echo $HF_FILES | wc -w)
 success "Downloaded $DOWNLOADED/$EXPECTED model files"
 
-# Lipsync models: Wan 2.2 S2V diffusion model plus the wav2vec2 audio encoder.
-# Only fetched when lipsync is enabled.
+# Lipsync models. Only fetched when lipsync is enabled.
+#   s2v          -> Wan 2.2 S2V diffusion model + wav2vec2 audio encoder
+#   infinitetalk -> Wan 2.1 I2V base + InfiniteTalk patch + audio encoder
 if [[ "${LIPSYNC_ENGINE:-s2v}" != "off" ]]; then
-    log "Downloading lipsync models (S2V + audio encoder)..."
-    uv run python - "$MODEL_CACHE" <<'PY'
+    log "Downloading lipsync models (engine: ${LIPSYNC_ENGINE:-s2v})..."
+    uv run python - "$MODEL_CACHE" "${LIPSYNC_ENGINE:-s2v}" <<'PY'
 import sys
 from pathlib import Path
 from huggingface_hub import hf_hub_download
 
 dest = Path(sys.argv[1])
-files = [
-    ("split_files/diffusion_models/wan2.2_s2v_14B_fp8_scaled.safetensors", "diffusion_models"),
-    ("split_files/audio_encoders/wav2vec2_large_english_fp16.safetensors", "audio_encoders"),
-]
-for repo_path, subdir in files:
+engine = sys.argv[2]
+
+jobs = []
+if engine == "infinitetalk":
+    jobs.append(("Comfy-Org/Wan-2.1",
+                 "split_files/diffusion_models/wan2.1_i2v_480p_14B_fp8_scaled.safetensors",
+                 "diffusion_models"))
+    jobs.append(("Kijai/WanVideo_comfy_fp8_scaled",
+                 "InfiniteTalk/Wan2_1-InfiniteTalk-Multi_fp8_e4m3fn_scaled_KJ.safetensors",
+                 "model_patches"))
+else:
+    jobs.append(("Comfy-Org/Wan-2.2",
+                 "split_files/diffusion_models/wan2.2_s2v_14B_fp8_scaled.safetensors",
+                 "diffusion_models"))
+
+jobs.append(("Comfy-Org/Wan-2.2",
+             "split_files/audio_encoders/wav2vec2_large_english_fp16.safetensors",
+             "audio_encoders"))
+
+for repo, repo_path, subdir in jobs:
     target = dest / subdir
     target.mkdir(parents=True, exist_ok=True)
-    path = hf_hub_download(
-        repo_id="Comfy-Org/Wan-2.2",
-        filename=repo_path,
-        local_dir=str(target),
-    )
+    path = hf_hub_download(repo_id=repo, filename=repo_path, local_dir=str(target))
     print("lipsync model:", path)
 PY
     success "Lipsync models ready"
@@ -400,6 +412,11 @@ done
 for f in "$MODEL_CACHE"/diffusion_models/*.safetensors; do
     [[ -e "$f" ]] || continue
     link_into "$f" "$COMFY_DIR/models/diffusion_models/$(basename "$f")"
+done
+mkdir -p "$COMFY_DIR/models/model_patches"
+for f in "$MODEL_CACHE"/model_patches/*.safetensors; do
+    [[ -e "$f" ]] || continue
+    link_into "$f" "$COMFY_DIR/models/model_patches/$(basename "$f")"
 done
 
 LORA_COUNT=$(find "$COMFY_DIR/models/loras" -name "*.safetensors" | wc -l)

@@ -38,6 +38,8 @@ from render import post, wait_for  # noqa: E402
 
 S2V_UNET = "wan2.2_s2v_14B_fp8_scaled.safetensors"
 AUDIO_ENCODER = "wav2vec2_large_english_fp16.safetensors"
+# InfiniteTalk runs on Wan 2.1 I2V 14B plus a separate audio patch model.
+INFINITETALK_BASE = "wan2.1_i2v_480p_14B_fp8_scaled.safetensors"
 INFINITETALK_PATCH = "Wan2_1-InfiniteTalk-Multi_fp8_e4m3fn_scaled_KJ.safetensors"
 
 
@@ -117,10 +119,15 @@ def build_infinitetalk_workflow(
     steps: int,
     cfg: float,
 ) -> dict:
-    """Wan 2.1 InfiniteTalk Multi graph: two-speaker capable lipsync."""
+    """Wan 2.1 InfiniteTalk Multi graph: two-speaker capable lipsync.
+
+    `model_patch` is not a diffusion model: it is the InfiniteTalk patch
+    loaded by ModelPatchLoader, which detects `audio_proj.proj1.weight` and
+    builds a MultiTalkModelPatch. The base model is Wan 2.1 I2V 14B.
+    """
     return {
         "1": {"class_type": "UnetLoader", "inputs": {
-            "unet_name": "wan2.1_i2v_14B_fp8_scaled.safetensors", "weight_dtype": "default"}},
+            "unet_name": INFINITETALK_BASE, "weight_dtype": "default"}},
         "2": {"class_type": "CLIPLoader", "inputs": {
             "clip_name": "umt5_xxl_fp8_e4m3fn_scaled.safetensors", "type": "wan"}},
         "3": {"class_type": "VAELoader", "inputs": {"vae_name": "wan_2.1_vae.safetensors"}},
@@ -132,26 +139,28 @@ def build_infinitetalk_workflow(
         "7": {"class_type": "LoadImage", "inputs": {"image": image_name, "upload": "image"}},
         "8": {"class_type": "CLIPTextEncode", "inputs": {"text": prompt, "clip": ["2", 0]}},
         "9": {"class_type": "CLIPTextEncode", "inputs": {"text": negative, "clip": ["2", 0]}},
-        "10": {"class_type": "WanInfiniteTalkToVideo", "inputs": {
+        "10": {"class_type": "ModelPatchLoader", "inputs": {
+            "name": INFINITETALK_PATCH}},
+        "11": {"class_type": "WanInfiniteTalkToVideo", "inputs": {
             "mode": "single_speaker",
-            "model": ["1", 0], "model_patch": ["1", 0],
+            "model": ["1", 0], "model_patch": ["10", 0],
             "positive": ["8", 0], "negative": ["9", 0], "vae": ["3", 0],
             "width": width, "height": height, "length": frames,
             "start_image": ["7", 0],
             "audio_encoder_output_1": ["6", 0],
             "audio_scale": 1.0,
         }},
-        "11": {"class_type": "KSampler", "inputs": {
+        "12": {"class_type": "KSampler", "inputs": {
             "seed": seed, "control_after_generate": "fixed",
             "steps": steps, "cfg": cfg, "sampler_name": "euler",
             "scheduler": "simple", "denoise": 1.0,
-            "model": ["10", 0], "positive": ["10", 1], "negative": ["10", 2],
-            "latent_image": ["10", 3],
+            "model": ["11", 0], "positive": ["11", 1], "negative": ["11", 2],
+            "latent_image": ["11", 3],
         }},
-        "12": {"class_type": "VAEDecode", "inputs": {
-            "samples": ["11", 0], "vae": ["3", 0]}},
-        "13": {"class_type": "VHS_VideoCombine", "inputs": {
-            "images": ["12", 0], "frame_rate": 16, "loop_count": 0,
+        "13": {"class_type": "VAEDecode", "inputs": {
+            "samples": ["12", 0], "vae": ["3", 0]}},
+        "14": {"class_type": "VHS_VideoCombine", "inputs": {
+            "images": ["13", 0], "frame_rate": 16, "loop_count": 0,
             "filename_prefix": "lipsync", "format": "video/h264-mp4",
             "pingpong": False, "save_output": True,
         }},
