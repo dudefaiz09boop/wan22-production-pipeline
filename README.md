@@ -8,6 +8,29 @@ This is a standalone, production-ready pipeline that merges the best of:
 
 ---
 
+## ⚡ Ultra-Fast Setup (NEW)
+
+**For AIC Cloud GPU instances - optimized for zero GPU waste:**
+
+```bash
+# On fresh AIC Cloud instance (after SSH)
+export HF_TOKEN="hf_your_token"
+export KAGGLE_KEY='{"username":"yourname","key":"your_key"}'
+curl -fsSL https://raw.githubusercontent.com/YOUR_USERNAME/wan22-production-pipeline/main/scripts/setup_aic_fast.sh | bash
+```
+
+**Timeline (L40S 48GB):**
+- System + deps: ~90s
+- Model downloads (57GB): ~8-12 min (parallel aria2)
+- ComfyUI + Stills: ~5-10 min
+- **70-clip render: ~25-35 min**
+- Face swap + assemble: ~5-8 min
+- **Total: ~45-60 min | Cost: ~₹42-56**
+
+See [`PREREQUISITES.md`](PREREQUISITES.md) for complete checklist.
+
+---
+
 ## Features
 
 ### 🎯 Auto GPU Detection & Model Selection
@@ -52,11 +75,14 @@ cd wan22-production-pipeline
 export HF_TOKEN="your_hf_token"
 export KAGGLE_KEY="your_kaggle_key"
 
-# Run full production
+# Run full production (ULTRA-FAST)
+./scripts/setup_aic_fast.sh
+
+# OR traditional step-by-step:
 ./run_production.sh
 ```
 
-### Options
+### Options (run_production.sh)
 
 ```bash
 # Validate only (dry run)
@@ -119,6 +145,7 @@ wan22-production-pipeline/
 ├── docs/
 │   └── beats.yaml              # Production spec (70 clips)
 ├── scripts/
+│   ├── setup_aic_fast.sh       # ⚡ ULTRA-FAST AIC Cloud setup
 │   ├── run_production.py       # Main orchestrator
 │   ├── auto_model_selector.py  # GPU VRAM → model selection
 │   ├── download_models.py      # Parallel model downloads
@@ -137,7 +164,8 @@ wan22-production-pipeline/
 │   └── loras.json              # LoRA registry (auto-updated)
 ├── negatives/
 │   └── artifact_neg.txt        # Negative prompt
-├── run_production.sh           # Shell wrapper
+├── run_production.sh           # Shell wrapper (traditional)
+├── PREREQUISITES.md            # Complete pre-flight checklist
 ├── package.json                # Node dependencies
 ├── pyproject.toml              # Python dependencies
 └── uv.lock                     # Locked Python deps
@@ -188,7 +216,7 @@ output/
 | GPU | Hourly Rate | 70-Clip Render | Quality |
 |-----|-------------|----------------|---------|
 | **L40S 48GB** | ~₹84/hr | ~₹42-56 | **FP16 - Best** |
-| RTX 3090 24GB | ~₹25-35/hr | ~₹25-35 | FP8 Scaled |
+| RTX 3090 24GB | ~₹30/hr | ~₹25-35 | FP8 Scaled |
 | RTX A6000 48GB | ~₹60-80/hr | ~₹30-40 | FP16 |
 
 ---
