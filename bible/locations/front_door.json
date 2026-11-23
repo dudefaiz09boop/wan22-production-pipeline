@@ -1,0 +1,99 @@
+{
+  "slug": "front_door",
+  "name": "Front door and threshold",
+  "bible_version": 1,
+  "used_in_shots": [
+    "c45",
+    "c47",
+    "c48",
+    "c49",
+    "c67",
+    "c68",
+    "c69",
+    "c70"
+  ],
+  "beats_scenes": [
+    "scene 10",
+    "scene 12"
+  ],
+  "geography": {
+    "value": "front door with chain, latch and peephole; passage end with Ammi outside",
+    "sources": [
+      "beats:c45 cam",
+      "beats:c47 cam",
+      "beats:c48 cam",
+      "beats:c49 cam"
+    ],
+    "status": "beats_canon"
+  },
+  "props": [
+    {
+      "value": "chain and latch",
+      "sources": [
+        "beats:c45 cam",
+        "beats:c48 cam",
+        "beats:c68 continuity"
+      ],
+      "status": "beats_canon"
+    },
+    {
+      "value": "peephole and buzzer box",
+      "sources": [
+        "beats:c47 cam",
+        "beats:c48 cam"
+      ],
+      "status": "beats_canon"
+    },
+    {
+      "value": "mosaic threshold",
+      "sources": [
+        "beats:c49 continuity"
+      ],
+      "status": "beats_canon"
+    },
+    {
+      "value": "corridor outside with one failing bulb",
+      "sources": [
+        "beats:c47 cam"
+      ],
+      "status": "beats_canon"
+    }
+  ],
+  "lighting_states": [
+    {
+      "value": "night corridor",
+      "sources": [
+        "beats:c45 cam"
+      ],
+      "status": "beats_canon"
+    },
+    {
+      "value": "pre-dawn corridor",
+      "sources": [
+        "beats:c47 cam",
+        "beats:c48 cam"
+      ],
+      "status": "beats_canon"
+    },
+    {
+      "value": "morning corridor daylight",
+      "sources": [
+        "beats:c67 cam",
+        "beats:c68 cam"
+      ],
+      "status": "beats_canon"
+    }
+  ],
+  "camera_axis": {
+    "value": "perpendicular close framings on chain, latch and peephole; profile along passage toward door",
+    "sources": [
+      "beats:c47 cam",
+      "beats:c48 cam",
+      "beats:c67 cam"
+    ],
+    "status": "beats_canon"
+  },
+  "notes": [
+    "Ammi is never rendered as a full body; only voice and hands enter frame at c49-c50."
+  ]
+}

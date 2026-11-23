@@ -1,0 +1,79 @@
+{
+  "slug": "bathroom",
+  "name": "Bathroom",
+  "bible_version": 1,
+  "used_in_shots": [
+    "c38",
+    "c53",
+    "c54"
+  ],
+  "beats_scenes": [
+    "scene 8",
+    "scene 10"
+  ],
+  "geography": {
+    "value": "small utility room with bucket, taped mirror and water tap",
+    "sources": [
+      "beats:c38 cam",
+      "beats:c53 cam"
+    ],
+    "status": "beats_canon"
+  },
+  "props": [
+    {
+      "value": "bucket, cloth and taped mirror",
+      "sources": [
+        "beats:c38 cam"
+      ],
+      "status": "beats_canon"
+    },
+    {
+      "value": "wedding photo beside mirror",
+      "sources": [
+        "beats:c38 cam"
+      ],
+      "status": "beats_canon"
+    },
+    {
+      "value": "tap and running-water sound",
+      "sources": [
+        "beats:c53 cam",
+        "beats:c54 cam"
+      ],
+      "status": "beats_canon"
+    }
+  ],
+  "lighting_states": [
+    {
+      "value": "night interior light",
+      "sources": [
+        "beats:c38 cam"
+      ],
+      "status": "beats_canon"
+    },
+    {
+      "value": "pre-dawn shut-door exterior",
+      "sources": [
+        "beats:c53 cam"
+      ],
+      "status": "beats_canon"
+    },
+    {
+      "value": "morning water-light",
+      "sources": [
+        "beats:c54 cam"
+      ],
+      "status": "beats_canon"
+    }
+  ],
+  "camera_axis": {
+    "value": "interior close on bucket and mirror; exterior frames the shut door from the study side",
+    "sources": [
+      "beats:c38 cam",
+      "beats:c53 cam",
+      "beats:c54 cam"
+    ],
+    "status": "beats_canon"
+  },
+  "notes": []
+}

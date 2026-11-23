@@ -1,0 +1,434 @@
+{
+  "name": "Juveriya",
+  "bible_version": 1,
+  "adult": true,
+  "role": "female lead; adult daughter of Ammi; sister of Faiz (locked siblings canon)",
+  "face": {
+    "bone_structure": {
+      "value": "round-heart face, soft cheek volume, small rounded chin",
+      "sources": [
+        "refs/04.png",
+        "refs/06.png",
+        "refs/07.png"
+      ],
+      "status": "photo_verified"
+    },
+    "apparent_age": {
+      "value": "adult, mid-to-late 20s appearance",
+      "sources": [
+        "refs/04.png",
+        "refs/05.png",
+        "refs/06.png",
+        "refs/07.png"
+      ],
+      "status": "photo_verified"
+    },
+    "nose": {
+      "value": "small straight nose with narrow tip",
+      "sources": [
+        "refs/04.png",
+        "refs/06.png",
+        "refs/07.png"
+      ],
+      "status": "photo_verified"
+    },
+    "brow": {
+      "value": "full dark shaped brows with a soft arch",
+      "sources": [
+        "refs/04.png",
+        "refs/06.png",
+        "refs/07.png"
+      ],
+      "status": "photo_verified"
+    },
+    "jaw": {
+      "value": "soft jaw with no hard angle",
+      "sources": [
+        "refs/04.png",
+        "refs/07.png"
+      ],
+      "status": "photo_verified"
+    },
+    "lip_shape": {
+      "value": "full lips with defined cupid's bow; pink or magenta lipstick in refs",
+      "sources": [
+        "refs/04.png",
+        "refs/07.png"
+      ],
+      "status": "photo_verified"
+    },
+    "eye_shape": {
+      "value": "large almond eyes with open lids",
+      "sources": [
+        "refs/04.png",
+        "refs/06.png",
+        "refs/07.png"
+      ],
+      "status": "photo_verified"
+    },
+    "eye_colour": {
+      "value": "dark brown",
+      "sources": [
+        "refs/04.png",
+        "refs/06.png",
+        "refs/07.png"
+      ],
+      "status": "photo_verified"
+    },
+    "eye_makeup": {
+      "value": "dark kajal or eyeliner worn in reference stills",
+      "sources": [
+        "refs/04.png",
+        "refs/07.png"
+      ],
+      "status": "photo_verified"
+    },
+    "skin_tone": {
+      "value": "light-medium with warm undertone",
+      "sources": [
+        "refs/04.png",
+        "refs/06.png",
+        "refs/07.png"
+      ],
+      "status": "photo_verified"
+    },
+    "skin_undertone": {
+      "value": "warm-neutral",
+      "sources": [
+        "refs/04.png",
+        "refs/06.png"
+      ],
+      "status": "photo_verified"
+    },
+    "marks_moles_scars": {
+      "value": "no face marks or scars visible in the four refs",
+      "sources": [
+        "refs/04.png",
+        "refs/05.png",
+        "refs/06.png",
+        "refs/07.png"
+      ],
+      "status": "photo_verified"
+    },
+    "beard": null,
+    "hairline": {
+      "value": "intact side-part hairline with fine baby hairs",
+      "sources": [
+        "refs/04.png",
+        "refs/07.png"
+      ],
+      "status": "photo_verified"
+    },
+    "hair": {
+      "value": "very long straight black hair to hip length; often left loose",
+      "sources": [
+        "refs/04.png",
+        "refs/05.png",
+        "refs/06.png",
+        "refs/07.png"
+      ],
+      "status": "photo_verified"
+    },
+    "ear": {
+      "value": "ornate gold jhumka or earring styles observed in refs",
+      "sources": [
+        "refs/04.png",
+        "refs/05.png",
+        "refs/06.png",
+        "refs/07.png"
+      ],
+      "status": "photo_verified"
+    },
+    "teeth": {
+      "value": "natural adult teeth; no unusual dental feature visible",
+      "sources": [
+        "refs/04.png",
+        "refs/07.png"
+      ],
+      "status": "photo_verified"
+    }
+  },
+  "body": {
+    "height_ratio": {
+      "value": "petite adult stature",
+      "sources": [
+        "refs/05.png",
+        "refs/07.png"
+      ],
+      "status": "photo_verified"
+    },
+    "build": {
+      "value": "slim-petite frame with defined waist",
+      "sources": [
+        "refs/05.png",
+        "refs/07.png"
+      ],
+      "status": "photo_verified"
+    },
+    "shoulder_width": {
+      "value": "narrow",
+      "sources": [
+        "refs/05.png",
+        "refs/06.png"
+      ],
+      "status": "photo_verified"
+    },
+    "waist": {
+      "value": "small and defined in clothed reference views",
+      "sources": [
+        "refs/05.png"
+      ],
+      "status": "photo_verified"
+    },
+    "hips": {
+      "value": "proportionate to slim frame",
+      "sources": [
+        "refs/05.png",
+        "refs/07.png"
+      ],
+      "status": "photo_verified"
+    },
+    "chest": {
+      "value": "moderate, proportionate; clothed reference only",
+      "sources": [
+        "refs/05.png",
+        "refs/06.png"
+      ],
+      "status": "photo_verified"
+    },
+    "limb_proportion": {
+      "value": "proportionate slim arms and legs",
+      "sources": [
+        "refs/05.png",
+        "refs/06.png"
+      ],
+      "status": "photo_verified"
+    },
+    "body_hair": null,
+    "accessories": {
+      "value": "thin gold chain, bangles and traditional jewellery observed in refs",
+      "sources": [
+        "refs/05.png",
+        "refs/06.png",
+        "refs/07.png"
+      ],
+      "status": "photo_verified"
+    },
+    "height_vs_faiz": {
+      "value": "beats imply Faiz is tall and strong enough to lift her; not confirmed in a shared plate",
+      "sources": [
+        "beats:c08 cam",
+        "beats:c09 cam"
+      ],
+      "status": "canon_unverified"
+    }
+  },
+  "voice": {
+    "pitch": null,
+    "pace": null,
+    "accent": {
+      "value": "Hindi/Urdu and English code-switching is established by dialogue",
+      "sources": [
+        "beats:c34 dialogue",
+        "beats:c51 dialogue",
+        "beats:c66 dialogue"
+      ],
+      "status": "canon_unverified"
+    },
+    "performed_phone_voice": {
+      "value": "pitched high and thin when deceiving Ammi over the phone",
+      "sources": [
+        "beats:c35 cam",
+        "beats:c36 cam"
+      ],
+      "status": "beats_canon"
+    },
+    "delivery_notes": {
+      "value": "commands with a flat, unhurried tone during later intimacy",
+      "sources": [
+        "beats:c56 say",
+        "beats:c61 say"
+      ],
+      "status": "beats_canon"
+    }
+  },
+  "backstory": [
+    {
+      "text": "Adult daughter of Ammi; the study, desk and family flat are her everyday setting.",
+      "sources": [
+        "HANDOFF.md: section 1.1",
+        "beats:c13 continuity",
+        "beats:c46 continuity"
+      ],
+      "status": "beats_canon"
+    },
+    {
+      "text": "Adult sister of Faiz; the sibling relationship and secret are locked canon.",
+      "sources": [
+        "HANDOFF.md: section 1.1",
+        "beats:c35 cam",
+        "beats:c36 cam"
+      ],
+      "status": "beats_canon"
+    },
+    {
+      "text": "Initiates and directs later intimacy without withdrawing consent.",
+      "sources": [
+        "beats:c55 cam",
+        "beats:c56 say",
+        "beats:c61 say"
+      ],
+      "status": "beats_canon"
+    }
+  ],
+  "continuity_marks": [
+    {
+      "range": "c15-c26",
+      "value": "fresh red tooth welt with four dent marks",
+      "sources": [
+        "beats:c15 cam",
+        "beats:c17 continuity"
+      ],
+      "status": "beats_canon"
+    },
+    {
+      "range": "c27-c46",
+      "value": "welt remains tender and visible",
+      "sources": [
+        "beats:c33 cam",
+        "beats:c44 cam"
+      ],
+      "status": "beats_canon"
+    },
+    {
+      "range": "c47-c54",
+      "value": "welt hidden under pinned dupatta",
+      "sources": [
+        "beats:c45 continuity",
+        "beats:c47 cam"
+      ],
+      "status": "beats_canon"
+    },
+    {
+      "range": "c55-c70",
+      "value": "yellow fading welt",
+      "sources": [
+        "beats:c55 continuity",
+        "beats:c68 continuity"
+      ],
+      "status": "beats_canon"
+    }
+  ],
+  "wardrobe_states": [
+    {
+      "range": "c01-c03",
+      "value": "loose kurti, grey skirt, dupatta on left shoulder, taveez, henna, six bangles each wrist",
+      "sources": [
+        "beats:c01 continuity"
+      ],
+      "status": "beats_canon"
+    },
+    {
+      "range": "c04-c09",
+      "value": "skirt tears and is rucked to waist; panties removed; kurti bunched",
+      "sources": [
+        "beats:c04 continuity",
+        "beats:c05 continuity",
+        "beats:c08 continuity"
+      ],
+      "status": "beats_canon"
+    },
+    {
+      "range": "c10-c29",
+      "value": "skirt at waist, kurti open or bunched, dupatta displaced",
+      "sources": [
+        "beats:c10 continuity",
+        "beats:c20 continuity",
+        "beats:c29 continuity"
+      ],
+      "status": "beats_canon"
+    },
+    {
+      "range": "c30-c31",
+      "value": "Faiz's shirt over shoulders; one strap broken",
+      "sources": [
+        "beats:c30 continuity",
+        "beats:c31 continuity"
+      ],
+      "status": "beats_canon"
+    },
+    {
+      "range": "c32-c38",
+      "value": "fresh panties; skirt lowered; shirt open; kajal smeared",
+      "sources": [
+        "beats:c32 continuity",
+        "beats:c34 continuity",
+        "beats:c38 continuity"
+      ],
+      "status": "beats_canon"
+    },
+    {
+      "range": "c39-c40",
+      "value": "shirt on, skirt smoothed, hair tied back",
+      "sources": [
+        "beats:c39 continuity",
+        "beats:c40 continuity"
+      ],
+      "status": "beats_canon"
+    },
+    {
+      "range": "c41-c46",
+      "value": "fresh shalwar, shirt removed, dupatta pinned",
+      "sources": [
+        "beats:c41 continuity",
+        "beats:c45 continuity"
+      ],
+      "status": "beats_canon"
+    },
+    {
+      "range": "c47-c54",
+      "value": "full shalwar and pinned dupatta; welt hidden",
+      "sources": [
+        "beats:c47 continuity",
+        "beats:c52 continuity"
+      ],
+      "status": "beats_canon"
+    },
+    {
+      "range": "c55-c64",
+      "value": "fresh kurti and skirt, dupatta off, hair loose, yellow fading welt",
+      "sources": [
+        "beats:c55 continuity",
+        "beats:c58 continuity",
+        "beats:c63 continuity"
+      ],
+      "status": "beats_canon"
+    },
+    {
+      "range": "c65-c70",
+      "value": "daylight shalwar kameez and dupatta",
+      "sources": [
+        "beats:c65 continuity",
+        "beats:c70 continuity"
+      ],
+      "status": "beats_canon"
+    }
+  ],
+  "forbidden": [
+    "blonde, bleached or non-black hair",
+    "hair shorter than hip length outside the beats-tracked tied-back window",
+    "glasses",
+    "nose piercing, facial piercings or visible tattoos",
+    "bindi, sindoor or mangalsutra",
+    "Western dress or bridal wear",
+    "a third person in frame",
+    "Ammi's face or full body in frame",
+    "childlike proportions or any read contradicting adult: true"
+  ],
+  "plate_refs": [
+    "refs/04.png",
+    "refs/05.png",
+    "refs/06.png",
+    "refs/07.png"
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "slug": "kitchen",
+  "name": "Kitchen and hatch",
+  "bible_version": 1,
+  "used_in_shots": [
+    "c45",
+    "c50",
+    "c51",
+    "c54",
+    "c65",
+    "c66"
+  ],
+  "beats_scenes": [
+    "scene 10",
+    "scene 12"
+  ],
+  "geography": {
+    "value": "counter, hatch toward passage and steel-vessel area",
+    "sources": [
+      "beats:c51 cam",
+      "beats:c65 cam",
+      "beats:c66 cam"
+    ],
+    "status": "beats_canon"
+  },
+  "props": [
+    {
+      "value": "vegetable bags and tomato",
+      "sources": [
+        "beats:c51 continuity"
+      ],
+      "status": "beats_canon"
+    },
+    {
+      "value": "steel vessels",
+      "sources": [
+        "beats:c65 continuity"
+      ],
+      "status": "beats_canon"
+    },
+    {
+      "value": "fridge; heard starting, not directly seen",
+      "sources": [
+        "beats:c45 cam"
+      ],
+      "status": "canon_unverified"
+    }
+  ],
+  "lighting_states": [
+    {
+      "value": "night dim",
+      "sources": [
+        "beats:c45 cam"
+      ],
+      "status": "beats_canon"
+    },
+    {
+      "value": "dawn grey",
+      "sources": [
+        "beats:c51 cam",
+        "beats:c54 cam"
+      ],
+      "status": "beats_canon"
+    },
+    {
+      "value": "morning daylight",
+      "sources": [
+        "beats:c65 cam"
+      ],
+      "status": "beats_canon"
+    }
+  ],
+  "camera_axis": {
+    "value": "from passage door and hatch toward counter; close on dropped vegetables",
+    "sources": [
+      "beats:c50 cam",
+      "beats:c51 cam",
+      "beats:c65 cam"
+    ],
+    "status": "beats_canon"
+  },
+  "notes": []
+}

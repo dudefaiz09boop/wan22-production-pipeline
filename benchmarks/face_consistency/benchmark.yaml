@@ -1,0 +1,47 @@
+version: 1
+purpose: "Neutral face-identity and temporal-stability test; not a production beat."
+prompt_file: prompt.txt
+negative_prompt: "warped face, changing facial features, asymmetrical eyes, duplicate facial features, face blur, flicker, text, watermark"
+preprocessing:
+  script: scripts/prepare_face_consistency_inputs.py
+  method: "Keep the complete source photo centered over a blurred, full-bleed copy."
+  width: 1280
+  height: 720
+cases:
+  - id: c08-face-identity
+    source_beat: c08
+    build: fm
+    reference_image: startframes/c08.png
+    prepared_image: c08_face_test.png
+  - id: c18-face-identity
+    source_beat: c18
+    build: fm
+    reference_image: startframes/c18.png
+    prepared_image: c18_face_test.png
+render:
+  profile: wan22-fm-lightning-q8
+  width: 1280
+  height: 720
+  frames: 41
+  fps: 8
+  steps: 5
+  cfg: 1
+  sampler: euler
+  scheduler: simple
+  seed: 20261118
+  loras: []
+evaluation:
+  report:
+    - face-detection-coverage
+    - ArcFace-cosine-similarity-median
+    - CurricularFace-FaceSim-median
+    - CurricularFace-FaceSim-p10
+    - temporal-landmark-jitter
+    - human-review
+  face_detection_coverage_minimum: 0.95
+  identity_similarity_threshold: "Calibrate against reviewed same-identity and different-identity examples; do not invent a universal cosine cutoff."
+  human_review:
+    - identity-resemblance
+    - eye-and-mouth-geometry
+    - frame-to-frame-warping
+    - lighting-and-texture-stability

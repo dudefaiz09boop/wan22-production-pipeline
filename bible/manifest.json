@@ -1,5 +1,34 @@
 {
   "bible_version": 1,
   "algorithm": "sha256",
-  "files": []
+  "files": [
+    {
+      "path": "faiz.json",
+      "sha256": "5d80c85e1bf6d75ea42e8e3334b17222798f8d02ff34a7739d68d38cc142c8ea"
+    },
+    {
+      "path": "juveriya.json",
+      "sha256": "011ff795ed2969a82bcb725411539a936ebd70f98ac60d04922eca8f0f4c632e"
+    },
+    {
+      "path": "locations/bathroom.json",
+      "sha256": "4356017b6cd8795441e162df0f51b581524bbb5f84690372bd01e510873819b2"
+    },
+    {
+      "path": "locations/front_door.json",
+      "sha256": "04fcd999f15e427a68bb40fc84ab81cbc211fa0c59d6b490a39cf8f76eedaf5b"
+    },
+    {
+      "path": "locations/hallway.json",
+      "sha256": "35522066f3d71e6ef4d23c5b5beef6d45004e4fc5ead08d9ea7b46dd1320c40a"
+    },
+    {
+      "path": "locations/kitchen.json",
+      "sha256": "6c1efeed2c2080bcd662bc19c6c03cc14474414a994e701aa2df34512f13881e"
+    },
+    {
+      "path": "locations/study_desk.json",
+      "sha256": "102336124e288ba8b5bb2bc259a7d9e119edc236287ea18e33526ad69ff7f1ae"
+    }
+  ]
 }

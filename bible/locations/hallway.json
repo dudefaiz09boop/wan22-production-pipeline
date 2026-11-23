@@ -1,0 +1,107 @@
+{
+  "slug": "hallway",
+  "name": "Hallway and passage",
+  "bible_version": 1,
+  "used_in_shots": [
+    "c01",
+    "c02",
+    "c03",
+    "c04",
+    "c47",
+    "c48",
+    "c49",
+    "c50",
+    "c51",
+    "c52",
+    "c53",
+    "c54",
+    "c65",
+    "c66",
+    "c67",
+    "c68",
+    "c69",
+    "c70"
+  ],
+  "beats_scenes": [
+    "scene 1",
+    "scene 10",
+    "scene 12"
+  ],
+  "geography": {
+    "value": "narrow passage linking front door, study, kitchen and bedroom",
+    "sources": [
+      "beats:c01 cam",
+      "beats:c48 cam",
+      "beats:c50 cam",
+      "beats:c65 cam"
+    ],
+    "status": "beats_canon"
+  },
+  "props": [
+    {
+      "value": "peeling wallpaper and damp patch",
+      "sources": [
+        "beats:c01 cam"
+      ],
+      "status": "beats_canon"
+    },
+    {
+      "value": "cold mosaic floor",
+      "sources": [
+        "beats:c02 cam"
+      ],
+      "status": "beats_canon"
+    },
+    {
+      "value": "bedroom and study doorways",
+      "sources": [
+        "beats:c03 cam",
+        "beats:c55 cam"
+      ],
+      "status": "beats_canon"
+    },
+    {
+      "value": "shoe rack",
+      "sources": [
+        "beats:c69 continuity",
+        "beats:c70 continuity"
+      ],
+      "status": "beats_canon"
+    }
+  ],
+  "lighting_states": [
+    {
+      "value": "night failing tube",
+      "sources": [
+        "beats:c02 cam"
+      ],
+      "status": "beats_canon"
+    },
+    {
+      "value": "pre-dawn grey",
+      "sources": [
+        "beats:c47 cam",
+        "beats:c48 cam"
+      ],
+      "status": "beats_canon"
+    },
+    {
+      "value": "morning daylight",
+      "sources": [
+        "beats:c65 cam",
+        "beats:c67 cam"
+      ],
+      "status": "beats_canon"
+    }
+  ],
+  "camera_axis": {
+    "value": "axial down the passage from front door to study, plus low mosaic-floor angles",
+    "sources": [
+      "beats:c01 cam",
+      "beats:c02 cam",
+      "beats:c48 cam"
+    ],
+    "status": "beats_canon"
+  },
+  "notes": []
+}

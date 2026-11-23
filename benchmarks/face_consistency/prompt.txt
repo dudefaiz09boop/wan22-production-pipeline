@@ -1,0 +1,6 @@
+(At 0 seconds: static, the same adult person from the reference, centered and facing the camera with a relaxed neutral expression, soft even window light)
+(At 1 seconds: static, the same adult person from the reference, completing one natural blink while holding the same pose, soft even window light)
+(At 2 seconds: static, the same adult person from the reference, returning to a steady gaze at the camera with unchanged facial features, soft even window light)
+(At 3 seconds: static, the same adult person from the reference, making a very small head turn to their left and returning to center, soft even window light)
+(At 4 seconds: static, the same adult person from the reference, holding the centered pose with a subtle relaxed half-smile, soft even window light)
+(At 5 seconds: static, the same adult person from the reference, settling back to a neutral expression with the same hair and face shape, soft even window light)
