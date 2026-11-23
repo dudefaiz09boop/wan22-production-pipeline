@@ -32,14 +32,54 @@ and `all spec LoRAs staged`.
 
 ## 1. Add your SSH key to AIC Cloud
 
-Your public key:
+**AIC Cloud generates its own `.pem` key per instance.** You do not need to
+create an `id_rsa` pair for it. On the instance card, click **SSH KEY →
+Download** and save the file to:
 
-```powershell
-type $env:USERPROFILE\.ssh\id_rsa.pub
+```
+C:\Users\FAIZ SAYYED\.ssh\aic-gpu-gpu-wan22.pem
 ```
 
-Paste the whole line into the **SSH public key** field on the launch page.
-AIC Cloud saves it in the browser, so you only do this once.
+If the `.ssh` folder does not exist:
+
+```powershell
+New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.ssh"
+```
+
+### Fix the key permissions (Windows, not chmod)
+
+Windows OpenSSH refuses a private key that other users can read. `chmod 600`
+does not exist on Windows — use `icacls` instead:
+
+```powershell
+icacls "$env:USERPROFILE\.ssh\aic-gpu-gpu-wan22.pem" /inheritance:r /grant:r "$($env:USERNAME):(R)"
+```
+
+Or run the helper, which does this and prints the exact commands:
+
+```powershell
+python scripts/setup_ssh_key.py --key "$env:USERPROFILE\.ssh\aic-gpu-gpu-wan22.pem" --host gpu-868186.aiccloud.one --port 40581
+```
+
+### Connect
+
+**The port is not 22.** AIC assigns a high port per instance (40581 in this
+example). Use the exact command from the instance card:
+
+```powershell
+ssh -i "$env:USERPROFILE\.ssh\aic-gpu-gpu-wan22.pem" -p 40581 root@gpu-868186.aiccloud.one
+```
+
+If the hostname does not resolve, use the IP:
+
+```powershell
+ssh -i "$env:USERPROFILE\.ssh\aic-gpu-gpu-wan22.pem" -p 40581 root@38.29.145.28
+```
+
+Type `yes` at the fingerprint prompt. If it asks for a password, use the one
+shown on the instance card.
+
+**Note on `scp`:** the port flag is capital `-P`, not lowercase `-p`.
 
 ---
 
@@ -162,7 +202,7 @@ to become ready after deploy. "Connection refused" or "permission denied" in
 the first minute is normal and clears on its own. Wait 90 s, then:
 
 ```powershell
-ssh root@<instance-ip>
+ssh -i "$env:USERPROFILE\.ssh\aic-gpu-gpu-wan22.pem" -p 40581 root@gpu-868186.aiccloud.one
 ```
 
 **Where to find the terminal access.** Three options, all from the dashboard:
@@ -177,10 +217,8 @@ ssh root@<instance-ip>
 3. **Jupyter.** The PyTorch image ships Jupyter. Open it from the instance
    card and use **File → New → Terminal** for a shell.
 
-**Note on the SSH port.** AIC Cloud VPS docs say the SSH port is not 22 but a
-higher assigned number. GPU instances normally use 22. If `ssh root@<ip>`
-fails, check the instance card for an explicit port and use
-`ssh root@<ip> -p <port>`.
+**Note on the SSH port.** AIC assigns a high port per instance (40581 in this
+example), not 22. Use the exact command from the instance card.
 
 **Step 4 — Clone and configure.**
 
@@ -202,11 +240,11 @@ AIC_API_KEY=...
 
 Save with `Ctrl+O`, `Enter`, then `Ctrl+X`.
 
-**Step 5 — Copy the two trained LoRAs** from your laptop (new terminal):
+**Step 5 — Copy the two trained LoRAs** from your laptop (new PowerShell window):
 
 ```powershell
-scp "C:\Users\FAIZ SAYYED\projects\wan22-production-pipeline\loras\faiz_lora.safetensors" root@<ip>:/workspace/wan22-production-pipeline/loras/
-scp "C:\Users\FAIZ SAYYED\projects\wan22-production-pipeline\loras\juv_lora.safetensors"  root@<ip>:/workspace/wan22-production-pipeline/loras/
+scp -i "$env:USERPROFILE\.ssh\aic-gpu-gpu-wan22.pem" -P 40581 "C:\Users\FAIZ SAYYED\projects\wan22-production-pipeline\loras\faiz_lora.safetensors" root@gpu-868186.aiccloud.one:/workspace/wan22-production-pipeline/loras/
+scp -i "$env:USERPROFILE\.ssh\aic-gpu-gpu-wan22.pem" -P 40581 "C:\Users\FAIZ SAYYED\projects\wan22-production-pipeline\loras\juv_lora.safetensors"  root@gpu-868186.aiccloud.one:/workspace/wan22-production-pipeline/loras/
 ```
 
 **Step 6 — Verify before spending GPU time.**
@@ -229,7 +267,13 @@ bash scripts/setup_aic_fast.sh 2>&1 | tee /tmp/production.log
 **Step 8 — Pull results** (from your laptop, before stopping):
 
 ```powershell
-python scripts/pull_results.py --http http://<ip>:8000
+python scripts/pull_results.py --host root@gpu-868186.aiccloud.one --port 40581 --key "$env:USERPROFILE\.ssh\aic-gpu-gpu-wan22.pem"
+```
+
+Or over HTTP:
+
+```powershell
+python scripts/pull_results.py --http http://38.29.145.28:8000
 ```
 
 **Step 9 — Stop billing.**
