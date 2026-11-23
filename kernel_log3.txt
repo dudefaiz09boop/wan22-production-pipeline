@@ -1,7 +1,0 @@
-﻿kaggle : 'charmap' codec can't encode characters in position 30727-30738: character maps to <undefined>
-At line:2 char:63
-+ ... -pipeline"; kaggle kernels logs sofiya009/lora-nuke-faiz-juveriya-sdx ...
-+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : NotSpecified: ('charmap' codec... to <undefined>:String) [], RemoteException
-    + FullyQualifiedErrorId : NativeCommandError
- 
