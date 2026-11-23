@@ -1,7 +1,9 @@
 [project]
 name = "wan22-production-pipeline"
 version = "0.1.0"
-requires-python = ">=3.11"
+# onnxruntime-gpu ships wheels for cp311-cp314 only. Python 3.15 has no wheel,
+# so cap the interpreter below 3.15.
+requires-python = ">=3.11,<3.15"
 dependencies = [
     "pyyaml>=6.0",
     "pillow>=11.0",
@@ -16,10 +18,25 @@ dependencies = [
     "diffusers>=0.30",
     "transformers>=4.41",
     "accelerate>=0.30",
+    # diffusers' load_lora_weights() requires the PEFT backend.
+    "peft>=0.11",
     "safetensors>=0.4",
     "torch>=2.3",
     "torchvision>=0.18",
 ]
+
+# The AIC Cloud PyTorch image ships an NVIDIA driver that supports CUDA 12.6.
+# PyPI's default torch wheel is built for CUDA 13 and fails at import with
+# "NVIDIA driver on your system is too old". Pin the CUDA 12.6 index so
+# `uv sync` never silently replaces the working build.
+[tool.uv.sources]
+torch = { index = "pytorch-cu126" }
+torchvision = { index = "pytorch-cu126" }
+
+[[tool.uv.index]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
+explicit = true
 
 [project.optional-dependencies]
 test = [

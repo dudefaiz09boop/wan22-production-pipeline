@@ -139,10 +139,11 @@ def inject(
         elif ct in ("Wan22ImageToVideo", "WanImageToVideo"):
             inputs["width"] = cfg["width"]
             inputs["height"] = cfg["height"]
-            # WanImageToVideo requires (length - 1) % 4 == 0 (step=4). At
-            # 16 fps a 5s clip is 81 frames and a 4s clip is 65; using
-            # duration*16 gives 80/64, which the node rejects.
-            inputs["length"] = cfg["duration"] * 16 + 1
+            # Project contract: 8 fps, 41 frames for a 5s clip and 33 for a
+            # 4s clip. WanImageToVideo requires (length - 1) % 4 == 0, which
+            # both values satisfy. Rendering at 16 fps doubled the frame count
+            # and therefore the sampling cost for no authored benefit.
+            inputs["length"] = 41 if cfg["duration"] >= 5 else 33
     if registry is None:
         registry = load_lora_registry()
     return inject_loras(wf, cfg, registry)

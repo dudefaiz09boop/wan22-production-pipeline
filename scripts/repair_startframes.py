@@ -34,6 +34,11 @@ def main() -> int:
     ap.add_argument("--beats", nargs="+", help="Override the failing list")
     ap.add_argument("--candidates", type=int, default=4, help="Candidates per beat")
     ap.add_argument("--gate", type=float, default=0.45, help="Identity gate")
+    ap.add_argument(
+        "--sdxl-model",
+        default="models/Juggernaut-XL-v9/Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors",
+        help="SDXL base model path",
+    )
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
@@ -53,6 +58,7 @@ def main() -> int:
         "--output", "startframes",
         "--references", "references",
         "--loras", "models/loras/trained",
+        "--sdxl-model", args.sdxl_model,
         "--spec", "docs/beats.yaml",
         "--swapper-model", "models/inswapper_128.onnx",
         "--candidates", str(args.candidates),

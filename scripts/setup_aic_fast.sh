@@ -362,6 +362,12 @@ uv run python scripts/generate_workflow.py \
 
 success "Workflow generated"
 
+# Compile prompts/*.txt from docs/beats.yaml. --no-frames is required here:
+# the start frames this step would otherwise validate are produced in phase 7.
+log "Compiling beat prompts..."
+uv run python scripts/build_prompts.py --no-frames
+success "Prompts compiled"
+
 # ──────────────────────────────────────────────
 # PHASE 6: START COMFYUI (BACKGROUND)
 # ──────────────────────────────────────────────
@@ -373,15 +379,33 @@ log "Starting ComfyUI on port $COMFYUI_PORT..."
 if [[ ! -d "$WORKSPACE/ComfyUI" ]]; then
     log "Cloning ComfyUI (minimal)..."
     git clone --depth 1 https://github.com/comfyanonymous/ComfyUI.git "$WORKSPACE/ComfyUI" 2>/dev/null
-    cd "$WORKSPACE/ComfyUI"
-    pip install -q -r requirements.txt 2>/dev/null | tail -3
-    
-    # Install required custom nodes
-    cd custom_nodes
-    git clone --depth 1 https://github.com/kijai/ComfyUI-GGUF.git 2>/dev/null &
-    git clone --depth 1 https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git 2>/dev/null &
-    wait
 fi
+
+# ComfyUI gets its own virtual environment. Sharing the pipeline venv breaks
+# in both directions: `uv sync` prunes ComfyUI's packages, and installing
+# ComfyUI's requirements can replace the pinned CUDA 12.6 torch build.
+COMFY_VENV="$WORKSPACE/ComfyUI/.venv"
+if [[ ! -x "$COMFY_VENV/bin/python" ]]; then
+    log "Creating isolated ComfyUI environment..."
+    cd "$WORKSPACE/ComfyUI"
+    uv venv --python 3.14 "$COMFY_VENV"
+    uv pip install --python "$COMFY_VENV/bin/python" \
+        --index-url https://download.pytorch.org/whl/cu126 \
+        torch==2.14.1+cu126 torchvision==0.29.1+cu126
+fi
+
+cd "$WORKSPACE/ComfyUI"
+uv pip install --python "$COMFY_VENV/bin/python" -r requirements.txt
+
+if [[ ! -d "$WORKSPACE/ComfyUI/custom_nodes/ComfyUI-GGUF" ]]; then
+    git clone --depth 1 https://github.com/kijai/ComfyUI-GGUF.git \
+        "$WORKSPACE/ComfyUI/custom_nodes/ComfyUI-GGUF" 2>/dev/null &
+fi
+if [[ ! -d "$WORKSPACE/ComfyUI/custom_nodes/ComfyUI-VideoHelperSuite" ]]; then
+    git clone --depth 1 https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git \
+        "$WORKSPACE/ComfyUI/custom_nodes/ComfyUI-VideoHelperSuite" 2>/dev/null &
+fi
+wait
 
 # Point ComfyUI at the staged model cache. Without this, ComfyUI looks in its
 # own models/ tree and every LoRA and checkpoint resolves as missing.
@@ -463,7 +487,7 @@ else
 fi
 
 cd "$COMFY_DIR"
-nohup python main.py \
+nohup "$COMFY_VENV/bin/python" main.py \
     --listen 0.0.0.0 \
     --port $COMFYUI_PORT \
     ${COMFY_VRAM_ARGS[@]+"${COMFY_VRAM_ARGS[@]}"} \
@@ -494,6 +518,8 @@ done
 # ──────────────────────────────────────────────
 phase "PHASE 7: GENERATE STILLS (SDXL + InsightFace)"
 
+cd "$REPO_DIR"
+
 # The SDXL base model is only needed for stills, so fetch it here rather
 # than in the Wan model phase.
 SDXL_DIR="$MODEL_CACHE/Juggernaut-XL-v9"
@@ -518,8 +544,16 @@ success "SDXL base model ready"
 
 # Character reference faces drive the InsightFace swap. Without them the
 # stills are generated but identity is not enforced, so warn clearly.
-if [[ ! -f references/faiz_ref.jpg || ! -f references/juv_ref.jpg ]]; then
-    warn "references/faiz_ref.jpg and/or references/juv_ref.jpg missing."
+# References may be png, jpg, jpeg, or webp; check every supported extension.
+REF_FOUND=false
+for ext in png jpg jpeg webp; do
+    if [[ -f "references/faiz_ref.$ext" && -f "references/juv_ref.$ext" ]]; then
+        REF_FOUND=true
+        break
+    fi
+done
+if [[ "$REF_FOUND" != "true" ]]; then
+    warn "references/faiz_ref.* and/or references/juv_ref.* missing."
     warn "Stills will generate without identity enforcement."
     warn "Add both files to references/ for the face swap to work."
 fi
@@ -575,6 +609,7 @@ uv run python scripts/run_production.py \
     --server "http://127.0.0.1:$COMFYUI_PORT" \
     --force-precision "$PRECISION" \
     --hf-token "$HF_TOKEN" \
+    --skip-download \
     --skip-loras \
     --skip-stills \
     --skip-face-swap \
