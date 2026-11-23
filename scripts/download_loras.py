@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import shutil
 import sys
 import time
 from pathlib import Path
@@ -199,6 +200,13 @@ def download_trained_loras(
 
     dest_dir.mkdir(parents=True, exist_ok=True)
 
+    # A LoRA already staged locally (for example one recovered from a Kaggle
+    # run) is authoritative. Never re-download or retrain it.
+    local_sources = [
+        Path("loras"),
+        Path("models/loras/trained"),
+    ]
+
     for lora_key, lora_info in TRAINED_LORAS.items():
         filename = lora_info["filename"]
         dest = dest_dir / filename
@@ -206,7 +214,17 @@ def download_trained_loras(
         print(f"[{lora_key}] {filename} - {lora_info['description']}")
 
         if dest.exists() and not force:
-                    print(f"  [OK] Already exists (use --force to re-download)")
+            print("  [OK] Already exists (use --force to re-download)")
+            results[lora_key] = True
+            continue
+
+        staged = next(
+            (src / filename for src in local_sources if (src / filename).is_file()),
+            None,
+        )
+        if staged is not None and not force:
+            shutil.copy2(staged, dest)
+            print(f"  [OK] Copied from local staging: {staged}")
             results[lora_key] = True
             continue
 
@@ -217,7 +235,7 @@ def download_trained_loras(
         try:
             expected_size = get_file_size(file_url, session, token)
         except Exception as e:
-                    print(f"  [FAIL] Failed to get file size: {e}")
+            print(f"  [FAIL] Failed to get file size: {e}")
             results[lora_key] = False
             continue
 
