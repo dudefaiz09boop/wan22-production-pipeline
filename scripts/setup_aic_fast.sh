@@ -443,18 +443,17 @@ COMFY_VRAM_ARGS=()
 if [[ $VRAM_GB -lt 24 ]]; then
     COMFY_VRAM_ARGS=(--lowvram)
     log "VRAM ${VRAM_GB}GB < 24GB: using --lowvram"
-elif [[ $VRAM_GB -lt 40 ]]; then
-    COMFY_VRAM_ARGS=(--normalvram)
-    log "VRAM ${VRAM_GB}GB: using --normalvram"
 else
-    log "VRAM ${VRAM_GB}GB: keeping models resident (no offload flags)"
+    # ComfyUI has no --normalvram flag; the default is normal VRAM handling.
+    # Passing an unknown flag aborts startup, so pass nothing here.
+    log "VRAM ${VRAM_GB}GB: default VRAM handling (models stay resident)"
 fi
 
 cd "$COMFY_DIR"
 nohup python main.py \
     --listen 0.0.0.0 \
     --port $COMFYUI_PORT \
-    "${COMFY_VRAM_ARGS[@]}" \
+    ${COMFY_VRAM_ARGS[@]+"${COMFY_VRAM_ARGS[@]}"} \
     --preview-method none \
     --disable-auto-launch \
     > /tmp/comfyui.log 2>&1 &
@@ -705,7 +704,7 @@ if ! uv run python scripts/mux_audio.py \
     --muxed renders/muxed \
     --output output/final.mp4 \
     --crf 18 --preset slow \
-    "${MUSIC_ARGS[@]}" \
+    ${MUSIC_ARGS[@]+"${MUSIC_ARGS[@]}"} \
     2>&1 | tail -12; then
     warn "Audio mux failed - falling back to silent assembly"
     uv run python scripts/assemble_final.py \
