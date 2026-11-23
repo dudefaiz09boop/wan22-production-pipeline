@@ -5,9 +5,13 @@ AIC Cloud GPU instances are created in the dashboard and expose no GPU API,
 so the instance cannot push to your laptop on its own. This script runs
 locally and pulls the deliverable over SSH or HTTP.
 
+AIC GPU instances use a generated .pem key and a non-standard SSH port, so
+both are first-class options here.
+
 Usage:
-    python scripts/pull_results.py --host root@1.2.3.4
-    python scripts/pull_results.py --http http://1.2.3.4:8000
+    python scripts/pull_results.py --host root@gpu-868186.aiccloud.one \
+        --port 40581 --key ~/.ssh/aic-gpu-gpu-wan22.pem
+    python scripts/pull_results.py --http http://38.29.145.28:8000
     python scripts/pull_results.py --host root@1.2.3.4 --dest D:/renders
 """
 from __future__ import annotations
@@ -23,18 +27,23 @@ DEFAULT_REMOTE_DIR = "/workspace/output"
 ARTIFACTS = ("deliverable.zip", "final.mp4")
 
 
-def pull_ssh(host: str, remote_dir: str, dest: Path) -> int:
+def pull_ssh(host: str, remote_dir: str, dest: Path, port: int | None, key: str | None) -> int:
     if not shutil.which("scp"):
         print("scp not found. Install OpenSSH client, or use --http.", file=sys.stderr)
         return 1
     dest.mkdir(parents=True, exist_ok=True)
+
+    base = ["scp", "-o", "StrictHostKeyChecking=accept-new"]
+    if port:
+        base += ["-P", str(port)]
+    if key:
+        base += ["-i", str(Path(key).expanduser())]
+
     failures = 0
     for name in ARTIFACTS:
         remote = f"{host}:{remote_dir}/{name}"
         print(f"scp {remote} -> {dest}")
-        result = subprocess.run(
-            ["scp", "-o", "StrictHostKeyChecking=accept-new", remote, str(dest)],
-        )
+        result = subprocess.run(base + [remote, str(dest)])
         if result.returncode != 0:
             print(f"  failed: {name}", file=sys.stderr)
             failures += 1
@@ -62,8 +71,10 @@ def pull_http(base_url: str, dest: Path) -> int:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Pull rendered results from AIC Cloud")
-    ap.add_argument("--host", help="SSH target, e.g. root@1.2.3.4")
-    ap.add_argument("--http", help="HTTP base URL, e.g. http://1.2.3.4:8000")
+    ap.add_argument("--host", help="SSH target, e.g. root@gpu-868186.aiccloud.one")
+    ap.add_argument("--http", help="HTTP base URL, e.g. http://38.29.145.28:8000")
+    ap.add_argument("--port", type=int, help="SSH port (AIC GPU instances are not 22)")
+    ap.add_argument("--key", help="Path to the .pem private key")
     ap.add_argument("--remote-dir", default=DEFAULT_REMOTE_DIR, help="Remote output directory")
     ap.add_argument("--dest", default="renders_local", help="Local destination directory")
     args = ap.parse_args()
@@ -73,7 +84,7 @@ def main() -> int:
 
     dest = Path(args.dest)
     if args.host:
-        return pull_ssh(args.host, args.remote_dir, dest)
+        return pull_ssh(args.host, args.remote_dir, dest, args.port, args.key)
     return pull_http(args.http, dest)
 
 
