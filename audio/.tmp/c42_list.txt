@@ -1,0 +1,3 @@
+file 'C:/Users/FAIZ SAYYED/projects/wan22-production-pipeline/audio/.tmp/c42_00.mp3'
+file 'C:/Users/FAIZ SAYYED/projects/wan22-production-pipeline/audio/.tmp/c42_01.mp3'
+file 'C:/Users/FAIZ SAYYED/projects/wan22-production-pipeline/audio/.tmp/c42_02.mp3'

@@ -256,6 +256,33 @@ DOWNLOADED=$(find "$MODEL_CACHE" -name "*.safetensors" -o -name "*.gguf" | wc -l
 EXPECTED=$(echo $HF_FILES | wc -w)
 success "Downloaded $DOWNLOADED/$EXPECTED model files"
 
+# Lipsync models: Wan 2.2 S2V diffusion model plus the wav2vec2 audio encoder.
+# Only fetched when lipsync is enabled.
+if [[ "${LIPSYNC_ENGINE:-s2v}" != "off" ]]; then
+    log "Downloading lipsync models (S2V + audio encoder)..."
+    uv run python - "$MODEL_CACHE" <<'PY'
+import sys
+from pathlib import Path
+from huggingface_hub import hf_hub_download
+
+dest = Path(sys.argv[1])
+files = [
+    ("split_files/diffusion_models/wan2.2_s2v_14B_fp8_scaled.safetensors", "diffusion_models"),
+    ("split_files/audio_encoders/wav2vec2_large_english_fp16.safetensors", "audio_encoders"),
+]
+for repo_path, subdir in files:
+    target = dest / subdir
+    target.mkdir(parents=True, exist_ok=True)
+    path = hf_hub_download(
+        repo_id="Comfy-Org/Wan-2.2",
+        filename=repo_path,
+        local_dir=str(target),
+    )
+    print("lipsync model:", path)
+PY
+    success "Lipsync models ready"
+fi
+
 # ──────────────────────────────────────────────
 # PHASE 4: LORAS (ANATOMY + TRAINED CHARACTERS)
 # ──────────────────────────────────────────────
@@ -332,7 +359,7 @@ fi
 COMFY_DIR="$WORKSPACE/ComfyUI"
 mkdir -p "$COMFY_DIR/models/loras" "$COMFY_DIR/models/diffusion_models" \
          "$COMFY_DIR/models/text_encoders" "$COMFY_DIR/models/vae" \
-         "$COMFY_DIR/models/unet"
+         "$COMFY_DIR/models/unet" "$COMFY_DIR/models/audio_encoders"
 
 log "Linking staged models into ComfyUI..."
 link_into() {
@@ -363,6 +390,16 @@ for f in "$MODEL_CACHE"/*.safetensors "$MODEL_CACHE"/*.gguf; do
         *vae*)         link_into "$f" "$COMFY_DIR/models/vae/$base" ;;
         *)             link_into "$f" "$COMFY_DIR/models/diffusion_models/$base" ;;
     esac
+done
+
+# Lipsync assets live in subdirectories of the cache.
+for f in "$MODEL_CACHE"/audio_encoders/*.safetensors; do
+    [[ -e "$f" ]] || continue
+    link_into "$f" "$COMFY_DIR/models/audio_encoders/$(basename "$f")"
+done
+for f in "$MODEL_CACHE"/diffusion_models/*.safetensors; do
+    [[ -e "$f" ]] || continue
+    link_into "$f" "$COMFY_DIR/models/diffusion_models/$(basename "$f")"
 done
 
 LORA_COUNT=$(find "$COMFY_DIR/models/loras" -name "*.safetensors" | wc -l)
@@ -533,7 +570,16 @@ if [[ ! -f "$SWAPPER" ]]; then
     fi
 fi
 
-if [[ -f "$SWAPPER" && -f references/faiz_ref.jpg && -f references/juv_ref.jpg ]]; then
+# Reference faces may be png or jpg; resolve whichever exists.
+REF_OK=false
+for ext in png jpg jpeg webp; do
+    if [[ -f "references/faiz_ref.$ext" && -f "references/juv_ref.$ext" ]]; then
+        REF_OK=true
+        break
+    fi
+done
+
+if [[ -f "$SWAPPER" && "$REF_OK" == true ]]; then
     log "Running face swap on rendered clips..."
     uv run python scripts/face_swap_video.py \
         --input renders \
@@ -549,6 +595,37 @@ else
     warn "Face swap skipped (missing swapper model or reference faces)."
     warn "Using raw renders for the final cut."
     RENDER_SOURCE="renders"
+fi
+
+# ──────────────────────────────────────────────
+# PHASE 9b: LIPSYNC (audio-driven mouth)
+# ──────────────────────────────────────────────
+phase "PHASE 9b: LIPSYNC"
+
+if [[ "${LIPSYNC_ENGINE:-s2v}" != "off" ]]; then
+    log "Running lipsync pass (engine: ${LIPSYNC_ENGINE:-s2v})..."
+    if uv run python scripts/lipsync.py \
+        --spec docs/beats.yaml \
+        --renders "$RENDER_SOURCE" \
+        --startframes startframes \
+        --audio audio \
+        --output renders/lipsync \
+        --server "http://127.0.0.1:$COMFYUI_PORT" \
+        --engine "${LIPSYNC_ENGINE:-s2v}" \
+        --steps "${LIPSYNC_STEPS:-6}" \
+        2>&1 | tail -15; then
+        LIPSYNC_COUNT=$(find renders/lipsync -name "c*.mp4" 2>/dev/null | wc -l)
+        if [[ "$LIPSYNC_COUNT" -gt 0 ]]; then
+            success "Lipsync complete ($LIPSYNC_COUNT clip(s))"
+            RENDER_SOURCE="renders/lipsync"
+        else
+            warn "Lipsync produced no clips - keeping the pre-lipsync render"
+        fi
+    else
+        warn "Lipsync failed - keeping the pre-lipsync render"
+    fi
+else
+    log "Lipsync disabled (LIPSYNC_ENGINE=off)"
 fi
 
 # ──────────────────────────────────────────────
