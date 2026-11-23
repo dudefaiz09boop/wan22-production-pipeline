@@ -1,9 +1,0 @@
-{
-  "id": "sofiya009/wan22-nsfw-lightning-q8",
-  "title": "WAN 2.2 NSFW Lightning Q8 Base Model",
-  "subtitle": "Juggernaut XL v9 base model for SDXL LoRA training",
-  "description": "Base model for SDXL LoRA training - Juggernaut XL v9 RunDiffusionPhoto v2",
-  "isPrivate": true,
-  "keywords": ["sdxl", "base-model", "juggernaut-xl", "wan22"],
-  "licenses": [{"name": "CC0-1.0"}]
-}
