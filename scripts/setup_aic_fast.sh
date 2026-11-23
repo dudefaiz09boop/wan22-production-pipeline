@@ -443,8 +443,10 @@ uv run python scripts/generate_stills.py \
     --loras "$MODEL_CACHE/loras/trained" \
     --sdxl-model "$SDXL_FILE" \
     --negative negatives/artifact_neg.txt \
-    --width 832 --height 480 \
+    --spec docs/beats.yaml \
+    --swapper-model "$MODEL_CACHE/insightface/inswapper_128.onnx" \
     --steps 30 --guidance 7.0 \
+    --seed 1000 --gate 0.40 --candidates 2 \
     --device cuda --dtype fp16 \
     2>&1 | tail -20
 
@@ -454,6 +456,14 @@ if [[ "$FRAME_COUNT" -eq 0 ]]; then
     exit 1
 fi
 success "Start frames generated ($FRAME_COUNT)"
+
+# Audit the frames before spending GPU time on the render. Problems here
+# become disfigured video, so surface them now.
+log "Auditing start frame quality..."
+if ! uv run python scripts/audit_startframes.py --dir startframes --spec docs/beats.yaml; then
+    warn "Some start frames have quality problems (see startframes/quality_report.json)."
+    warn "The render will still run; review the report if output looks wrong."
+fi
 
 # ──────────────────────────────────────────────
 # PHASE 8: RENDER CLIPS (MAIN PRODUCTION)
@@ -538,21 +548,58 @@ else
 fi
 
 # ──────────────────────────────────────────────
-# PHASE 10: ASSEMBLE FINAL DELIVERABLE
+# PHASE 10: NARRATION + AUDIO MUX + FINAL CUT
 # ──────────────────────────────────────────────
-phase "PHASE 10: ASSEMBLE FINAL DELIVERABLE"
+phase "PHASE 10: NARRATION, AUDIO MUX, FINAL CUT"
 
-log "Concatenating clips and creating deliverable..."
+# 10a. Per-clip narration with Edge TTS. The compiled prompts already carry
+# the authored narration text, so this only synthesises and fits duration.
+log "Generating narration audio (Edge TTS)..."
+if uv run python scripts/generate_narration.py --prompts prompts --output audio; then
+    NARRATION_COUNT=$(find audio -name "c*.wav" 2>/dev/null | wc -l)
+    success "Narration generated ($NARRATION_COUNT track(s))"
+else
+    warn "Narration generation failed - clips will get silent audio tracks"
+fi
+
+# 10b. Mux narration into each clip, then concatenate into one MP4 with a
+# single continuous audio stream. This is what makes the deliverable a real
+# video with sound.
+log "Muxing audio and building the final cut..."
+MUSIC_ARGS=()
+if [[ -n "${MUSIC_BED:-}" && -f "${MUSIC_BED:-}" ]]; then
+    MUSIC_ARGS=(--music "$MUSIC_BED" --music-db "${MUSIC_DB:--22}")
+fi
+
+if ! uv run python scripts/mux_audio.py \
+    --spec docs/beats.yaml \
+    --renders "$RENDER_SOURCE" \
+    --audio audio \
+    --muxed renders/muxed \
+    --output output/final.mp4 \
+    --crf 18 --preset slow \
+    "${MUSIC_ARGS[@]}" \
+    2>&1 | tail -12; then
+    warn "Audio mux failed - falling back to silent assembly"
+    uv run python scripts/assemble_final.py \
+        --spec docs/beats.yaml \
+        --renders "$RENDER_SOURCE" \
+        --output output \
+        --crf 18 --preset slow \
+        2>&1 | tail -6
+fi
+
+# 10c. Package the deliverable.
+log "Packaging deliverable..."
 uv run python scripts/assemble_final.py \
     --spec docs/beats.yaml \
     --renders "$RENDER_SOURCE" \
     --output output \
-    --crossfade 0.5 \
     --crf 18 \
     --preset slow \
     --zip \
     --include-frames \
-    2>&1 | tail -10
+    2>&1 | tail -6
 
 if [[ ! -f output/final.mp4 ]]; then
     error "Final video was not produced. Check the assemble output above."

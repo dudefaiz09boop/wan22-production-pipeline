@@ -232,7 +232,7 @@ shots:
     scene: 2
     build: fm
     start_frame: startframes/c05.png
-    loras: []
+    loras: [nsfw_general]
     speaker: Faiz
     say: "You like that, you dirty slut?"
     language: en
@@ -948,7 +948,7 @@ shots:
     scene: 7
     build: cf
     start_frame: startframes/c28.png
-    loras: []
+    loras: [nsfw_general]
     speaker: Faiz
     say: "There. Now don't move."
     language: en
@@ -1313,7 +1313,7 @@ shots:
     scene: 9
     build: cf
     start_frame: startframes/c39.png
-    loras: []
+    loras: [nsfw_general]
     dialogue:
       - speaker: Juveriya
         text: "There's a wet patch."

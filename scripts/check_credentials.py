@@ -150,9 +150,10 @@ def main() -> int:
         return True, f"{len(json.loads(body).get('models', []))} models"
 
     def openai():
+        # Optional and unused by the pipeline; report as skipped when absent.
         key = os.environ.get("OPENAI_API_KEY", "")
         if not key:
-            return False, "OPENAI_API_KEY empty"
+            return True, "not set (optional, unused)"
         status, body = call(
             "https://api.openai.com/v1/models",
             {"Authorization": f"Bearer {key}"},

@@ -18,6 +18,8 @@ from huggingface_hub import hf_hub_download
 from insightface.app import FaceAnalysis
 from PIL import Image
 
+from face_swap_video import swap_faces_in_frame
+
 
 # Character reference images for InsightFace
 CHARACTER_REFS = {
@@ -187,13 +189,26 @@ def load_sdxl_pipeline(
     pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config)
     pipe = pipe.to(device)
 
-    # Load LoRAs
+    # Load LoRAs. Loading alone is not enough: without set_adapters the
+    # adapters stay inactive and the stills are generated from the base model.
+    loaded = []
     for name, path in lora_paths.items():
         if Path(path).exists():
             pipe.load_lora_weights(path, adapter_name=name)
+            loaded.append(name)
             print(f"  [OK] Loaded LoRA: {name} from {path}")
         else:
             print(f"  [FAIL] LoRA not found: {path}")
+
+    if loaded:
+        # The combined adapter carries both faces; prefer it when present.
+        if "both" in loaded:
+            pipe.set_adapters(["both"], adapter_weights=[0.9])
+            print("  [OK] Active adapter: both @ 0.9")
+        else:
+            weights = [0.85] * len(loaded)
+            pipe.set_adapters(loaded, adapter_weights=weights)
+            print(f"  [OK] Active adapters: {', '.join(loaded)} @ 0.85")
 
     return pipe
 
@@ -222,46 +237,82 @@ def generate_still(
     return image
 
 
+def face_similarity(app: FaceAnalysis, frame: np.ndarray, ref_face) -> float:
+    """Best cosine similarity between any face in the frame and a reference."""
+    faces = app.get(frame)
+    if not faces:
+        return 0.0
+    best = 0.0
+    for face in faces:
+        score = float(
+            np.dot(face.normed_embedding, ref_face.normed_embedding)
+            / (
+                np.linalg.norm(face.normed_embedding)
+                * np.linalg.norm(ref_face.normed_embedding)
+                + 1e-9
+            )
+        )
+        best = max(best, score)
+    return best
+
+
 def process_beat(
     beat_id: str,
     beat_prompt: str,
     pipe: StableDiffusionXLPipeline,
     app: FaceAnalysis,
-    ref_embeddings: dict[str, np.ndarray],
+    swapper,
+    ref_faces: dict[str, object],
     output_dir: Path,
     negative_prompt: str,
     width: int = 832,
     height: int = 480,
+    seed: int = 42,
+    gate: float = 0.40,
+    candidates: int = 2,
 ) -> Optional[Path]:
-    """Process a single beat: generate still + face swap."""
-    print(f"\n[{beat_id}] Generating still...")
+    """Generate a still, swap both faces, and keep the best-scoring candidate."""
+    print(f"\n[{beat_id}] Generating still at {width}x{height}...")
 
     characters = BEAT_CHARACTERS.get(beat_id, ["faiz", "juv"])
+    best = None
 
-    # Generate base image
-    image = generate_still(
-        pipe,
-        beat_prompt,
-        negative_prompt,
-        width=width,
-        height=height,
-    )
+    for attempt in range(max(1, candidates)):
+        image = generate_still(
+            pipe,
+            beat_prompt,
+            negative_prompt,
+            width=width,
+            height=height,
+            seed=seed + attempt,
+        )
+        frame = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
 
-    # Convert to OpenCV for face swap
-    cv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+        if swapper is not None and ref_faces:
+            frame, _ = swap_faces_in_frame(
+                app, swapper, frame, ref_faces, characters, gate
+            )
 
-    # Apply face swap for each character
-    for char in characters:
-        if char in ref_embeddings:
-            # In production, use inswapper model here
-            # For now, save without swap
-            pass
+        score = min(
+            (
+                face_similarity(app, frame, ref_faces[char])
+                for char in characters
+                if char in ref_faces
+            ),
+            default=0.0,
+        )
+        print(f"  candidate {attempt + 1}: identity score {score:.3f}")
 
-    # Save result
+        if best is None or score > best[0]:
+            best = (score, frame)
+        if score >= gate:
+            break
+
+    score, frame = best
     output_path = output_dir / f"{beat_id}.png"
     output_dir.mkdir(parents=True, exist_ok=True)
-    image.save(output_path)
-    print(f"  ✓ Saved: {output_path}")
+    cv2.imwrite(str(output_path), frame)
+    print(f"  ✓ Saved: {output_path} (score {score:.3f})")
 
     return output_path
 
@@ -275,6 +326,30 @@ def load_beat_prompts(prompts_dir: Path) -> dict[str, str]:
     return prompts
 
 
+def load_shot_resolutions(spec_path: Path) -> dict[str, tuple[int, int]]:
+    """Map shot id -> (width, height) from meta.res_base / meta.res_face.
+
+    Face-closeup shots (build: cf) use res_face; everything else uses res_base.
+    """
+    try:
+        import yaml
+        data = yaml.safe_load(spec_path.read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001 - fall back to CLI defaults
+        return {}
+    meta = (data or {}).get("meta") or {}
+    base = meta.get("res_base")
+    face = meta.get("res_face")
+    out: dict[str, tuple[int, int]] = {}
+    for shot in (data or {}).get("shots") or []:
+        sid = shot.get("id")
+        if not isinstance(sid, str):
+            continue
+        res = face if shot.get("build") == "cf" else base
+        if isinstance(res, list) and len(res) == 2:
+            out[sid] = (int(res[0]), int(res[1]))
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Generate SDXL stills with trained LoRAs + InsightFace swap")
     ap.add_argument("--prompts", default="prompts", help="Prompts directory")
@@ -283,42 +358,57 @@ def main() -> int:
     ap.add_argument("--loras", default="models/loras/trained", help="Trained LoRAs directory")
     ap.add_argument("--sdxl-model", default="models/sdxl_base.safetensors", help="SDXL base model path")
     ap.add_argument("--negative", default="negatives/artifact_neg.txt", help="Negative prompt file")
-    ap.add_argument("--width", type=int, default=832, help="Output width")
-    ap.add_argument("--height", type=int, default=480, help="Output height")
+    ap.add_argument("--spec", default="docs/beats.yaml", help="Spec for per-shot resolution")
+    ap.add_argument("--swapper-model", default="models/inswapper_128.onnx", help="InsightFace swapper")
+    ap.add_argument("--width", type=int, default=832, help="Fallback width")
+    ap.add_argument("--height", type=int, default=480, help="Fallback height")
     ap.add_argument("--steps", type=int, default=30, help="Inference steps")
     ap.add_argument("--guidance", type=float, default=7.0, help="Guidance scale")
+    ap.add_argument("--seed", type=int, default=1000, help="Base seed")
+    ap.add_argument("--gate", type=float, default=0.40, help="Identity accept threshold")
+    ap.add_argument("--candidates", type=int, default=2, help="Candidates per beat")
     ap.add_argument("--device", default="cuda", help="Device (cuda/cpu)")
     ap.add_argument("--dtype", choices=["fp16", "fp32"], default="fp16", help="Precision")
     ap.add_argument("--beats", nargs="+", help="Specific beats to process (default: all)")
     args = ap.parse_args()
 
-    # Load negative prompt
     negative_prompt = Path(args.negative).read_text(encoding="utf-8").strip()
-
-    # Load beat prompts
     beat_prompts = load_beat_prompts(Path(args.prompts))
     if args.beats:
         beat_prompts = {k: v for k, v in beat_prompts.items() if k in args.beats}
+    resolutions = load_shot_resolutions(Path(args.spec))
 
     print(f"Processing {len(beat_prompts)} beats")
 
-    # Initialize InsightFace
     print("Loading InsightFace...")
     app = load_insightface()
 
-    # Load reference embeddings
-    ref_embeddings = {}
+    # Reference faces (the swapper needs the Face object, not just embeddings).
+    ref_faces = {}
     for char, ref_stem in CHARACTER_REFS.items():
         full_path = resolve_ref(Path(args.references), Path(ref_stem).name)
-        if full_path is not None:
-            emb = get_face_embedding(app, full_path)
-            if emb is not None:
-                ref_embeddings[char] = emb
-                print(f"  Loaded reference for {char}: {full_path.name}")
-        else:
+        if full_path is None:
             print(f"  ✗ Reference not found for {char} in {args.references}")
+            continue
+        img = cv2.imread(str(full_path))
+        faces = app.get(img) if img is not None else []
+        if not faces:
+            print(f"  ✗ No face in reference for {char}")
+            continue
+        ref_faces[char] = max(
+            faces, key=lambda f: (f.bbox[2] - f.bbox[0]) * (f.bbox[3] - f.bbox[1])
+        )
+        print(f"  Loaded reference for {char}: {full_path.name}")
 
-    # Load LoRA paths
+    swapper = None
+    swapper_path = Path(args.swapper_model)
+    if swapper_path.is_file():
+        from insightface.model_zoo import get_model
+        swapper = get_model(str(swapper_path), providers=["CUDAExecutionProvider", "CPUExecutionProvider"])
+        print("  Loaded inswapper")
+    else:
+        print(f"  ✗ Swapper model missing: {swapper_path} - stills will not be identity-swapped")
+
     lora_paths = {}
     lora_dir = Path(args.loras)
     for char in ["faiz", "juv", "both"]:
@@ -326,27 +416,30 @@ def main() -> int:
         if lora_file.exists():
             lora_paths[char] = str(lora_file)
 
-    # Load SDXL pipeline
     print("Loading SDXL pipeline...")
     dtype = torch.float16 if args.dtype == "fp16" else torch.float32
     pipe = load_sdxl_pipeline(args.sdxl_model, lora_paths, args.device, dtype)
 
-    # Process each beat
     output_dir = Path(args.output)
     output_dir.mkdir(parents=True, exist_ok=True)
 
     for beat_id, prompt in beat_prompts.items():
+        width, height = resolutions.get(beat_id, (args.width, args.height))
         try:
             process_beat(
                 beat_id,
                 prompt,
                 pipe,
                 app,
-                ref_embeddings,
+                swapper,
+                ref_faces,
                 output_dir,
                 negative_prompt,
-                args.width,
-                args.height,
+                width,
+                height,
+                args.seed + int(beat_id[1:]) * 10,
+                args.gate,
+                args.candidates,
             )
         except Exception as e:
             print(f"  ✗ Failed: {e}")

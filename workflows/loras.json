@@ -1,4 +1,30 @@
 {
+  "nsfw_general": {
+    "high": "loras/nsfw_general_wan22_high.safetensors",
+    "low": null,
+    "w": 0.55,
+    "trigger": null,
+    "trigger_scope": null,
+    "conflicts": ["vag_detail"],
+    "source": {
+      "civitai_model": 2073605,
+      "civitai_version": 2073605,
+      "note": "WAN General NSFW mode, 416k downloads, highest-used WAN 2.2 NSFW LoRA"
+    }
+  },
+  "genitals_helper": {
+    "high": "loras/genitals_helper_wan22_high.safetensors",
+    "low": null,
+    "w": 0.6,
+    "trigger": null,
+    "trigger_scope": null,
+    "conflicts": ["vag_detail", "penis_insert"],
+    "source": {
+      "civitai_model": 2012120,
+      "civitai_version": 2012120,
+      "note": "Female genitals helper for Wan I2V, 73k downloads"
+    }
+  },
   "penis_insert": {
     "high": "loras/penis_insert_wan22_high.safetensors",
     "low": "loras/penis_insert_wan22_low.safetensors",
