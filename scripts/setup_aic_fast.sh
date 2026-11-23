@@ -94,7 +94,11 @@ VRAM_GB=$((VRAM_MB / 1024))
 GPU_NAME=$(nvidia-smi --query-gpu=name --format=csv,noheader | head -1)
 success "GPU: $GPU_NAME (${VRAM_GB} GB VRAM)"
 
-# Determine precision (WAN_PRECISION=auto picks from VRAM)
+# Determine precision (WAN_PRECISION=auto picks from VRAM).
+# Thresholds match auto_model_selector.py: FP16 needs 44 GB because one
+# 26.62 GB UNET is resident at a time plus the 6.27 GB text encoder, VAE and
+# activations. An RTX A6000 reports 46068 MiB, which is 44 GB after integer
+# division, so a 48 GB threshold would wrongly fall back to FP8.
 if [[ "$WAN_PRECISION" != "auto" ]]; then
     PRECISION="$WAN_PRECISION"
     case "$PRECISION" in
@@ -102,10 +106,10 @@ if [[ "$WAN_PRECISION" != "auto" ]]; then
         fp8)  MODEL_SIZE_GB=29 ;;
         *)    MODEL_SIZE_GB=15 ;;
     esac
-elif [[ $VRAM_GB -ge 48 ]]; then
+elif [[ $VRAM_GB -ge 44 ]]; then
     PRECISION="fp16"
     MODEL_SIZE_GB=57
-elif [[ $VRAM_GB -ge 24 ]]; then
+elif [[ $VRAM_GB -ge 22 ]]; then
     PRECISION="fp8"
     MODEL_SIZE_GB=29
 else

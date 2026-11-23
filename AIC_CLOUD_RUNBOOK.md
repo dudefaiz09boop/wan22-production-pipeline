@@ -49,7 +49,7 @@ From the live AIC Cloud list, ranked for this pipeline:
 
 | GPU | VRAM | Price | Precision | Verdict |
 |-----|------|-------|-----------|---------|
-| **RTX A6000** | 48 GB | ₹72.40/hr | **FP16** | **Best value for full quality** |
+| **RTX A6000** | 45 GB | ₹81.02/hr | **FP16** | **Best value for full quality** |
 | RTX 6000 Ada | 48 GB | ₹120.40/hr | FP16 | Faster, 2× the price |
 | RTX PRO 5000 | 48 GB | ₹120.67/hr | FP16 | Same tier as 6000 Ada |
 | RTX 4090 | 48 GB | ₹73.60/hr | FP16 | Good, but only 267 GB max disk |
@@ -57,7 +57,7 @@ From the live AIC Cloud list, ranked for this pipeline:
 | A100 SXM4 | 80 GB | ₹94.00/hr | FP16 | **Avoid: only 29 GB disk** |
 | H100 SXM | 80 GB | ₹408.20/hr | FP16 | Overkill |
 
-**Recommendation: RTX A6000 48 GB at ₹72.40/hr.**
+**Recommendation: RTX A6000 at ₹81.02/hr.**
 
 Why not the A100? Its host allows only **29 GB** of disk. The FP16 model pair
 alone is 53 GB, so it cannot hold the weights. Disk is the binding constraint,
@@ -66,23 +66,29 @@ not VRAM.
 ### Your proposed instance — verdict
 
 ```
-RTX A6000 · 48 GB VRAM · 28 vCPU · 55 GB RAM · 200 GB disk · PyTorch · UK
+RTX A6000 · 45 GB VRAM · 48 vCPU · 71 GB RAM · 200 GB disk · PyTorch · Delaware US
+₹81.02/hr
 ```
 
-**This is good enough. Deploy it.** Every number clears the requirement:
+**This is good enough. Deploy it.**
 
 | Requirement | Needed | Yours | Verdict |
 |-------------|--------|-------|---------|
-| VRAM (FP16) | 48 GB | 48 GB | ✅ exactly fits |
-| Disk | 115 GB | 200 GB | ✅ 85 GB spare |
-| RAM | 32 GB | 55 GB | ✅ |
-| vCPU | 8 | 28 | ✅ |
+| VRAM (FP16) | **44 GB** | **45 GB** | ✅ 1 GB spare |
+| Disk | 115.5 GB | 200 GB | ✅ 84 GB spare |
+| RAM | 32 GB | 71 GB | ✅ |
+| vCPU | 8 | 48 | ✅ |
 | Image | PyTorch | PyTorch | ✅ |
-| Location | any | UK | ✅ (bandwidth 861↓/915↑ Mbps) |
+| Bandwidth | any | — | ✅ |
 
-The 200 GB disk is the right call — it leaves room for the FP16 pair, the
-lipsync models, three render passes, and the deliverable zip without ever
-touching a cleanup step.
+**Note on the 45 GB figure.** AIC lists the A6000 as 45 GB; the card reports
+46068 MiB, which is 44 GB after integer division. The precision selector now
+uses a **44 GB** FP16 threshold, not 48, so this instance correctly selects
+FP16. With the old 48 GB threshold it would have silently fallen back to FP8.
+
+FP16 fits because ComfyUI swaps the HIGH and LOW UNETs — only one 26.62 GB
+UNET is resident at a time, plus the 6.27 GB text encoder, the VAE and
+activations, for roughly 37 GB peak.
 
 ### Disk sizing
 

@@ -107,17 +107,27 @@ def get_gpu_vram_gb() -> int | None:
 
 
 def select_precision(vram_gb: int | None, force: Precision | None = None) -> Precision:
-    """Select the best precision based on available VRAM."""
+    """Select the best precision based on available VRAM.
+
+    Thresholds are set from measured model sizes, not round numbers:
+
+    FP16 needs one 26.62 GB UNET resident at a time plus the 6.27 GB text
+    encoder, the VAE and activations (~37 GB peak). ComfyUI swaps the HIGH
+    and LOW UNETs, so both never need to be resident together. 44 GB is the
+    real floor, which is what an RTX A6000 reports (46068 MiB -> 44 GB).
+
+    FP8 needs 14.3 GB per UNET, so 22 GB is the floor.
+    """
     if force:
         return force
 
     if vram_gb is None:
-        print("WARNING: Could not detect GPU VRAM, defaulting to GGUF Q8", file=sys.stderr)
-        return "gguf_q8"
+        print("WARNING: Could not detect GPU VRAM, defaulting to FP8", file=sys.stderr)
+        return "fp8"
 
-    if vram_gb >= 48:
+    if vram_gb >= 44:
         return "fp16"
-    elif vram_gb >= 24:
+    elif vram_gb >= 22:
         return "fp8"
     else:
         return "gguf_q8"
