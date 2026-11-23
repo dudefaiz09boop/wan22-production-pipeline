@@ -257,20 +257,33 @@ EXPECTED=$(echo $HF_FILES | wc -w)
 success "Downloaded $DOWNLOADED/$EXPECTED model files"
 
 # ──────────────────────────────────────────────
-# PHASE 4: TRAINED LORAS (KAGGLE)
+# PHASE 4: LORAS (ANATOMY + TRAINED CHARACTERS)
 # ──────────────────────────────────────────────
-phase "PHASE 4: TRAINED LORAS FROM KAGGLE"
+phase "PHASE 4: LORAS"
 
-log "Downloading trained LoRAs from sofiya009/lora-nuke-faiz-juv..."
+# 4a. Anatomy LoRAs. The beats declare penis_insert and vag_detail on
+# specific shots, so these must exist before ComfyUI runs.
+log "Checking anatomy LoRAs (Civitai)..."
+if ! uv run python scripts/download_anatomy_loras.py --dest "$MODEL_CACHE/loras"; then
+    error "Anatomy LoRAs are missing and could not be downloaded."
+    echo "Set CIVITAI_API_KEY in .env, or stage the files manually in $MODEL_CACHE/loras."
+    echo "Required: penis_insert_wan22_high/low, vag_detail_wan22_high/low"
+    exit 1
+fi
+success "Anatomy LoRAs present"
+
+# 4b. Trained character LoRAs. A locally staged copy wins over Kaggle.
+log "Resolving trained character LoRAs..."
 uv run python scripts/download_loras.py \
     --dest "$MODEL_CACHE/loras/trained" \
     --kaggle-username sofiya009 \
     --kaggle-dataset lora-nuke-faiz-juv \
     --token "$KAGGLE_KEY" \
     --update-registry \
-    --registry-path workflows/loras.json
+    --registry-path workflows/loras.json || \
+    warn "Trained LoRA resolution incomplete - stills will fall back to the base model"
 
-success "Trained LoRAs downloaded and registry updated"
+success "LoRA staging complete"
 
 # ──────────────────────────────────────────────
 # PHASE 5: VALIDATE & GENERATE WORKFLOW
@@ -314,8 +327,53 @@ if [[ ! -d "$WORKSPACE/ComfyUI" ]]; then
     wait
 fi
 
+# Point ComfyUI at the staged model cache. Without this, ComfyUI looks in its
+# own models/ tree and every LoRA and checkpoint resolves as missing.
+COMFY_DIR="$WORKSPACE/ComfyUI"
+mkdir -p "$COMFY_DIR/models/loras" "$COMFY_DIR/models/diffusion_models" \
+         "$COMFY_DIR/models/text_encoders" "$COMFY_DIR/models/vae" \
+         "$COMFY_DIR/models/unet"
+
+log "Linking staged models into ComfyUI..."
+link_into() {
+    local src="$1" dst="$2"
+    [[ -e "$src" ]] || return 0
+    if [[ -e "$dst" || -L "$dst" ]]; then
+        rm -f "$dst"
+    fi
+    ln -s "$src" "$dst"
+}
+
+# LoRAs: anatomy (flat) and trained (subdirectory)
+for f in "$MODEL_CACHE"/loras/*.safetensors; do
+    [[ -e "$f" ]] || continue
+    link_into "$f" "$COMFY_DIR/models/loras/$(basename "$f")"
+done
+for f in "$MODEL_CACHE"/loras/trained/*.safetensors; do
+    [[ -e "$f" ]] || continue
+    link_into "$f" "$COMFY_DIR/models/loras/$(basename "$f")"
+done
+
+# Checkpoints / encoders / VAE downloaded by the model phase
+for f in "$MODEL_CACHE"/*.safetensors "$MODEL_CACHE"/*.gguf; do
+    [[ -e "$f" ]] || continue
+    base="$(basename "$f")"
+    case "$base" in
+        *umt5*|*clip*) link_into "$f" "$COMFY_DIR/models/text_encoders/$base" ;;
+        *vae*)         link_into "$f" "$COMFY_DIR/models/vae/$base" ;;
+        *)             link_into "$f" "$COMFY_DIR/models/diffusion_models/$base" ;;
+    esac
+done
+
+LORA_COUNT=$(find "$COMFY_DIR/models/loras" -name "*.safetensors" | wc -l)
+success "ComfyUI model paths linked ($LORA_COUNT LoRAs visible)"
+if [[ "$LORA_COUNT" -eq 0 ]]; then
+    error "No LoRAs visible to ComfyUI - the render would fail on the first LoRA shot."
+    exit 1
+fi
+
 # Start ComfyUI in background with optimal flags
-cd "$WORKSPACE/ComfyUI"
+cd "$COMFY_DIR"
 nohup python main.py \
     --listen 0.0.0.0 \
     --port $COMFYUI_PORT \

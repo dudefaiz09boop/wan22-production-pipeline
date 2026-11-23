@@ -60,7 +60,7 @@
     }
   },
   "8": {
-    "class_type": "Wan22ImageToVideo",
+    "class_type": "WanImageToVideo",
     "inputs": {
       "width": 832,
       "height": 480,

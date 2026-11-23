@@ -9,7 +9,7 @@
     "_meta": { "title": "LOW - FP16" },
     "inputs": { "unet_name": "wan2.2_i2v_low_noise_14B_fp16.safetensors" }
   },
-  "3": { "class_type": "CLIPLoader", "inputs": { "clip_name": "umt5_xxl_fp8_e4m3fn.safetensors", "type": "wan" } },
+  "3": { "class_type": "CLIPLoader", "inputs": { "clip_name": "umt5_xxl_fp8_e4m3fn_scaled.safetensors", "type": "wan" } },
   "4": { "class_type": "VAELoader", "inputs": { "vae_name": "wan_2.1_vae.safetensors" } },
   "5": {
     "class_type": "LoadImage",
@@ -24,7 +24,7 @@
     "inputs": { "__todo__": "negative", "text": "", "clip": ["3", 0] }
   },
   "8": {
-    "class_type": "Wan22ImageToVideo",
+    "class_type": "WanImageToVideo",
     "inputs": {
       "width": 832, "height": 480, "length": 80, "batch_size": 1,
       "positive": ["6", 0], "negative": ["7", 0],

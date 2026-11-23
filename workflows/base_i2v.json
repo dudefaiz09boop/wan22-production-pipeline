@@ -25,7 +25,7 @@
     "inputs": { "__todo__": "negative", "text": "", "clip": ["3", 0] }
   },
   "8": {
-    "class_type": "Wan22ImageToVideo",
+    "class_type": "WanImageToVideo",
     "inputs": {
       "width": 832, "height": 480, "length": 80, "batch_size": 1,
       "positive": ["6", 0], "negative": ["7", 0],

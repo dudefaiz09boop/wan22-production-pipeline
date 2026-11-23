@@ -43,22 +43,27 @@ MODEL_CONFIGS: dict[Precision, ModelConfig] = {
     ),
     "gguf_q8": ModelConfig(
         precision="gguf_q8",
-        high_noise_model="wan2.2_i2v_high_noise_14B_q8.gguf",
-        low_noise_model="wan2.2_i2v_low_noise_14B_q8.gguf",
-        loader_class="UnetLoaderGGUF",
-        description="GGUF Q8 - current workflow, works on <24GB VRAM",
+        high_noise_model="wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors",
+        low_noise_model="wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors",
+        loader_class="UnetLoader",
+        description="FP8 scaled fallback for <24GB VRAM (no GGUF in the Comfy-Org repo)",
         vram_required_gb=16,
     ),
 }
 
-# Hugging Face repo IDs for each precision
+# Hugging Face repo IDs for each precision.
+# The old `Comfy-Org/Wan_2.2_ComfyUI_Repackaged` id redirects to
+# `Comfy-Org/Wan-2.2`; use the canonical id directly.
 HF_REPOS = {
-    "fp16": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
-    "fp8": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
-    "gguf_q8": "Comfy-Org/Wan_2.2_ComfyUI_Repackaged",
+    "fp16": "Comfy-Org/Wan-2.2",
+    "fp8": "Comfy-Org/Wan-2.2",
+    "gguf_q8": "Comfy-Org/Wan-2.2",
 }
 
-# File patterns in the HF repo
+# File patterns in the HF repo.
+# Verified against https://huggingface.co/api/models/Comfy-Org/Wan-2.2:
+# the text encoder is `umt5_xxl_fp8_e4m3fn_scaled.safetensors` (with the
+# `_scaled` suffix) and the repo ships no GGUF files at all.
 HF_FILES = {
     "fp16": [
         "split_files/diffusion_models/wan2.2_i2v_high_noise_14B_fp16.safetensors",
@@ -68,15 +73,17 @@ HF_FILES = {
         "split_files/diffusion_models/wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors",
         "split_files/diffusion_models/wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors",
     ],
+    # GGUF is not published in the Comfy-Org repo. The GGUF tier uses the
+    # fp8 pair, which fits the same <24GB budget and needs no extra loader.
     "gguf_q8": [
-        "split_files/diffusion_models/wan2.2_i2v_high_noise_14B_q8.gguf",
-        "split_files/diffusion_models/wan2.2_i2v_low_noise_14B_q8.gguf",
+        "split_files/diffusion_models/wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors",
+        "split_files/diffusion_models/wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors",
     ],
 }
 
 # Shared files needed for all precisions
 SHARED_FILES = [
-    "split_files/text_encoders/umt5_xxl_fp8_e4m3fn.safetensors",
+    "split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors",
     "split_files/vae/wan_2.1_vae.safetensors",
 ]
 
