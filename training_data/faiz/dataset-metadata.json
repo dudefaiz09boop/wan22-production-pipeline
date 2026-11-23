@@ -1,0 +1,9 @@
+{
+  "id": "sofiya009/lora-train-faiz",
+  "title": "LoRA Training Data: Faiz",
+  "subtitle": "Character training images for Faiz",
+  "description": "Face crops extracted from Images REF and startframes for LoRA training",
+  "isPrivate": true,
+  "keywords": ["lora", "training", "character", "faiz", "sdxl"],
+  "licenses": [{"name": "CC0-1.0"}]
+}

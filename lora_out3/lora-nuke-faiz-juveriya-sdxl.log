@@ -1,0 +1,291 @@
+[{"stream_name":"stderr","time":8.416734764,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":8.416780544,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":8.41678745,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":8.416792552,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stderr","time":9.045623127,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":9.045661601,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":9.045665368,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":9.045668008,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stdout","time":16.767031959,"data":"PyTorch: 2.11.0+cu130\n"}
+,{"stream_name":"stdout","time":16.767131134,"data":"CUDA: 13.0\n"}
+,{"stream_name":"stdout","time":16.767137417,"data":"GPU count: 2\n"}
+,{"stream_name":"stdout","time":16.770787384,"data":"GPU 0: Tesla T4\n"}
+,{"stream_name":"stdout","time":16.770806311,"data":"working free GB: 19.5\n"}
+,{"stream_name":"stdout","time":33.029806585,"data":"  Installing build dependencies ... \u001b[?25l\u001b[?25hdone\r\n"}
+,{"stream_name":"stdout","time":33.232809721,"data":"  Getting requirements to build wheel ... \u001b[?25l\u001b[?25hdone\r\n"}
+,{"stream_name":"stdout","time":35.671110588,"data":"  Installing backend dependencies ... \u001b[?25l\u001b[?25hdone\r\n"}
+,{"stream_name":"stdout","time":225.416432049,"data":"  Preparing metadata (pyproject.toml) ... \u001b[?25l\u001b[?25hdone\r\n"}
+,{"stream_name":"stdout","time":251.066706915,"data":"  Building wheel for numpy (pyproject.toml) ... \u001b[?25l\u001b[?25hdone\r\n"}
+,{"stream_name":"stdout","time":258.378024917,"data":"\u001b[31mERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":258.378062878,"data":"\u001b[31mbigframes 2.51.0 requires google-cloud-bigquery-storage\u003c3.0.0,\u003e=2.30.0, which is not installed.\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":258.378068151,"data":"\u001b[31mbayesian-optimization 3.4.0 requires numpy\u003e=2.1.3; python_full_version == \"3.13.*\", but you have numpy 1.26.4 which is incompatible.\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":258.378086274,"data":"\u001b[31mmne 1.13.2 requires numpy\u003c3,\u003e=2.1, but you have numpy 1.26.4 which is incompatible.\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":258.378091786,"data":"\u001b[31mkaggle-environments 1.32.2 requires numpy\u003e=2.0, but you have numpy 1.26.4 which is incompatible.\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":258.378097266,"data":"\u001b[31mopencv-python 4.14.0.94 requires numpy\u003e=2; python_version \u003e= \"3.9\", but you have numpy 1.26.4 which is incompatible.\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":258.378102934,"data":"\u001b[31mcesium 0.12.4 requires numpy\u003c3.0,\u003e=2.0, but you have numpy 1.26.4 which is incompatible.\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":258.378108074,"data":"\u001b[31mdopamine-rl 4.1.2 requires gym\u003c=0.25.2, but you have gym 0.26.2 which is incompatible.\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":258.378113014,"data":"\u001b[31mmoviepy 1.0.3 requires decorator\u003c5.0,\u003e=4.0.2, but you have decorator 5.3.1 which is incompatible.\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":258.378126637,"data":"\u001b[31mml-dtypes 0.6.0 requires numpy\u003e=2.0.0, but you have numpy 1.26.4 which is incompatible.\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":258.378130529,"data":"\u001b[31mml-dtypes 0.6.0 requires numpy\u003e=2.1.0; python_version \u003e= \"3.13\", but you have numpy 1.26.4 which is incompatible.\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":258.37813478099997,"data":"\u001b[31mshap 0.54.1 requires numpy\u003e=2, but you have numpy 1.26.4 which is incompatible.\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":258.378138353,"data":"\u001b[31mtobler 0.14.0 requires numpy\u003e=2.0, but you have numpy 1.26.4 which is incompatible.\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":258.378142047,"data":"\u001b[31mgeopandas 1.2.0 requires numpy\u003e=2, but you have numpy 1.26.4 which is incompatible.\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":258.378145757,"data":"\u001b[31mjax 0.11.1 requires numpy\u003e=2.1, but you have numpy 1.26.4 which is incompatible.\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":258.378149647,"data":"\u001b[31mcupy-cuda13x 14.0.1 requires numpy\u003c2.6,\u003e=2.0, but you have numpy 1.26.4 which is incompatible.\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":258.378158122,"data":"\u001b[31mydf 0.15.0 requires protobuf\u003c7.0.0,\u003e=5.29.1, but you have protobuf 7.36.2 which is incompatible.\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":258.378160861,"data":"\u001b[31mrasterio 1.5.2 requires numpy\u003e=2, but you have numpy 1.26.4 which is incompatible.\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":258.378164538,"data":"\u001b[31mopencv-contrib-python 4.14.0.94 requires numpy\u003e=2; python_version \u003e= \"3.9\", but you have numpy 1.26.4 which is incompatible.\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":258.378167178,"data":"\u001b[31mdm-tree 0.1.10 requires numpy\u003e=2.1.0; python_version \u003e= \"3.13\", but you have numpy 1.26.4 which is incompatible.\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":258.378170503,"data":"\u001b[31mjaxlib 0.11.1 requires numpy\u003e=2.0, but you have numpy 1.26.4 which is incompatible.\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":258.37818583,"data":"\u001b[31mxarray-einstats 0.11.0 requires numpy\u003e=2.0, but you have numpy 1.26.4 which is incompatible.\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":258.378190175,"data":"\u001b[31mgradio 6.30.0 requires pillow\u003c13.0,\u003e=8.0, but you have pillow 13.0.0 which is incompatible.\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":258.378194454,"data":"\u001b[31mpytensor 2.38.3 requires numpy\u003e=2.0, but you have numpy 1.26.4 which is incompatible.\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":258.378198742,"data":"\u001b[31mtifffile 2026.10.15 requires numpy\u003e=2.1, but you have numpy 1.26.4 which is incompatible.\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":258.378202563,"data":"\u001b[31mcontourpy 1.4.0 requires numpy\u003e=2.0, but you have numpy 1.26.4 which is incompatible.\u001b[0m\r\n"}
+,{"stream_name":"stdout","time":261.922167132,"data":"Cloning into 'sd-scripts'...\r\n"}
+,{"stream_name":"stdout","time":262.429608449,"data":"remote: Enumerating objects: 348, done.\u001b[K\r\n"}
+,{"stream_name":"stdout","time":262.429642417,"data":"remote: Counting objects:   0% (1/348)\u001b[K\rremote: Counting objects:   1% (4/348)\u001b[K\rremote: Counting objects:   2% (7/348)\u001b[K\rremote: Counting objects:   3% (11/348)\u001b[K\rremote: Counting objects:   4% (14/348)\u001b[K\rremote: Counting objects:   5% (18/348)\u001b[K\rremote: Counting objects:   6% (21/348)\u001b[K\rremote: Counting objects:   7% (25/348)\u001b[K\rremote: Counting objects:   8% (28/348)\u001b[K\rremote: Counting objects:   9% (32/348)\u001b[K\rremote: Counting objects:  10% (35/348)\u001b[K\rremote: Counting objects:  11% (39/348)\u001b[K\rremote: Counting objects:  12% (42/348)\u001b[K\rremote: Counting objects:  13% (46/348)\u001b[K\rremote: Counting objects:  14% (49/348)\u001b[K\rremote: Counting objects:  15% (53/348)\u001b[K\rremote: Counting objects:  16% (56/348)\u001b[K\rremote: Counting objects:  17% (60/348)\u001b[K\rremote: Counting objects:  18% (63/348)\u001b[K\rremote: Counting objects:  19% (67/348)\u001b[K\rremote: Counting objects:  20% (70/348)\u001b[K\rremote: Counting objects:  21% (74/348)\u001b[K\rremote: Counting objects:  22% (77/348)\u001b[K\rremote: Counting objects:  23% (81/348)\u001b[K\rremote: Counting objects:  24% (84/348)\u001b[K\rremote: Counting objects:  25% (87/348)\u001b[K\rremote: Counting objects:  26% (91/348)\u001b[K\rremote: Counting objects:  27% (94/348)\u001b[K\rremote: Counting objects:  28% (98/348)\u001b[K\rremote: Counting objects:  29% (101/348)\u001b[K\rremote: Counting objects:  30% (105/348)\u001b[K\rremote: Counting objects:  31% (108/348)\u001b[K\rremote: Counting objects:  32% (112/348)\u001b[K\rremote: Counting objects:  33% (115/348)\u001b[K\rremote: Counting objects:  34% (119/348)\u001b[K\rremote: Counting objects:  35% (122/348)\u001b[K\rremote: Counting objects:  36% (126/348)\u001b[K\rremote: Counting objects:  37% (129/348)\u001b[K\rremote: Counting objects:  38% (133/348)\u001b[K\rremote: Counting objects:  39% (136/348)\u001b[K\rremote: Counting objects:  40% (140/348)\u001b[K\rremote: Counting objects:  41% (143/348)\u001b[K\rremote: Counting objects:  42% (147/348)\u001b[K\rremote: Counting objects:  43% (150/348)\u001b[K\rremote: Counting objects:  44% (154/348)\u001b[K\rremote: Counting objects:  45% (157/348)\u001b[K\rremote: Counting objects:  46% (161/348)\u001b[K\rremote: Counting objects:  47% (164/348)\u001b[K\rremote: Counting objects:  48% (168/348)\u001b[K\rremote: Counting objects:  49% (171/348)\u001b[K\rremote: Counting objects:  50% (174/348)\u001b[K\rremote: Counting objects:  51% (178/348)\u001b[K\rremote: Counting objects:  52% (181/348)\u001b[K\rremote: Counting objects:  53% (185/348)\u001b[K\rremote: Counting objects:  54% (188/348)\u001b[K\rremote: Counting objects:  55% (192/348)\u001b[K\rremote: Counting objects:  56% (195/348)\u001b[K\rremote: Counting objects:  57% (199/348)\u001b[K\rremote: Counting objects:  58% (202/348)\u001b[K\rremote: Counting objects:  59% (206/348)\u001b[K\rremote: Counting objects:  60% (209/348)\u001b[K\rremote: Counting objects:  61% (213/348)\u001b[K\rremote: Counting objects:  62% (216/348)\u001b[K\rremote: Counting objects:  63% (220/348)\u001b[K\rremote: Counting objects:  64% (223/348)\u001b[K\rremote: Counting objects:  65% (227/348)\u001b[K\rremote: Counting objects:  66% (230/348)\u001b[K\rremote: Counting objects:  67% (234/348)\u001b[K\rremote: Counting objects:  68% (237/348)\u001b[K\rremote: Counting objects:  69% (241/348)\u001b[K\rremote: Counting objects:  70% (244/348)\u001b[K\rremote: Counting objects:  71% (248/348)\u001b[K\rremote: Counting objects:  72% (251/348)\u001b[K\rremote: Counting objects:  73% (255/348)\u001b[K\rremote: Counting objects:  74% (258/348)\u001b[K\rremote: Counting objects:  75% (261/348)\u001b[K\rremote: Counting objects:  76% (265/348)\u001b[K\rremote: Counting objects:  77% (268/348)\u001b[K\rremote: Counting objects:  78% (272/348)\u001b[K\rremote: Counting objects:  79% (275/348)\u001b[K\rremote: Counting objects:  80% (279/348)\u001b[K\rremote: Counting objects:  81% (282/348)\u001b[K\rremote: Counting objects:  82% (286/348)\u001b[K\rremote: Counting objects:  83% (289/348)\u001b[K\rremote: Counting objects:  84% (293/348)\u001b[K\rremote: Counting objects:  85% (296/348)\u001b[K\rremote: Counting objects:  86% (300/348)\u001b[K\rremote: Counting objects:  87% (303/348)\u001b[K\rremote: Counting objects:  88% (307/348)\u001b[K\rremote: Counting objects:  89% (310/348)\u001b[K\rremote: Counting objects:  90% (314/348)\u001b[K\rremote: Counting objects:  91% (317/348)\u001b[K\rremote: Counting objects:  92% (321/348)\u001b[K\rremote: Counting objects:  93% (324/348)\u001b[K\rremote: Counting objects:  94% (328/348)\u001b[K\rremote: Counting objects:  95% (331/348)\u001b[K\rremote: Counting objects:  96% (335/348)\u001b[K\rremote: Counting objects:  97% (338/348)\u001b[K\rremote: Counting objects:  98% (342/348)\u001b[K\rremote: Counting objects:  99% (345/348)\u001b[K\rremote: Counting objects: 100% (348/348)\u001b[K\rremote: Counting objects: 100% (348/348), done.\u001b[K\r\n"}
+,{"stream_name":"stdout","time":262.683841383,"data":"remote: Compressing objects:   0% (1/325)\u001b[K\rremote: Compressing objects:   1% (4/325)\u001b[K\rremote: Compressing objects:   2% (7/325)\u001b[K\rremote: Compressing objects:   3% (10/325)\u001b[K\rremote: Compressing objects:   4% (13/325)\u001b[K\rremote: Compressing objects:   5% (17/325)\u001b[K\rremote: Compressing objects:   6% (20/325)\u001b[K\rremote: Compressing objects:   7% (23/325)\u001b[K\rremote: Compressing objects:   8% (26/325)\u001b[K\rremote: Compressing objects:   9% (30/325)\u001b[K\rremote: Compressing objects:  10% (33/325)\u001b[K\rremote: Compressing objects:  11% (36/325)\u001b[K\rremote: Compressing objects:  12% (39/325)\u001b[K\rremote: Compressing objects:  13% (43/325)\u001b[K\rremote: Compressing objects:  14% (46/325)\u001b[K\rremote: Compressing objects:  15% (49/325)\u001b[K\rremote: Compressing objects:  16% (52/325)\u001b[K\rremote: Compressing objects:  17% (56/325)\u001b[K\rremote: Compressing objects:  18% (59/325)\u001b[K\rremote: Compressing objects:  19% (62/325)\u001b[K\rremote: Compressing objects:  20% (65/325)\u001b[K\rremote: Compressing objects:  21% (69/325)\u001b[K\rremote: Compressing objects:  22% (72/325)\u001b[K\rremote: Compressing objects:  23% (75/325)\u001b[K\rremote: Compressing objects:  24% (78/325)\u001b[K\rremote: Compressing objects:  25% (82/325)\u001b[K\rremote: Compressing objects:  26% (85/325)\u001b[K\rremote: Compressing objects:  27% (88/325)\u001b[K\rremote: Compressing objects:  28% (91/325)\u001b[K\rremote: Compressing objects:  29% (95/325)\u001b[K\rremote: Compressing objects:  30% (98/325)\u001b[K\rremote: Compressing objects:  31% (101/325)\u001b[K\rremote: Compressing objects:  32% (104/325)\u001b[K\rremote: Compressing objects:  33% (108/325)\u001b[K\rremote: Compressing objects:  34% (111/325)\u001b[K\rremote: Compressing objects:  35% (114/325)\u001b[K\rremote: Compressing objects:  36% (117/325)\u001b[K\rremote: Compressing objects:  37% (121/325)\u001b[K\rremote: Compressing objects:  38% (124/325)\u001b[K\rremote: Compressing objects:  39% (127/325)\u001b[K\rremote: Compressing objects:  40% (130/325)\u001b[K\rremote: Compressing objects:  41% (134/325)\u001b[K\rremote: Compressing objects:  42% (137/325)\u001b[K\rremote: Compressing objects:  43% (140/325)\u001b[K\rremote: Compressing objects:  44% (143/325)\u001b[K\rremote: Compressing objects:  45% (147/325)\u001b[K\rremote: Compressing objects:  46% (150/325)\u001b[K\rremote: Compressing objects:  47% (153/325)\u001b[K\rremote: Compressing objects:  48% (156/325)\u001b[K\rremote: Compressing objects:  49% (160/325)\u001b[K\rremote: Compressing objects:  50% (163/325)\u001b[K\rremote: Compressing objects:  51% (166/325)\u001b[K\rremote: Compressing objects:  52% (169/325)\u001b[K\rremote: Compressing objects:  53% (173/325)\u001b[K\rremote: Compressing objects:  54% (176/325)\u001b[K\rremote: Compressing objects:  55% (179/325)\u001b[K\rremote: Compressing objects:  56% (182/325)\u001b[K\rremote: Compressing objects:  57% (186/325)\u001b[K\rremote: Compressing objects:  58% (189/325)\u001b[K\rremote: Compressing objects:  59% (192/325)\u001b[K\rremote: Compressing objects:  60% (195/325)\u001b[K\rremote: Compressing objects:  61% (199/325)\u001b[K\rremote: Compressing objects:  62% (202/325)\u001b[K\rremote: Compressing objects:  63% (205/325)\u001b[K\rremote: Compressing objects:  64% (208/325)\u001b[K\rremote: Compressing objects:  65% (212/325)\u001b[K\rremote: Compressing objects:  66% (215/325)\u001b[K\rremote: Compressing objects:  67% (218/325)\u001b[K\rremote: Compressing objects:  68% (221/325)\u001b[K\rremote: Compressing objects:  69% (225/325)\u001b[K\rremote: Compressing objects:  70% (228/325)\u001b[K\rremote: Compressing objects:  71% (231/325)\u001b[K\rremote: Compressing objects:  72% (234/325)\u001b[K\rremote: Compressing objects:  73% (238/325)\u001b[K\rremote: Compressing objects:  74% (241/325)\u001b[K\rremote: Compressing objects:  75% (244/325)\u001b[K\rremote: Compressing objects:  76% (247/325)\u001b[K\rremote: Compressing objects:  77% (251/325)\u001b[K\rremote: Compressing objects:  78% (254/325)\u001b[K\rremote: Compressing objects:  79% (257/325)\u001b[K\rremote: Compressing objects:  80% (260/325)\u001b[K\rremote: Compressing objects:  81% (264/325)\u001b[K\rremote: Compressing objects:  82% (267/325)\u001b[K\rremote: Compressing objects:  83% (270/325)\u001b[K\rremote: Compressing objects:  84% (273/325)\u001b[K\rremote: Compressing objects:  85% (277/325)\u001b[K\rremote: Compressing objects:  86% (280/325)\u001b[K\rremote: Compressing objects:  87% (283/325)\u001b[K\rremote: Compressing objects:  88% (286/325)\u001b[K\rremote: Compressing objects:  89% (290/325)\u001b[K\rremote: Compressing objects:  90% (293/325)\u001b[K\rremote: Compressing objects:  91% (296/325)\u001b[K\rremote: Compressing objects:  92% (299/325)\u001b[K\rremote: Compressing objects:  93% (303/325)\u001b[K\rremote: Compressing objects:  94% (306/325)\u001b[K\rremote: Compressing objects:  95% (309/325)\u001b[K\rremote: Compressing objects:  96% (312/325)\u001b[K\rremote: Compressing objects:  97% (316/325)\u001b[K\rremote: Compressing objects:  98% (319/325)\u001b[K\rremote: Compressing objects:  99% (322/325)\u001b[K\rremote: Compressing objects: 100% (325/325)\u001b[K\rremote: Compressing objects: 100% (325/325), done.\u001b[K\r\n"}
+,{"stream_name":"stdout","time":262.939044016,"data":"Receiving objects:   0% (1/348)\rReceiving objects:   1% (4/348)\rReceiving objects:   2% (7/348)\rReceiving objects:   3% (11/348)\rReceiving objects:   4% (14/348)\rReceiving objects:   5% (18/348)\rReceiving objects:   6% (21/348)\rReceiving objects:   7% (25/348)\rReceiving objects:   8% (28/348)\rReceiving objects:   9% (32/348)\rReceiving objects:  10% (35/348)\rReceiving objects:  11% (39/348)\rReceiving objects:  12% (42/348)\rReceiving objects:  13% (46/348)\rReceiving objects:  14% (49/348)\rReceiving objects:  15% (53/348)\rReceiving objects:  16% (56/348)\rReceiving objects:  17% (60/348)\rReceiving objects:  18% (63/348)\rReceiving objects:  19% (67/348)\rReceiving objects:  20% (70/348)\rReceiving objects:  21% (74/348)\rReceiving objects:  22% (77/348)\rReceiving objects:  23% (81/348)\rReceiving objects:  24% (84/348)\rReceiving objects:  25% (87/348)\rReceiving objects:  26% (91/348)\rReceiving objects:  27% (94/348)\rReceiving objects:  28% (98/348)\rReceiving objects:  29% (101/348)\rReceiving objects:  30% (105/348)\rReceiving objects:  31% (108/348)\rReceiving objects:  32% (112/348)\rReceiving objects:  33% (115/348)\rReceiving objects:  34% (119/348)\rReceiving objects:  35% (122/348)\rReceiving objects:  36% (126/348)\rReceiving objects:  37% (129/348)\rReceiving objects:  38% (133/348)\rReceiving objects:  39% (136/348)\rReceiving objects:  40% (140/348)\rReceiving objects:  41% (143/348)\rReceiving objects:  42% (147/348)\rReceiving objects:  43% (150/348)\rReceiving objects:  44% (154/348)\rReceiving objects:  45% (157/348)\rReceiving objects:  46% (161/348)\rReceiving objects:  47% (164/348)\rReceiving objects:  48% (168/348)\rReceiving objects:  49% (171/348)\rReceiving objects:  50% (174/348)\rReceiving objects:  51% (178/348)\rReceiving objects:  52% (181/348)\rReceiving objects:  53% (185/348)\rReceiving objects:  54% (188/348)\rReceiving objects:  55% (192/348)\rReceiving objects:  56% (195/348)\rReceiving objects:  57% (199/348)\rReceiving objects:  58% (202/348)\rReceiving objects:  59% (206/348)\rReceiving objects:  60% (209/348)\rReceiving objects:  61% (213/348)\rReceiving objects:  62% (216/348)\rReceiving objects:  63% (220/348)\rReceiving objects:  64% (223/348)\rReceiving objects:  65% (227/348)\rReceiving objects:  66% (230/348)\rReceiving objects:  67% (234/348)\rReceiving objects:  68% (237/348)\rReceiving objects:  69% (241/348)\rReceiving objects:  70% (244/348)\rReceiving objects:  71% (248/348)\rReceiving objects:  72% (251/348)\rReceiving objects:  73% (255/348)\rReceiving objects:  74% (258/348)\rReceiving objects:  75% (261/348)\rReceiving objects:  76% (265/348)\rReceiving objects:  77% (268/348)\rReceiving objects:  78% (272/348)\rReceiving objects:  79% (275/348)\rReceiving objects:  80% (279/348)\rReceiving objects:  81% (282/348)\rReceiving objects:  82% (286/348)\rReceiving objects:  83% (289/348)\rReceiving objects:  84% (293/348)\rReceiving objects:  85% (296/348)\rReceiving objects:  86% (300/348)\rReceiving objects:  87% (303/348)\rReceiving objects:  88% (307/348)\rReceiving objects:  89% (310/348)\rReceiving objects:  90% (314/348)\rReceiving objects:  91% (317/348)\rReceiving objects:  92% (321/348)\rReceiving objects:  93% (324/348)\rReceiving objects:  94% (328/348)\rReceiving objects:  95% (331/348)\rremote: Total 348 (delta 38), reused 153 (delta 17), pack-reused 0 (from 0)\u001b[K\r\n"}
+,{"stream_name":"stdout","time":262.939104662,"data":"Receiving objects:  96% (335/348)\rReceiving objects:  97% (338/348)\rReceiving objects:  98% (342/348)\rReceiving objects:  99% (345/348)\rReceiving objects: 100% (348/348)\rReceiving objects: 100% (348/348), 6.30 MiB | 23.20 MiB/s, done.\r\n"}
+,{"stream_name":"stdout","time":262.939110451,"data":"Resolving deltas:   0% (0/38)\rResolving deltas:   2% (1/38)\rResolving deltas:   5% (2/38)\rResolving deltas:   7% (3/38)\rResolving deltas:  10% (4/38)\rResolving deltas:  13% (5/38)\rResolving deltas:  15% (6/38)\rResolving deltas:  18% (7/38)\rResolving deltas:  21% (8/38)\rResolving deltas:  23% (9/38)\rResolving deltas:  26% (10/38)\rResolving deltas:  31% (12/38)\rResolving deltas:  34% (13/38)\rResolving deltas:  36% (14/38)\rResolving deltas:  39% (15/38)\rResolving deltas:  42% (16/38)\rResolving deltas:  44% (17/38)\rResolving deltas:  47% (18/38)\rResolving deltas:  50% (19/38)\rResolving deltas:  52% (20/38)\rResolving deltas:  57% (22/38)\rResolving deltas:  60% (23/38)\rResolving deltas:  63% (24/38)\rResolving deltas:  65% (25/38)\rResolving deltas:  68% (26/38)\rResolving deltas:  71% (27/38)\rResolving deltas:  73% (28/38)\rResolving deltas:  76% (29/38)\rResolving deltas:  78% (30/38)\rResolving deltas:  84% (32/38)\rResolving deltas:  86% (33/38)\rResolving deltas:  89% (34/38)\rResolving deltas:  92% (35/38)\rResolving deltas:  94% (36/38)\rResolving deltas:  97% (37/38)\rResolving deltas: 100% (38/38)\rResolving deltas: 100% (38/38), done.\r\n"}
+,{"stream_name":"stdout","time":268.906978916,"data":"  \r\n"}
+,{"stream_name":"stdout","time":268.907020195,"data":"  !!\r\n"}
+,{"stream_name":"stdout","time":268.907024173,"data":"    with strategy, WheelFile(wheel_path, \"w\") as wheel_obj:\r\n"}
+,{"stream_name":"stdout","time":269.079599375,"data":"ftfy 6.3.1\n"}
+,{"stream_name":"stdout","time":269.079626797,"data":"voluptuous 0.16.0\n"}
+,{"stream_name":"stdout","time":269.079632438,"data":"sd-scripts ready\n"}
+,{"stream_name":"stdout","time":307.288879603,"data":"sd-scripts imports OK\n"}
+,{"stream_name":"stdout","time":307.288955811,"data":"\n"}
+,{"stream_name":"stdout","time":307.288962779,"data":"/kaggle/working/sd-scripts/library/lpw_stable_diffusion.py:70: SyntaxWarning: invalid escape sequence '\\('\n"}
+,{"stream_name":"stdout","time":307.28897366,"data":"  \\( - literal character '('\n"}
+,{"stream_name":"stdout","time":307.288977246,"data":"/kaggle/working/sd-scripts/library/strategy_base.py:107: SyntaxWarning: invalid escape sequence '\\('\n"}
+,{"stream_name":"stdout","time":307.288980499,"data":"  \\( - literal character '('\n"}
+,{"stream_name":"stdout","time":307.288983559,"data":"\n"}
+,{"stream_name":"stdout","time":315.036258829,"data":"lora-train-faiz staged 130 files -\u003e /kaggle/working/training/faiz\n"}
+,{"stream_name":"stdout","time":322.148515306,"data":"lora-train-juveriya staged 144 files -\u003e /kaggle/working/training/juv\n"}
+,{"stream_name":"stdout","time":322.148547271,"data":"faiz: 65 images, 65 captions\n"}
+,{"stream_name":"stdout","time":322.148552474,"data":"juv: 72 images, 72 captions\n"}
+,{"stream_name":"stdout","time":322.148556104,"data":"combined: 137 images, 137 captions\n"}
+,{"stream_name":"stdout","time":322.148561415,"data":"datasets OK\n"}
+,{"stream_name":"stderr","time":322.605197901,"data":"Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.\n"}
+,{"stream_name":"stderr","time":322.605226893,"data":"\n"}
+,{"stream_name":"stderr","time":322.605252063,"data":"Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.\n"}
+,{"stream_name":"stdout","time":334.786021755,"data":"model: /kaggle/working/base/Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors 7105348188 bytes\n"}
+,{"stream_name":"stdout","time":334.80074053,"data":"{\n"}
+,{"stream_name":"stdout","time":334.800785161,"data":"  \"pretrained_model_name_or_path\": \"/kaggle/working/base/Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors\",\n"}
+,{"stream_name":"stdout","time":334.800793062,"data":"  \"network_module\": \"networks.lora\",\n"}
+,{"stream_name":"stdout","time":334.800799615,"data":"  \"network_dim\": 32,\n"}
+,{"stream_name":"stdout","time":334.80080567,"data":"  \"network_alpha\": 32,\n"}
+,{"stream_name":"stdout","time":334.80081145,"data":"  \"learning_rate\": 0.0001,\n"}
+,{"stream_name":"stdout","time":334.800817224,"data":"  \"text_encoder_lr\": 5e-05,\n"}
+,{"stream_name":"stdout","time":334.800822167,"data":"  \"lr_scheduler\": \"cosine\",\n"}
+,{"stream_name":"stdout","time":334.80082722,"data":"  \"lr_warmup_steps\": 50,\n"}
+,{"stream_name":"stdout","time":334.80083221,"data":"  \"max_train_steps\": 1200,\n"}
+,{"stream_name":"stdout","time":334.800837981,"data":"  \"save_every_n_steps\": 400,\n"}
+,{"stream_name":"stdout","time":334.800843452,"data":"  \"train_batch_size\": 1,\n"}
+,{"stream_name":"stdout","time":334.800849926,"data":"  \"gradient_accumulation_steps\": 4,\n"}
+,{"stream_name":"stdout","time":334.800855641,"data":"  \"mixed_precision\": \"fp16\",\n"}
+,{"stream_name":"stdout","time":334.800861186,"data":"  \"optimizer_type\": \"AdamW8bit\",\n"}
+,{"stream_name":"stdout","time":334.800866156,"data":"  \"resolution\": \"1024,1024\",\n"}
+,{"stream_name":"stdout","time":334.800871528,"data":"  \"min_bucket_reso\": 512,\n"}
+,{"stream_name":"stdout","time":334.800876681,"data":"  \"max_bucket_reso\": 1024,\n"}
+,{"stream_name":"stdout","time":334.800882095,"data":"  \"save_precision\": \"fp16\",\n"}
+,{"stream_name":"stdout","time":334.800887745,"data":"  \"save_model_as\": \"safetensors\",\n"}
+,{"stream_name":"stdout","time":334.800893436,"data":"  \"logging_dir\": \"/kaggle/working/logs\"\n"}
+,{"stream_name":"stdout","time":334.800899176,"data":"}\n"}
+,{"stream_name":"stdout","time":334.819973108,"data":"trainer ready\n"}
+,{"stream_name":"stdout","time":334.986571656,"data":"RUN: accelerate launch --num_cpu_threads_per_process 2 --num_processes 1 --mixed_precision fp16 ...\n"}
+,{"stream_name":"stdout","time":366.330565231,"data":"rc: 0\n"}
+,{"stream_name":"stdout","time":366.33061899,"data":"stdout tail: \n"}
+,{"stream_name":"stdout","time":366.330627349,"data":"stderr tail:           \n"}
+,{"stream_name":"stdout","time":366.330641934,"data":"                             -laion2B-39B-b160k/743c27bd53dfe508                \n"}
+,{"stream_name":"stdout","time":366.3306462,"data":"                             a0ade0f50698f99b39d03bec/special_to                \n"}
+,{"stream_name":"stdout","time":366.330650021,"data":"                             kens_map.json?%2Flaion%2FCLIP-ViT-b                \n"}
+,{"stream_name":"stdout","time":366.330653863,"data":"                             igG-14-laion2B-39B-b160k%2Fresolve%                \n"}
+,{"stream_name":"stdout","time":366.33065753,"data":"                             2F743c27bd53dfe508a0ade0f50698f99b3                \n"}
+,{"stream_name":"stdout","time":366.330661418,"data":"                             9d03bec%2Fspecial_tokens_map.json=\u0026                \n"}
+,{"stream_name":"stdout","time":366.330665863,"data":"                             etag=%229bfb42aa97dcd61e89f279ccaee                \n"}
+,{"stream_name":"stdout","time":366.330669541,"data":"                             988bccb4fabae%22 \"HTTP/1.1 200 OK\"                 \n"}
+,{"stream_name":"stdout","time":366.330673465,"data":"                    INFO     HTTP Request: HEAD                  _client.py:1025\n"}
+,{"stream_name":"stdout","time":366.330677201,"data":"                             https://huggingface.co/laion/CLIP-V                \n"}
+,{"stream_name":"stdout","time":366.330681905,"data":"                             iT-bigG-14-laion2B-39B-b160k/resolv                \n"}
+,{"stream_name":"stdout","time":366.330685609,"data":"                             e/743c27bd53dfe508a0ade0f50698f99b3                \n"}
+,{"stream_name":"stdout","time":366.330689457,"data":"                             9d03bec/chat_template.jinja                        \n"}
+,{"stream_name":"stdout","time":366.330693263,"data":"                             \"HTTP/1.1 404 Not Found\"                           \n"}
+,{"stream_name":"stdout","time":366.330697448,"data":"                    INFO     Using DreamBooth method.      train_network.py:1081\n"}
+,{"stream_name":"stdout","time":366.330701297,"data":"                    INFO     prepare images.           dreambooth_dataset.py:291\n"}
+,{"stream_name":"stdout","time":366.330705329,"data":"                    INFO     0 train images with       dreambooth_dataset.py:337\n"}
+,{"stream_name":"stdout","time":366.330709137,"data":"                             repeats.                                           \n"}
+,{"stream_name":"stdout","time":366.330712881,"data":"                    INFO     0 reg images with         dreambooth_dataset.py:341\n"}
+,{"stream_name":"stdout","time":366.330716797,"data":"                             repeats.                                           \n"}
+,{"stream_name":"stdout","time":366.330720653,"data":"                    WARNING  no regularization images  dreambooth_dataset.py:346\n"}
+,{"stream_name":"stdout","time":366.330724129,"data":"                             /                                                  \n"}
+,{"stream_name":"stdout","time":366.330727823,"data":"                             正則化画像が見つかりませ                           \n"}
+,{"stream_name":"stdout","time":366.330732337,"data":"                             んでした                                           \n"}
+,{"stream_name":"stdout","time":366.330738357,"data":"                    INFO     [Dataset 0]                      config_util.py:595\n"}
+,{"stream_name":"stdout","time":366.330743072,"data":"                               batch_size: 1                                    \n"}
+,{"stream_name":"stdout","time":366.330746973,"data":"                               resolution: (1024, 1024)                         \n"}
+,{"stream_name":"stdout","time":366.330755855,"data":"                               skip_image_resolution: None                      \n"}
+,{"stream_name":"stdout","time":366.330759985,"data":"                               resize_interpolation: None                       \n"}
+,{"stream_name":"stdout","time":366.330764105,"data":"                               enable_bucket: False                             \n"}
+,{"stream_name":"stdout","time":366.330767865,"data":"                                                                                \n"}
+,{"stream_name":"stdout","time":366.330771576,"data":"                                                                                \n"}
+,{"stream_name":"stdout","time":366.330775338,"data":"                    INFO     [Prepare dataset 0]              config_util.py:607\n"}
+,{"stream_name":"stdout","time":366.330779135,"data":"                    INFO     loading image sizes.                 dataset.py:742\n"}
+,{"stream_name":"stdout","time":366.330782732,"data":"\n"}
+,{"stream_name":"stdout","time":366.330786282,"data":"0it [00:00, ?it/s]\n"}
+,{"stream_name":"stdout","time":366.330789885,"data":"0it [00:00, ?it/s]\n"}
+,{"stream_name":"stdout","time":366.330793592,"data":"                    INFO     make buckets                         dataset.py:765\n"}
+,{"stream_name":"stdout","time":366.330797428,"data":"                    INFO     number of images (including repeats) dataset.py:811\n"}
+,{"stream_name":"stdout","time":366.330801307,"data":"                             /                                                  \n"}
+,{"stream_name":"stdout","time":366.330805198,"data":"                             各bucketの画像枚数（繰り返し回数を含               \n"}
+,{"stream_name":"stdout","time":366.330809214,"data":"                             む）                                               \n"}
+,{"stream_name":"stdout","time":366.330812709,"data":"                    INFO     mean ar error (without repeats): 0   dataset.py:824\n"}
+,{"stream_name":"stdout","time":366.330816211,"data":"                    ERROR    No data found. Please verify  train_network.py:1127\n"}
+,{"stream_name":"stdout","time":366.330820067,"data":"                             arguments (train_data_dir                          \n"}
+,{"stream_name":"stdout","time":366.330823737,"data":"                             must be the parent of folders                      \n"}
+,{"stream_name":"stdout","time":366.330827197,"data":"                             with images) /                                     \n"}
+,{"stream_name":"stdout","time":366.330830648,"data":"                             画像がありません。引数指定を                       \n"}
+,{"stream_name":"stdout","time":366.330834443,"data":"                             確認してください（train_data_                      \n"}
+,{"stream_name":"stdout","time":366.330838029,"data":"                             dirには画像があるフォルダでは                      \n"}
+,{"stream_name":"stdout","time":366.330841806,"data":"                             なく、画像があるフォルダの親                       \n"}
+,{"stream_name":"stdout","time":366.330846573,"data":"                             フォルダを指定する必要があり                       \n"}
+,{"stream_name":"stdout","time":366.330850215,"data":"                             ます）                                             \n"}
+,{"stream_name":"stdout","time":366.330853433,"data":"\n"}
+,{"stream_name":"stdout","time":366.330857159,"data":"ERROR: no LoRA produced for faiz\n"}
+,{"stream_name":"stdout","time":366.330860943,"data":"faiz_ok = False\n"}
+,{"stream_name":"stdout","time":366.523789735,"data":"RUN: accelerate launch --num_cpu_threads_per_process 2 --num_processes 1 --mixed_precision fp16 ...\n"}
+,{"stream_name":"stdout","time":390.079667064,"data":"rc: 0\n"}
+,{"stream_name":"stdout","time":390.079710133,"data":"stdout tail: \n"}
+,{"stream_name":"stdout","time":390.079716343,"data":"stderr tail:           \n"}
+,{"stream_name":"stdout","time":390.079720861,"data":"                             aion/CLIP-ViT-bigG-14-laion2B-39B-b                \n"}
+,{"stream_name":"stdout","time":390.079724657,"data":"                             160k/revision/main \"HTTP/1.1 200                   \n"}
+,{"stream_name":"stdout","time":390.079728872,"data":"                             OK\"                                                \n"}
+,{"stream_name":"stdout","time":390.079733419,"data":"                    INFO     HTTP Request: GET                   _client.py:1025\n"}
+,{"stream_name":"stdout","time":390.079737233,"data":"                             https://huggingface.co/api/models/l                \n"}
+,{"stream_name":"stdout","time":390.079740958,"data":"                             aion/CLIP-ViT-bigG-14-laion2B-39B-b                \n"}
+,{"stream_name":"stdout","time":390.079744585,"data":"                             160k/tree/main/additional_chat_temp                \n"}
+,{"stream_name":"stdout","time":390.079748445,"data":"                             lates?recursive=false\u0026expand=false                 \n"}
+,{"stream_name":"stdout","time":390.07975259,"data":"                             \"HTTP/1.1 404 Not Found\"                           \n"}
+,{"stream_name":"stdout","time":390.079762221,"data":"                    INFO     HTTP Request: GET                   _client.py:1025\n"}
+,{"stream_name":"stdout","time":390.079765877,"data":"                             https://huggingface.co/api/models/l                \n"}
+,{"stream_name":"stdout","time":390.079768451,"data":"                             aion/CLIP-ViT-bigG-14-laion2B-39B-b                \n"}
+,{"stream_name":"stdout","time":390.079771061,"data":"                             160k/tree/main?recursive=true\u0026expan                \n"}
+,{"stream_name":"stdout","time":390.079773633,"data":"                             d=false \"HTTP/1.1 200 OK\"                          \n"}
+,{"stream_name":"stdout","time":390.079776189,"data":"                    INFO     Using DreamBooth method.      train_network.py:1081\n"}
+,{"stream_name":"stdout","time":390.079778739,"data":"                    INFO     prepare images.           dreambooth_dataset.py:291\n"}
+,{"stream_name":"stdout","time":390.079781166,"data":"                    INFO     0 train images with       dreambooth_dataset.py:337\n"}
+,{"stream_name":"stdout","time":390.079783685,"data":"                             repeats.                                           \n"}
+,{"stream_name":"stdout","time":390.079786229,"data":"                    INFO     0 reg images with         dreambooth_dataset.py:341\n"}
+,{"stream_name":"stdout","time":390.079788855,"data":"                             repeats.                                           \n"}
+,{"stream_name":"stdout","time":390.079791308,"data":"                    WARNING  no regularization images  dreambooth_dataset.py:346\n"}
+,{"stream_name":"stdout","time":390.079793742,"data":"                             /                                                  \n"}
+,{"stream_name":"stdout","time":390.079796313,"data":"                             正則化画像が見つかりませ                           \n"}
+,{"stream_name":"stdout","time":390.079799519,"data":"                             んでした                                           \n"}
+,{"stream_name":"stdout","time":390.079803187,"data":"                    INFO     [Dataset 0]                      config_util.py:595\n"}
+,{"stream_name":"stdout","time":390.079821373,"data":"                               batch_size: 1                                    \n"}
+,{"stream_name":"stdout","time":390.079824123,"data":"                               resolution: (1024, 1024)                         \n"}
+,{"stream_name":"stdout","time":390.07982668,"data":"                               skip_image_resolution: None                      \n"}
+,{"stream_name":"stdout","time":390.079829161,"data":"                               resize_interpolation: None                       \n"}
+,{"stream_name":"stdout","time":390.07983166,"data":"                               enable_bucket: False                             \n"}
+,{"stream_name":"stdout","time":390.07983416,"data":"                                                                                \n"}
+,{"stream_name":"stdout","time":390.07983659,"data":"                                                                                \n"}
+,{"stream_name":"stdout","time":390.079839025,"data":"                    INFO     [Prepare dataset 0]              config_util.py:607\n"}
+,{"stream_name":"stdout","time":390.079841542,"data":"                    INFO     loading image sizes.                 dataset.py:742\n"}
+,{"stream_name":"stdout","time":390.079844119,"data":"\n"}
+,{"stream_name":"stdout","time":390.079846488,"data":"0it [00:00, ?it/s]\n"}
+,{"stream_name":"stdout","time":390.079848848,"data":"0it [00:00, ?it/s]\n"}
+,{"stream_name":"stdout","time":390.079851163,"data":"                    INFO     make buckets                         dataset.py:765\n"}
+,{"stream_name":"stdout","time":390.079853654,"data":"                    INFO     number of images (including repeats) dataset.py:811\n"}
+,{"stream_name":"stdout","time":390.079856245,"data":"                             /                                                  \n"}
+,{"stream_name":"stdout","time":390.07985868,"data":"                             各bucketの画像枚数（繰り返し回数を含               \n"}
+,{"stream_name":"stdout","time":390.079861294,"data":"                             む）                                               \n"}
+,{"stream_name":"stdout","time":390.079863781,"data":"                    INFO     mean ar error (without repeats): 0   dataset.py:824\n"}
+,{"stream_name":"stdout","time":390.079866208,"data":"                    ERROR    No data found. Please verify  train_network.py:1127\n"}
+,{"stream_name":"stdout","time":390.079868712,"data":"                             arguments (train_data_dir                          \n"}
+,{"stream_name":"stdout","time":390.079871304,"data":"                             must be the parent of folders                      \n"}
+,{"stream_name":"stdout","time":390.079873752,"data":"                             with images) /                                     \n"}
+,{"stream_name":"stdout","time":390.079876262,"data":"                             画像がありません。引数指定を                       \n"}
+,{"stream_name":"stdout","time":390.079878817,"data":"                             確認してください（train_data_                      \n"}
+,{"stream_name":"stdout","time":390.079881414,"data":"                             dirには画像があるフォルダでは                      \n"}
+,{"stream_name":"stdout","time":390.079903844,"data":"                             なく、画像があるフォルダの親                       \n"}
+,{"stream_name":"stdout","time":390.079909004,"data":"                             フォルダを指定する必要があり                       \n"}
+,{"stream_name":"stdout","time":390.07991305,"data":"                             ます）                                             \n"}
+,{"stream_name":"stdout","time":390.079921685,"data":"\n"}
+,{"stream_name":"stdout","time":390.079925842,"data":"ERROR: no LoRA produced for juv\n"}
+,{"stream_name":"stdout","time":390.079929438,"data":"juv_ok = False\n"}
+,{"stream_name":"stdout","time":390.279326414,"data":"RUN: accelerate launch --num_cpu_threads_per_process 2 --num_processes 1 --mixed_precision fp16 ...\n"}
+,{"stream_name":"stdout","time":413.818212046,"data":"rc: 0\n"}
+,{"stream_name":"stdout","time":413.818257769,"data":"stdout tail: \n"}
+,{"stream_name":"stdout","time":413.818280043,"data":"stderr tail:           \n"}
+,{"stream_name":"stdout","time":413.81828729,"data":"                             aion/CLIP-ViT-bigG-14-laion2B-39B-b                \n"}
+,{"stream_name":"stdout","time":413.818292492,"data":"                             160k/revision/main \"HTTP/1.1 200                   \n"}
+,{"stream_name":"stdout","time":413.818297486,"data":"                             OK\"                                                \n"}
+,{"stream_name":"stdout","time":413.81830212,"data":"                    INFO     HTTP Request: GET                   _client.py:1025\n"}
+,{"stream_name":"stdout","time":413.81830732,"data":"                             https://huggingface.co/api/models/l                \n"}
+,{"stream_name":"stdout","time":413.818312907,"data":"                             aion/CLIP-ViT-bigG-14-laion2B-39B-b                \n"}
+,{"stream_name":"stdout","time":413.818317461,"data":"                             160k/tree/main/additional_chat_temp                \n"}
+,{"stream_name":"stdout","time":413.818322321,"data":"                             lates?recursive=false\u0026expand=false                 \n"}
+,{"stream_name":"stdout","time":413.818327727,"data":"                             \"HTTP/1.1 404 Not Found\"                           \n"}
+,{"stream_name":"stdout","time":413.818333324,"data":"                    INFO     HTTP Request: GET                   _client.py:1025\n"}
+,{"stream_name":"stdout","time":413.818338014,"data":"                             https://huggingface.co/api/models/l                \n"}
+,{"stream_name":"stdout","time":413.818343495,"data":"                             aion/CLIP-ViT-bigG-14-laion2B-39B-b                \n"}
+,{"stream_name":"stdout","time":413.818348997,"data":"                             160k/tree/main?recursive=true\u0026expan                \n"}
+,{"stream_name":"stdout","time":413.818354337,"data":"                             d=false \"HTTP/1.1 200 OK\"                          \n"}
+,{"stream_name":"stdout","time":413.818360083,"data":"                    INFO     Using DreamBooth method.      train_network.py:1081\n"}
+,{"stream_name":"stdout","time":413.818365637,"data":"                    INFO     prepare images.           dreambooth_dataset.py:291\n"}
+,{"stream_name":"stdout","time":413.81837098,"data":"                    INFO     0 train images with       dreambooth_dataset.py:337\n"}
+,{"stream_name":"stdout","time":413.818375717,"data":"                             repeats.                                           \n"}
+,{"stream_name":"stdout","time":413.818380349,"data":"                    INFO     0 reg images with         dreambooth_dataset.py:341\n"}
+,{"stream_name":"stdout","time":413.818384871,"data":"                             repeats.                                           \n"}
+,{"stream_name":"stdout","time":413.818389515,"data":"                    WARNING  no regularization images  dreambooth_dataset.py:346\n"}
+,{"stream_name":"stdout","time":413.818394798,"data":"                             /                                                  \n"}
+,{"stream_name":"stdout","time":413.818413185,"data":"                             正則化画像が見つかりませ                           \n"}
+,{"stream_name":"stdout","time":413.818418292,"data":"                             んでした                                           \n"}
+,{"stream_name":"stdout","time":413.818424192,"data":"                    INFO     [Dataset 0]                      config_util.py:595\n"}
+,{"stream_name":"stdout","time":413.818428206,"data":"                               batch_size: 1                                    \n"}
+,{"stream_name":"stdout","time":413.818432106,"data":"                               resolution: (1024, 1024)                         \n"}
+,{"stream_name":"stdout","time":413.818435895,"data":"                               skip_image_resolution: None                      \n"}
+,{"stream_name":"stdout","time":413.818440109,"data":"                               resize_interpolation: None                       \n"}
+,{"stream_name":"stdout","time":413.818444827,"data":"                               enable_bucket: False                             \n"}
+,{"stream_name":"stdout","time":413.818449071,"data":"                                                                                \n"}
+,{"stream_name":"stdout","time":413.818453071,"data":"                                                                                \n"}
+,{"stream_name":"stdout","time":413.818457415,"data":"                    INFO     [Prepare dataset 0]              config_util.py:607\n"}
+,{"stream_name":"stdout","time":413.818461619,"data":"                    INFO     loading image sizes.                 dataset.py:742\n"}
+,{"stream_name":"stdout","time":413.818465543,"data":"\n"}
+,{"stream_name":"stdout","time":413.818468879,"data":"0it [00:00, ?it/s]\n"}
+,{"stream_name":"stdout","time":413.818472307,"data":"0it [00:00, ?it/s]\n"}
+,{"stream_name":"stdout","time":413.818476181,"data":"                    INFO     make buckets                         dataset.py:765\n"}
+,{"stream_name":"stdout","time":413.818480261,"data":"                    INFO     number of images (including repeats) dataset.py:811\n"}
+,{"stream_name":"stdout","time":413.818484661,"data":"                             /                                                  \n"}
+,{"stream_name":"stdout","time":413.818488997,"data":"                             各bucketの画像枚数（繰り返し回数を含               \n"}
+,{"stream_name":"stdout","time":413.818493673,"data":"                             む）                                               \n"}
+,{"stream_name":"stdout","time":413.818497477,"data":"                    INFO     mean ar error (without repeats): 0   dataset.py:824\n"}
+,{"stream_name":"stdout","time":413.818501191,"data":"                    ERROR    No data found. Please verify  train_network.py:1127\n"}
+,{"stream_name":"stdout","time":413.818505529,"data":"                             arguments (train_data_dir                          \n"}
+,{"stream_name":"stdout","time":413.818510472,"data":"                             must be the parent of folders                      \n"}
+,{"stream_name":"stdout","time":413.818514928,"data":"                             with images) /                                     \n"}
+,{"stream_name":"stdout","time":413.818518801,"data":"                             画像がありません。引数指定を                       \n"}
+,{"stream_name":"stdout","time":413.818523392,"data":"                             確認してください（train_data_                      \n"}
+,{"stream_name":"stdout","time":413.818527707,"data":"                             dirには画像があるフォルダでは                      \n"}
+,{"stream_name":"stdout","time":413.818536715,"data":"                             なく、画像があるフォルダの親                       \n"}
+,{"stream_name":"stdout","time":413.818542332,"data":"                             フォルダを指定する必要があり                       \n"}
+,{"stream_name":"stdout","time":413.818546236,"data":"                             ます）                                             \n"}
+,{"stream_name":"stdout","time":413.818549924,"data":"\n"}
+,{"stream_name":"stdout","time":413.818553323,"data":"ERROR: no LoRA produced for faiz_juv\n"}
+,{"stream_name":"stdout","time":413.81855688,"data":"combined_ok = False\n"}
+,{"stream_name":"stdout","time":413.833074479,"data":"MISSING /kaggle/working/faiz_lora.safetensors\n"}
+,{"stream_name":"stdout","time":413.833097332,"data":"MISSING /kaggle/working/juv_lora.safetensors\n"}
+,{"stream_name":"stdout","time":413.833101557,"data":"MISSING /kaggle/working/faiz_juv_lora.safetensors\n"}
+,{"stream_name":"stdout","time":413.83310513,"data":"zip size: 22 bytes\n"}
+,{"stream_name":"stdout","time":413.833108587,"data":"status: faiz=False juv=False combined=False\n"}
+,{"stream_name":"stderr","time":417.065738981,"data":"/usr/local/lib/python3.13/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":417.065764704,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":417.212236985,"data":"/usr/local/lib/python3.13/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":417.212293983,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":417.973636682,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to notebook\n"}
+,{"stream_name":"stderr","time":418.06031423,"data":"[NbConvertApp] Writing 63952 bytes to __notebook__.ipynb\n"}
+,{"stream_name":"stderr","time":420.616497185,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to html\n"}
+,{"stream_name":"stderr","time":421.177499266,"data":"[NbConvertApp] Writing 358609 bytes to __results__.html\n"}
+]

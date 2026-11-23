@@ -1,0 +1,16 @@
+{
+  "id": "sofiya009/lora-nuke-faiz-juveriya-sdxl",
+  "title": "LoRA Nuke Faiz Juveriya SDXL",
+  "code_file": "train_loras_kaggle.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": [
+    "sofiya009/lora-train-faiz",
+    "sofiya009/lora-train-juveriya"
+  ],
+  "competition_sources": [],
+  "kernel_sources": []
+}

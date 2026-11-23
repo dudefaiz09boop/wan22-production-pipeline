@@ -1,0 +1,9 @@
+{
+  "id": "sofiya009/lora-train-juveriya",
+  "title": "LoRA Training Data: Juveriya",
+  "subtitle": "Character training images for Juveriya",
+  "description": "Face crops extracted from Images REF and startframes for LoRA training",
+  "isPrivate": true,
+  "keywords": ["lora", "training", "character", "juveriya", "sdxl"],
+  "licenses": [{"name": "CC0-1.0"}]
+}

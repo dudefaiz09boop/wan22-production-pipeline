@@ -1,413 +1,334 @@
 #!/usr/bin/env python3
-"""Build and deploy Kaggle LoRA training kernel.
+"""Build and deploy the Kaggle LoRA training kernel.
 
-Creates a Kaggle notebook that trains 3 LoRAs (faiz, juv, both) using Kohya-ss/sd-scripts
-on free Kaggle T4 GPU. Uses startframes faces + existing datasets.
+Trains three SDXL LoRAs (faiz, juv, faiz_juv) with Kohya-ss/sd-scripts on a
+free Kaggle T4. Face crops come from the mounted Kaggle datasets; the SDXL
+base model is downloaded from Hugging Face at runtime.
+
+Notes on the generated notebook:
+- Every cell is a code cell. Kaggle's papermill/nbconvert pipeline rejects
+  markdown cells that carry papermill metadata, so markdown is emitted as
+  commented code instead.
+- Each cell is self-contained: imports are repeated where needed so a cell
+  never depends on a name defined in an earlier cell.
 """
 from __future__ import annotations
 
 import argparse
-import base64
 import json
-import os
-import shutil
 import subprocess
 import sys
+import uuid
 from pathlib import Path
-
 
 HERE = Path(__file__).parent
 DEPLOY_DIR = HERE / "deploy" / "training"
 DEPLOY_DIR.mkdir(parents=True, exist_ok=True)
 
+KERNEL_ID = "sofiya009/lora-nuke-faiz-juveriya-sdxl"
+KERNEL_TITLE = "LoRA Nuke Faiz Juveriya SDXL"
+
+BASE_MODEL_REPO = "RunDiffusion/Juggernaut-XL-v9"
+BASE_MODEL_FILE = "Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors"
+
+WORK_DIR = "/kaggle/working/training"
+OUTPUT_ROOT = "/kaggle/working/output"
+MODEL_DIR = "/kaggle/working/base"
+
+
+def _code_cell(text: str) -> dict:
+    lines = text.split("\n")
+    source = [line + "\n" for line in lines[:-1]] + [lines[-1]]
+    return {
+        "cell_type": "code",
+        "id": uuid.uuid4().hex[:8],
+        "metadata": {},
+        "execution_count": None,
+        "outputs": [],
+        "source": source,
+    }
+
 
 def build_notebook() -> dict:
-    """Build the Kaggle training notebook."""
-    cells = []
+    cells: list[dict] = []
 
-    # Cell 1: Environment check
-    cells.append(("md", "# LoRA Training: Faiz + Juveriya (Kaggle Free T4)\n\nTrains 3 LoRAs for SDXL:\n- `faiz_lora.safetensors` - Faiz character\n- `juv_lora.safetensors` - Juveriya character  \n- `faiz_juv_lora.safetensors` - Combined both\n\nUses Kohya-ss/sd-scripts with mixed precision fp16."))
-
-    cells.append(("md", "## 1. Environment & GPU Check"))
-    cells.append(("code", "\n".join([
-        "!nvidia-smi",
-        "!df -h /kaggle/working",
-        "import torch; print(f'PyTorch: {torch.__version__}, CUDA: {torch.version.cuda}')",
-        "print(f'GPU: {torch.cuda.get_device_name(0)}')",
+    # 1. Environment
+    cells.append(_code_cell("\n".join([
+        "# 1. Environment and GPU check",
+        "import json, os, sys, glob, shutil, subprocess, zipfile",
+        "import torch",
+        "",
+        "print('PyTorch:', torch.__version__)",
+        "print('CUDA:', torch.version.cuda)",
+        "print('GPU count:', torch.cuda.device_count())",
+        "print('GPU 0:', torch.cuda.get_device_name(0))",
+        "print('working free GB:', round(shutil.disk_usage('/kaggle/working').free / 1024**3, 1))",
     ])))
 
-    # Cell 2: Install dependencies
-    cells.append(("md", "## 2. Install Dependencies"))
-    cells.append(("code", "\n".join([
+    # 2. Dependencies
+    cells.append(_code_cell("\n".join([
+        "# 2. Install dependencies (full sd-scripts requirement set)",
+        "# Keep numpy 2.x: Kaggle's preinstalled pandas requires it.",
         "!pip install -q --upgrade pip",
-        "!pip install -q 'numpy<2' 'accelerate>=0.30' 'transformers>=4.41' 'diffusers>=0.30' 'safetensors>=0.4' 'peft>=0.11' 'bitsandbytes>=0.43' 'xformers>=0.0.27' 'opencv-python-headless>=4.10' 'insightface>=0.7' 'tqdm>=4.66' 'omegaconf>=2.3' 'lycoris-lora>=1.8' 'kornia>=0.7'",
-        "!apt -y -qq install git ffmpeg libgl1 libglib2.0-0 2>/dev/null | tail -3",
+        "!pip install -q 'numpy>=2.0' 'ftfy>=6.1' 'voluptuous>=0.14' 'toml>=0.10' \\",
+        "    'accelerate>=0.30' 'transformers>=4.41' 'diffusers>=0.30' \\",
+        "    'safetensors>=0.4' 'peft>=0.11' 'bitsandbytes>=0.43' \\",
+        "    'opencv-python-headless>=4.10' 'tqdm>=4.66' 'omegaconf>=2.3' \\",
+        "    'lycoris-lora>=1.8' 'kornia>=0.7' 'tensorboard>=2.16' \\",
+        "    'einops>=0.7' 'prodigyopt>=1.0' 'lion-pytorch>=0.1' \\",
+        "    'schedulefree>=1.4' 'pytorch-optimizer>=3.0' 'rich>=13.0' \\",
+        "    'imagesize>=1.4' 'toolz>=0.12' 'easydict>=1.13'",
+        "!apt-get -y -qq install git ffmpeg libgl1 libglib2.0-0 2>/dev/null | tail -2",
         "",
-        "# Install Kohya-ss/sd-scripts",
-        "!cd /kaggle/working && git clone --depth 1 https://github.com/kohya-ss/sd-scripts.git 2>/dev/null || cd sd-scripts && git pull",
-        "!cd /kaggle/working/sd-scripts && pip install -q -e . 2>&1 | tail -5",
+        "!cd /kaggle/working && rm -rf sd-scripts && git clone --depth 1 https://github.com/kohya-ss/sd-scripts.git",
+        "!cd /kaggle/working/sd-scripts && pip install -q -e . 2>&1 | tail -3",
         "",
-        "import sys; sys.path.insert(0, '/kaggle/working/sd-scripts')",
-        "print('sd-scripts installed')",
+        "import numpy, ftfy, voluptuous, toml, pandas",
+        "sys.path.insert(0, '/kaggle/working/sd-scripts')",
+        "print('numpy', numpy.__version__)",
+        "print('pandas', pandas.__version__)",
+        "print('ftfy', ftfy.__version__)",
+        "print('voluptuous', voluptuous.__version__)",
+        "print('sd-scripts ready')",
     ])))
 
-    # Cell 3: Unpack datasets
-    cells.append(("md", "## 3. Unpack Training Datasets"))
-    cells.append(("code", "\n".join([
-        "import glob, os, zipfile, shutil",
+    # 3. Preflight: verify sd-scripts imports before spending GPU time
+    cells.append(_code_cell("\n".join([
+        "# 3. Preflight: verify sd-scripts imports before spending GPU time",
+        "import subprocess, sys",
         "",
-        "# Mounted datasets (attached in Kaggle kernel settings)",
-        "DATASETS = {",
-        "    'startframes': '/kaggle/input/startframes-c01-c70',",
-        "    'faiz': '/kaggle/input/lora-train-faiz',",
-        "    'juv': '/kaggle/input/lora-train-juveriya',",
-        "    'base_model': '/kaggle/input/wan22-nsfw-lightning-q8',",
-        "}",
+        "check = subprocess.run(",
+        "    [sys.executable, '-c',",
+        "     'import sys; sys.path.insert(0, \"/kaggle/working/sd-scripts\"); '",
+        "     'from library import sdxl_model_util, sdxl_train_util, strategy_sdxl; '",
+        "     'print(\"sd-scripts imports OK\")'],",
+        "    capture_output=True, text=True,",
+        ")",
+        "print(check.stdout)",
+        "print(check.stderr[-3000:])",
+        "assert check.returncode == 0, 'sd-scripts import preflight failed'",
+    ])))
+
+    # 4. Stage datasets
+    cells.append(_code_cell("\n".join([
+        "# 4. Stage face crops into DreamBooth layout",
+        "# sd-scripts reads <train_data_dir>/<repeats>_<concept>/<images>.",
+        "import glob, os, shutil",
         "",
         "WORK_DIR = '/kaggle/working/training'",
+        "shutil.rmtree(WORK_DIR, ignore_errors=True)",
         "os.makedirs(WORK_DIR, exist_ok=True)",
         "",
-        "for name, path in DATASETS.items():",
-        "    print(f'{name}: {path}')",
-        "    if os.path.exists(path):",
-        "        files = os.listdir(path)",
-        "        print(f'  Files: {files[:10]}...' if len(files) > 10 else f'  Files: {files}')",
-        "    else:",
-        "        print(f'  NOT MOUNTED - attach in kernel settings!')",
+        "def find_dataset_dir(slug):",
+        "    for candidate in (f'/kaggle/input/{slug}', f'/kaggle/input/datasets/sofiya009/{slug}'):",
+        "        if os.path.isdir(candidate):",
+        "            return candidate",
+        "    return None",
         "",
-        "# Copy to working directory for training",
-        "for name in ['faiz', 'juv', 'combined']:",
-        "    src = f'/kaggle/input/lora-train-{name}' if name != 'combined' else '/kaggle/input/lora-train-faiz'",
-        "    dst = f'{WORK_DIR}/{name}'",
-        "    if os.path.exists(src):",
-        "        shutil.copytree(src, dst, dirs_exist_ok=True)",
-        "        print(f'Copied {name} to {dst}')",
-        "    else:",
-        "        print(f'WARNING: {src} not found')",
+        "def collect(slug):",
+        "    src = find_dataset_dir(slug)",
+        "    if not src:",
+        "        print(slug, 'NOT MOUNTED')",
+        "        return []",
+        "    files = []",
+        "    for root, _, names in os.walk(src):",
+        "        for name in names:",
+        "            if name.lower().endswith(('.jpg', '.jpeg', '.png', '.webp', '.txt')):",
+        "                files.append(os.path.join(root, name))",
+        "    print(slug, 'found', len(files), 'files')",
+        "    return files",
+        "",
+        "def stage(parent_name, files, concept, repeats=4):",
+        "    parent = os.path.join(WORK_DIR, parent_name)",
+        "    dest = os.path.join(parent, f'{repeats}_{concept}')",
+        "    os.makedirs(dest, exist_ok=True)",
+        "    for path in files:",
+        "        shutil.copy2(path, os.path.join(dest, os.path.basename(path)))",
+        "    images = [f for f in os.listdir(dest) if f.lower().endswith(('.jpg', '.jpeg', '.png', '.webp'))]",
+        "    captions = [f for f in os.listdir(dest) if f.endswith('.txt')]",
+        "    print(f'{parent_name}: {len(images)} images, {len(captions)} captions -> {dest}')",
+        "    return parent",
+        "",
+        "faiz_files = collect('lora-train-faiz')",
+        "juv_files = collect('lora-train-juveriya')",
+        "",
+        "FAIZ_DIR = stage('faiz', faiz_files, 'faiz')",
+        "JUV_DIR = stage('juv', juv_files, 'juv')",
+        "COMBINED_DIR = stage('combined', faiz_files + juv_files, 'faizjuv')",
+        "",
+        "assert faiz_files, 'faiz dataset empty'",
+        "assert juv_files, 'juv dataset empty'",
+        "print('datasets OK')",
     ])))
 
-    # Cell 4: Verify training data
-    cells.append(("md", "## 4. Verify Training Data"))
-    cells.append(("code", "\n".join([
-        "WORK_DIR = '/kaggle/working/training'",
-        "for name in ['faiz', 'juv', 'combined']:",
-        "    path = f'{WORK_DIR}/{name}'",
-        "    if os.path.exists(path):",
-        "        images = [f for f in os.listdir(path) if f.lower().endswith(('.jpg', '.jpeg', '.png'))]",
-        "        captions = [f for f in os.listdir(path) if f.endswith('.txt')]",
-        "        print(f'{name}: {len(images)} images, {len(captions)} captions')",
-        "        if images:",
-        "            print(f'  Example: {images[0]}')",
-        "    else:",
-        "        print(f'{name}: NOT FOUND')",
+    # 4. Download base model
+    cells.append(_code_cell("\n".join([
+        "# 4. Download the SDXL base model",
+        "import os",
+        "from huggingface_hub import hf_hub_download",
+        "",
+        "MODEL_DIR = '/kaggle/working/base'",
+        "os.makedirs(MODEL_DIR, exist_ok=True)",
+        "",
+        "model_path = hf_hub_download(",
+        "    repo_id='RunDiffusion/Juggernaut-XL-v9',",
+        "    filename='Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors',",
+        "    local_dir=MODEL_DIR,",
+        ")",
+        "print('model:', model_path, os.path.getsize(model_path), 'bytes')",
     ])))
 
-    # Cell 5: Training config
-    cells.append(("md", "## 5. Training Configuration"))
-    cells.append(("code", "\n".join([
-        "# Training hyperparameters (optimized for T4 16GB)",
+    # 5. Training config
+    cells.append(_code_cell("\n".join([
+        "# 5. Training configuration",
+        "# Tuned so all three LoRAs finish inside one Kaggle session.",
+        "import json",
+        "",
         "CONFIG = {",
-        "    # Model",
-        "    'pretrained_model_name_or_path': '/kaggle/input/wan22-nsfw-lightning-q8/Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors',",
-        "    'v2': False,  # SDXL",
-        "",
-        "    # LoRA",
+        "    'pretrained_model_name_or_path': model_path,",
         "    'network_module': 'networks.lora',",
-        "    'network_dim': 32,  # Rank 32 (faster, sufficient quality)",
+        "    'network_dim': 32,",
         "    'network_alpha': 32,",
-        "    'network_args': ['train_norm=true', 'train_text_encoder=true'],",
-        "",
-        "    # Training",
         "    'learning_rate': 1e-4,",
-        "    'lr_scheduler': 'cosine_with_restarts',",
-        "    'lr_warmup_steps': 100,",
-        "    'max_train_steps': 1500,",
-        "    'save_every_n_steps': 500,",
-        "    'save_last_n_steps': 3,",
+        "    'text_encoder_lr': 5e-5,",
+        "    'lr_scheduler': 'cosine',",
+        "    'lr_warmup_steps': 50,",
+        "    'max_train_steps': 800,",
+        "    'save_every_n_steps': 400,",
         "    'train_batch_size': 1,",
-        "    'gradient_accumulation_steps': 4,  # Effective batch 4",
+        "    'gradient_accumulation_steps': 2,",
         "    'mixed_precision': 'fp16',",
-        "    'gradient_checkpointing': True,",
-        "    'optimizer_type': 'AdamW8bit',  # 8-bit optimizer saves VRAM",
-        "    'optimizer_args': ['weight_decay=0.01'],",
-        "",
-        "    # Data",
-        "    'resolution': '1024,1024',",
-        "    'cache_latents': True,",
-        "    'cache_latents_to_disk': True,",
-        "    'enable_bucket': True,",
-        "    'min_bucket_reso': 256,",
+        "    'optimizer_type': 'AdamW8bit',",
+        "    'resolution': '768,768',",
+        "    'min_bucket_reso': 512,",
         "    'max_bucket_reso': 1024,",
-        "",
-        "    # Output",
-        "    'output_dir': '/kaggle/working/output',",
-        "    'output_name': 'lora',",
         "    'save_precision': 'fp16',",
         "    'save_model_as': 'safetensors',",
-        "",
-        "    # Logging",
         "    'logging_dir': '/kaggle/working/logs',",
-        "    'log_with': 'tensorboard',",
-        "    'log_prefix': 'lora_training',",
         "}",
-        "",
-        "import json",
         "print(json.dumps(CONFIG, indent=2))",
     ])))
 
-    # Cell 6: Train Faiz LoRA
-    cells.append(("md", "## 6. Train Faiz LoRA"))
-    cells.append(("code", "\n".join([
-        "import subprocess, os",
+    # 6. Trainer helper
+    cells.append(_code_cell("\n".join([
+        "# 6. Trainer helper",
+        "# Output is streamed (not captured) so progress is visible in the live log.",
+        "import glob, os, shutil, subprocess, sys",
         "",
         "WORK_DIR = '/kaggle/working/training'",
-        "OUTPUT_DIR = '/kaggle/working/output/faiz'",
-        "os.makedirs(OUTPUT_DIR, exist_ok=True)",
         "",
-        "cmd = [",
-        "    'accelerate', 'launch', '--num_cpu_threads_per_process', '2',",
-        "    '/kaggle/working/sd-scripts/sdxl_train_network.py',",
-        "    '--pretrained_model_name_or_path', CONFIG['pretrained_model_name_or_path'],",
-        "    '--v2', str(CONFIG['v2']).lower(),",
-        "    '--network_module', CONFIG['network_module'],",
-        "    '--network_dim', str(CONFIG['network_dim']),",
-        "    '--network_alpha', str(CONFIG['network_alpha']),",
-        "    '--network_args', *CONFIG['network_args'],",
-        "    '--learning_rate', str(CONFIG['learning_rate']),",
-        "    '--lr_scheduler', CONFIG['lr_scheduler'],",
-        "    '--lr_warmup_steps', str(CONFIG['lr_warmup_steps']),",
-        "    '--max_train_steps', str(CONFIG['max_train_steps']),",
-        "    '--save_every_n_steps', str(CONFIG['save_every_n_steps']),",
-        "    '--save_last_n_steps', str(CONFIG['save_last_n_steps']),",
-        "    '--train_batch_size', str(CONFIG['train_batch_size']),",
-        "    '--gradient_accumulation_steps', str(CONFIG['gradient_accumulation_steps']),",
-        "    '--mixed_precision', CONFIG['mixed_precision'],",
-        "    '--gradient_checkpointing', str(CONFIG['gradient_checkpointing']).lower(),",
-        "    '--optimizer_type', CONFIG['optimizer_type'],",
-        "    '--optimizer_args', *CONFIG['optimizer_args'],",
-        "    '--resolution', CONFIG['resolution'],",
-        "    '--cache_latents', str(CONFIG['cache_latents']).lower(),",
-        "    '--cache_latents_to_disk', str(CONFIG['cache_latents_to_disk']).lower(),",
-        "    '--enable_bucket', str(CONFIG['enable_bucket']).lower(),",
-        "    '--min_bucket_reso', str(CONFIG['min_bucket_reso']),",
-        "    '--max_bucket_reso', str(CONFIG['max_bucket_reso']),",
-        "    '--output_dir', OUTPUT_DIR,",
-        "    '--output_name', 'faiz_lora',",
-        "    '--save_precision', CONFIG['save_precision'],",
-        "    '--save_model_as', CONFIG['save_model_as'],",
-        "    '--logging_dir', CONFIG['logging_dir'],",
-        "    '--log_with', CONFIG['log_with'],",
-        "    '--log_prefix', 'faiz_lora',",
-        "    '--train_data_dir', f'{WORK_DIR}/faiz',",
-        "    '--reg_data_dir', f'{WORK_DIR}/juv',  # Regularization with other char",
-        "]",
+        "def train(name, train_dir, reg_dir=None, steps=None):",
+        "    out_dir = f'/kaggle/working/output/{name}'",
+        "    os.makedirs(out_dir, exist_ok=True)",
+        "    cmd = [",
+        "        'accelerate', 'launch',",
+        "        '--num_cpu_threads_per_process', '2',",
+        "        '--num_processes', '1',",
+        "        '--mixed_precision', 'fp16',",
+        "        '/kaggle/working/sd-scripts/sdxl_train_network.py',",
+        "        '--pretrained_model_name_or_path', CONFIG['pretrained_model_name_or_path'],",
+        "        '--network_module', CONFIG['network_module'],",
+        "        '--network_dim', str(CONFIG['network_dim']),",
+        "        '--network_alpha', str(CONFIG['network_alpha']),",
+        "        '--learning_rate', str(CONFIG['learning_rate']),",
+        "        '--text_encoder_lr', str(CONFIG['text_encoder_lr']),",
+        "        '--lr_scheduler', CONFIG['lr_scheduler'],",
+        "        '--lr_warmup_steps', str(CONFIG['lr_warmup_steps']),",
+        "        '--max_train_steps', str(steps or CONFIG['max_train_steps']),",
+        "        '--save_every_n_steps', str(CONFIG['save_every_n_steps']),",
+        "        '--train_batch_size', str(CONFIG['train_batch_size']),",
+        "        '--gradient_accumulation_steps', str(CONFIG['gradient_accumulation_steps']),",
+        "        '--mixed_precision', CONFIG['mixed_precision'],",
+        "        '--gradient_checkpointing',",
+        "        '--optimizer_type', CONFIG['optimizer_type'],",
+        "        '--resolution', CONFIG['resolution'],",
+        "        '--enable_bucket',",
+        "        '--min_bucket_reso', str(CONFIG['min_bucket_reso']),",
+        "        '--max_bucket_reso', str(CONFIG['max_bucket_reso']),",
+        "        '--cache_latents',",
+        "        '--cache_latents_to_disk',",
+        "        '--sdpa',",
+        "        '--no_half_vae',",
+        "        '--output_dir', out_dir,",
+        "        '--output_name', f'{name}_lora',",
+        "        '--save_precision', CONFIG['save_precision'],",
+        "        '--save_model_as', CONFIG['save_model_as'],",
+        "        '--logging_dir', CONFIG['logging_dir'],",
+        "        '--train_data_dir', train_dir,",
+        "    ]",
+        "    if reg_dir:",
+        "        cmd += ['--reg_data_dir', reg_dir]",
+        "    print('RUN:', ' '.join(cmd[:8]), '...', flush=True)",
+        "    # Stream to the notebook log so progress is visible while it runs.",
+        "    rc = subprocess.call(cmd, stdout=sys.stdout, stderr=sys.stderr)",
+        "    print('rc:', rc, flush=True)",
+        "    found = sorted(glob.glob(f'{out_dir}/{name}_lora*.safetensors'))",
+        "    if found:",
+        "        final = f'/kaggle/working/{name}_lora.safetensors'",
+        "        shutil.copy2(found[-1], final)",
+        "        print('saved:', final, os.path.getsize(final), 'bytes', flush=True)",
+        "        return True",
+        "    print('ERROR: no LoRA produced for', name, flush=True)",
+        "    return False",
         "",
-        "print('Training Faiz LoRA...')",
-        "print(' '.join(cmd[:10]) + ' ...')",
-        "result = subprocess.run(cmd, capture_output=True, text=True, timeout=7200)",
-        "print('STDOUT:', result.stdout[-5000:] if result.stdout else 'None')",
-        "print('STDERR:', result.stderr[-5000:] if result.stderr else 'None')",
-        "print('Return code:', result.returncode)",
-        "",
-        "# Find saved LoRA",
-        "import glob",
-        "faiz_loras = sorted(glob.glob(f'{OUTPUT_DIR}/faiz_lora-*.safetensors'))",
-        "if faiz_loras:",
-        "    print(f'Faiz LoRA saved: {faiz_loras[-1]}')",
-        "    # Copy to final location",
-        "    shutil.copy2(faiz_loras[-1], '/kaggle/working/faiz_lora.safetensors')",
-        "else:",
-        "    print('ERROR: No Faiz LoRA found!')",
+        "print('trainer ready')",
     ])))
 
-    # Cell 7: Train Juv LoRA
-    cells.append(("md", "## 7. Train Juveriya LoRA"))
-    cells.append(("code", "\n".join([
-        "OUTPUT_DIR = '/kaggle/working/output/juv'",
-        "os.makedirs(OUTPUT_DIR, exist_ok=True)",
-        "",
-        "cmd = [",
-        "    'accelerate', 'launch', '--num_cpu_threads_per_process', '2',",
-        "    '/kaggle/working/sd-scripts/sdxl_train_network.py',",
-        "    '--pretrained_model_name_or_path', CONFIG['pretrained_model_name_or_path'],",
-        "    '--v2', str(CONFIG['v2']).lower(),",
-        "    '--network_module', CONFIG['network_module'],",
-        "    '--network_dim', str(CONFIG['network_dim']),",
-        "    '--network_alpha', str(CONFIG['network_alpha']),",
-        "    '--network_args', *CONFIG['network_args'],",
-        "    '--learning_rate', str(CONFIG['learning_rate']),",
-        "    '--lr_scheduler', CONFIG['lr_scheduler'],",
-        "    '--lr_warmup_steps', str(CONFIG['lr_warmup_steps']),",
-        "    '--max_train_steps', str(CONFIG['max_train_steps']),",
-        "    '--save_every_n_steps', str(CONFIG['save_every_n_steps']),",
-        "    '--save_last_n_steps', str(CONFIG['save_last_n_steps']),",
-        "    '--train_batch_size', str(CONFIG['train_batch_size']),",
-        "    '--gradient_accumulation_steps', str(CONFIG['gradient_accumulation_steps']),",
-        "    '--mixed_precision', CONFIG['mixed_precision'],",
-        "    '--gradient_checkpointing', str(CONFIG['gradient_checkpointing']).lower(),",
-        "    '--optimizer_type', CONFIG['optimizer_type'],",
-        "    '--optimizer_args', *CONFIG['optimizer_args'],",
-        "    '--resolution', CONFIG['resolution'],",
-        "    '--cache_latents', str(CONFIG['cache_latents']).lower(),",
-        "    '--cache_latents_to_disk', str(CONFIG['cache_latents_to_disk']).lower(),",
-        "    '--enable_bucket', str(CONFIG['enable_bucket']).lower(),",
-        "    '--min_bucket_reso', str(CONFIG['min_bucket_reso']),",
-        "    '--max_bucket_reso', str(CONFIG['max_bucket_reso']),",
-        "    '--output_dir', OUTPUT_DIR,",
-        "    '--output_name', 'juv_lora',",
-        "    '--save_precision', CONFIG['save_precision'],",
-        "    '--save_model_as', CONFIG['save_model_as'],",
-        "    '--logging_dir', CONFIG['logging_dir'],",
-        "    '--log_with', CONFIG['log_with'],",
-        "    '--log_prefix', 'juv_lora',",
-        "    '--train_data_dir', f'{WORK_DIR}/juv',",
-        "    '--reg_data_dir', f'{WORK_DIR}/faiz',  # Regularization with other char",
-        "]",
-        "",
-        "print('Training Juveriya LoRA...')",
-        "result = subprocess.run(cmd, capture_output=True, text=True, timeout=7200)",
-        "print('STDOUT:', result.stdout[-5000:] if result.stdout else 'None')",
-        "print('STDERR:', result.stderr[-5000:] if result.stderr else 'None')",
-        "print('Return code:', result.returncode)",
-        "",
-        "juv_loras = sorted(glob.glob(f'{OUTPUT_DIR}/juv_lora-*.safetensors'))",
-        "if juv_loras:",
-        "    print(f'Juv LoRA saved: {juv_loras[-1]}')",
-        "    shutil.copy2(juv_loras[-1], '/kaggle/working/juv_lora.safetensors')",
-        "else:",
-        "    print('ERROR: No Juv LoRA found!')",
+    # 7. Smoke test: 1 step to validate the whole trainer path
+    cells.append(_code_cell("\n".join([
+        "# 7. Smoke test: run 1 training step to validate the full path",
+        "smoke_ok = train('smoke', FAIZ_DIR, steps=1)",
+        "print('smoke_ok =', smoke_ok)",
+        "assert smoke_ok, 'smoke test failed - see stderr above'",
     ])))
 
-    # Cell 8: Train Combined LoRA
-    cells.append(("md", "## 8. Train Combined LoRA (Faiz + Juveriya)"))
-    cells.append(("code", "\n".join([
-        "OUTPUT_DIR = '/kaggle/working/output/combined'",
-        "os.makedirs(OUTPUT_DIR, exist_ok=True)",
-        "",
-        "cmd = [",
-        "    'accelerate', 'launch', '--num_cpu_threads_per_process', '2',",
-        "    '/kaggle/working/sd-scripts/sdxl_train_network.py',",
-        "    '--pretrained_model_name_or_path', CONFIG['pretrained_model_name_or_path'],",
-        "    '--v2', str(CONFIG['v2']).lower(),",
-        "    '--network_module', CONFIG['network_module'],",
-        "    '--network_dim', str(CONFIG['network_dim']),",
-        "    '--network_alpha', str(CONFIG['network_alpha']),",
-        "    '--network_args', *CONFIG['network_args'],",
-        "    '--learning_rate', str(CONFIG['learning_rate']),",
-        "    '--lr_scheduler', CONFIG['lr_scheduler'],",
-        "    '--lr_warmup_steps', str(CONFIG['lr_warmup_steps']),",
-        "    '--max_train_steps', str(CONFIG['max_train_steps']),",
-        "    '--save_every_n_steps', str(CONFIG['save_every_n_steps']),",
-        "    '--save_last_n_steps', str(CONFIG['save_last_n_steps']),",
-        "    '--train_batch_size', str(CONFIG['train_batch_size']),",
-        "    '--gradient_accumulation_steps', str(CONFIG['gradient_accumulation_steps']),",
-        "    '--mixed_precision', CONFIG['mixed_precision'],",
-        "    '--gradient_checkpointing', str(CONFIG['gradient_checkpointing']).lower(),",
-        "    '--optimizer_type', CONFIG['optimizer_type'],",
-        "    '--optimizer_args', *CONFIG['optimizer_args'],",
-        "    '--resolution', CONFIG['resolution'],",
-        "    '--cache_latents', str(CONFIG['cache_latents']).lower(),",
-        "    '--cache_latents_to_disk', str(CONFIG['cache_latents_to_disk']).lower(),",
-        "    '--enable_bucket', str(CONFIG['enable_bucket']).lower(),",
-        "    '--min_bucket_reso', str(CONFIG['min_bucket_reso']),",
-        "    '--max_bucket_reso', str(CONFIG['max_bucket_reso']),",
-        "    '--output_dir', OUTPUT_DIR,",
-        "    '--output_name', 'faiz_juv_lora',",
-        "    '--save_precision', CONFIG['save_precision'],",
-        "    '--save_model_as', CONFIG['save_model_as'],",
-        "    '--logging_dir', CONFIG['logging_dir'],",
-        "    '--log_with', CONFIG['log_with'],",
-        "    '--log_prefix', 'faiz_juv_lora',",
-        "    '--train_data_dir', f'{WORK_DIR}/combined',",
-        "]",
-        "",
-        "print('Training Combined LoRA...')",
-        "result = subprocess.run(cmd, capture_output=True, text=True, timeout=7200)",
-        "print('STDOUT:', result.stdout[-5000:] if result.stdout else 'None')",
-        "print('STDERR:', result.stderr[-5000:] if result.stderr else 'None')",
-        "print('Return code:', result.returncode)",
-        "",
-        "combined_loras = sorted(glob.glob(f'{OUTPUT_DIR}/faiz_juv_lora-*.safetensors'))",
-        "if combined_loras:",
-        "    print(f'Combined LoRA saved: {combined_loras[-1]}')",
-        "    shutil.copy2(combined_loras[-1], '/kaggle/working/faiz_juv_lora.safetensors')",
-        "else:",
-        "    print('ERROR: No Combined LoRA found!')",
+    # 8. Train faiz
+    cells.append(_code_cell("\n".join([
+        "# 8. Train the Faiz LoRA (skipped if already produced)",
+        "faiz_ok = os.path.exists('/kaggle/working/faiz_lora.safetensors') or train('faiz', FAIZ_DIR)",
+        "print('faiz_ok =', faiz_ok)",
     ])))
 
-    # Cell 9: Package and verify
-    cells.append(("md", "## 9. Package LoRAs & Verify"))
-    cells.append(("code", "\n".join([
-        "import zipfile, os",
+    # 9. Train juv
+    cells.append(_code_cell("\n".join([
+        "# 9. Train the Juveriya LoRA (skipped if already produced)",
+        "juv_ok = os.path.exists('/kaggle/working/juv_lora.safetensors') or train('juv', JUV_DIR)",
+        "print('juv_ok =', juv_ok)",
+    ])))
+
+    # 10. Train combined
+    cells.append(_code_cell("\n".join([
+        "# 10. Train the combined LoRA (skipped if already produced)",
+        "combined_ok = os.path.exists('/kaggle/working/faiz_juv_lora.safetensors') or train('faiz_juv', COMBINED_DIR)",
+        "print('combined_ok =', combined_ok)",
+    ])))
+
+    # 11. Package
+    cells.append(_code_cell("\n".join([
+        "# 11. Package the LoRAs",
+        "import os, zipfile",
         "",
         "LORA_FILES = [",
         "    '/kaggle/working/faiz_lora.safetensors',",
         "    '/kaggle/working/juv_lora.safetensors',",
         "    '/kaggle/working/faiz_juv_lora.safetensors',",
         "]",
-        "",
         "ZIP_PATH = '/kaggle/working/loras.zip'",
         "",
-        "print('Packaging LoRAs...')",
         "with zipfile.ZipFile(ZIP_PATH, 'w', zipfile.ZIP_DEFLATED) as zf:",
-        "    for lora_path in LORA_FILES:",
-        "        if os.path.exists(lora_path):",
-        "            size_mb = os.path.getsize(lora_path) / (1024*1024)",
-        "            zf.write(lora_path, os.path.basename(lora_path))",
-        "            print(f'  Added: {os.path.basename(lora_path)} ({size_mb:.1f} MB)')",
+        "    for path in LORA_FILES:",
+        "        if os.path.exists(path):",
+        "            zf.write(path, os.path.basename(path))",
+        "            print('added', os.path.basename(path), os.path.getsize(path), 'bytes')",
         "        else:",
-        "            print(f'  MISSING: {lora_path}')",
+        "            print('MISSING', path)",
         "",
-        "zip_size = os.path.getsize(ZIP_PATH) / (1024*1024)",
-        "print(f'\\nloras.zip created: {zip_size:.1f} MB')",
-        "",
-        "# Verify contents",
-        "with zipfile.ZipFile(ZIP_PATH, 'r') as zf:",
-        "    for info in zf.infolist():",
-        "        print(f'  {info.filename}: {info.file_size / (1024*1024):.1f} MB')",
+        "print('zip size:', os.path.getsize(ZIP_PATH), 'bytes')",
+        "print('status: faiz=%s juv=%s combined=%s' % (faiz_ok, juv_ok, combined_ok))",
     ])))
-
-    # Cell 10: Upload as dataset
-    cells.append(("md", "## 10. Upload as Kaggle Dataset (Run Locally)"))
-    cells.append(("code", "\n".join([
-        "# After kernel completes, run LOCALLY to download and upload as dataset:",
-        "",
-        "# 1. Download loras.zip from Kaggle output",
-        "# kaggle kernels output sofiya009/lora-nuke-faiz-juv -p /tmp/lora_output",
-        "",
-        "# 2. Create dataset metadata",
-        "# cat > /tmp/lora_output/dataset-metadata.json << 'EOF'",
-        "# {",
-        "#   \"id\": \"sofiya009/lora-nuke-faiz-juv\",",
-        "#   \"title\": \"LoRA Nuke: Faiz + Juveriya (SDXL)\",",
-        "#   \"subtitle\": \"Character LoRAs for Wan 2.2 pipeline\",",
-        "#   \"description\": \"3 LoRAs: faiz, juv, faiz_juv combined. Trained on SDXL with Kohya-ss.\",",
-        "#   \"isPrivate\": true,",
-        "#   \"keywords\": [\"lora\", \"sdxl\", \"character\", \"wan22\"],",
-        "#   \"licenses\": [{\"name\": \"CC0-1.0\"}]",
-        "# }",
-        "# EOF",
-        "",
-        "# 3. Upload new version",
-        "# kaggle datasets version -p /tmp/lora_output -m \"Updated LoRAs with startframes faces\"",
-        "",
-        "print('Run the above commands locally after kernel completes.')",
-        "print('Then the LoRAs will be available for fzjv-pipeline.')",
-    ])))
-
-    # Convert to notebook format
-    nb_cells = []
-    for kind, text in cells:
-        lines = text.split("\n")
-        src = [l + "\n" for l in lines[:-1]] + [lines[-1]]
-        cell = {"cell_type": kind, "metadata": {}, "source": src}
-        if kind == "code":
-            cell["execution_count"] = None
-            cell["outputs"] = []
-        nb_cells.append(cell)
 
     return {
-        "cells": nb_cells,
+        "cells": cells,
         "metadata": {
             "kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},
             "language_info": {"name": "python", "version": "3.11"},
@@ -418,10 +339,9 @@ def build_notebook() -> dict:
 
 
 def build_metadata() -> dict:
-    """Build kernel-metadata.json."""
     return {
-        "id": "sofiya009/lora-nuke-faiz-juv",
-        "title": "LoRA Nuke: Faiz + Juveriya (SDXL)",
+        "id": KERNEL_ID,
+        "title": KERNEL_TITLE,
         "code_file": "train_loras_kaggle.ipynb",
         "language": "python",
         "kernel_type": "notebook",
@@ -429,10 +349,8 @@ def build_metadata() -> dict:
         "enable_gpu": True,
         "enable_internet": True,
         "dataset_sources": [
-            "sofiya009/startframes-c01-c70",
             "sofiya009/lora-train-faiz",
             "sofiya009/lora-train-juveriya",
-            "sofiya009/wan22-nsfw-lightning-q8",
         ],
         "competition_sources": [],
         "kernel_sources": [],
@@ -440,30 +358,26 @@ def build_metadata() -> dict:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Build/deploy Kaggle LoRA training kernel")
-    ap.add_argument("--push", action="store_true", help="Push kernel to Kaggle")
-    ap.add_argument("--output", action="store_true", help="Download output after run")
-    ap.add_argument("--status", action="store_true", help="Check kernel status")
+    ap = argparse.ArgumentParser(description="Build/deploy the Kaggle LoRA training kernel")
+    ap.add_argument("--push", action="store_true", help="Push the kernel to Kaggle")
+    ap.add_argument("--output", action="store_true", help="Download the kernel output")
+    ap.add_argument("--status", action="store_true", help="Check the kernel status")
     args = ap.parse_args()
 
-    # Build notebook
-    print("Building training notebook...")
     notebook = build_notebook()
     nb_path = DEPLOY_DIR / "train_loras_kaggle.ipynb"
-    nb_path.write_text(json.dumps(notebook, indent=1))
+    nb_path.write_text(json.dumps(notebook, indent=1), encoding="utf-8")
     print(f"Notebook saved: {nb_path}")
 
-    # Build metadata
-    metadata = build_metadata()
     meta_path = DEPLOY_DIR / "kernel-metadata.json"
-    meta_path.write_text(json.dumps(metadata, indent=2))
+    meta_path.write_text(json.dumps(build_metadata(), indent=2), encoding="utf-8")
     print(f"Metadata saved: {meta_path}")
 
     if args.push:
         print("Pushing to Kaggle...")
         result = subprocess.run(
             ["kaggle", "kernels", "push", "-p", str(DEPLOY_DIR)],
-            capture_output=True, text=True
+            capture_output=True, text=True,
         )
         print(result.stdout)
         if result.stderr:
@@ -472,12 +386,10 @@ def main() -> int:
             return 1
 
     if args.status:
-        print("Checking kernel status...")
-        subprocess.run(["kaggle", "kernels", "status", "sofiya009/lora-nuke-faiz-juv"])
+        subprocess.run(["kaggle", "kernels", "status", KERNEL_ID])
 
     if args.output:
-        print("Downloading output...")
-        subprocess.run(["kaggle", "kernels", "output", "sofiya009/lora-nuke-faiz-juv", "-p", "/tmp/lora_output"])
+        subprocess.run(["kaggle", "kernels", "output", KERNEL_ID, "-p", "/tmp/lora_output"])
 
     return 0
 

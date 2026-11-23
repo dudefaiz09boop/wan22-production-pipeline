@@ -1,0 +1,2 @@
+cd "C:\Users\FAIZ SAYYED\projects\wan22-production-pipeline"
+python scripts/prepare_training_data.py --images-ref-dir "C:\Users\FAIZ SAYYED\OneDrive\Desktop\Images REF" --startframes-dir "D:\AI Pipeline\startframes" --output-dir ./training_data --min-face-size 128 --max-faces-ref 3 --max-faces-startframe 2
