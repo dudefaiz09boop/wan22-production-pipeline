@@ -462,7 +462,11 @@ success "Start frames generated ($FRAME_COUNT)"
 log "Auditing start frame quality..."
 if ! uv run python scripts/audit_startframes.py --dir startframes --spec docs/beats.yaml; then
     warn "Some start frames have quality problems (see startframes/quality_report.json)."
-    warn "The render will still run; review the report if output looks wrong."
+    if [[ "${REPAIR_FRAMES:-true}" == "true" ]]; then
+        log "Regenerating failing frames with more candidates..."
+        uv run python scripts/repair_startframes.py --candidates 4 --gate 0.45 \
+            2>&1 | tail -12 || warn "Frame repair incomplete; continuing with current frames"
+    fi
 fi
 
 # ──────────────────────────────────────────────
