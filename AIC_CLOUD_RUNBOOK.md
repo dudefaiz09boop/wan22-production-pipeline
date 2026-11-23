@@ -137,6 +137,9 @@ COMFY_URL=http://127.0.0.1:8188
 COMFY_PORT=8188
 WAN_PRECISION=auto
 PARALLEL_DOWNLOADS=4
+LIPSYNC_ENGINE=s2v        # s2v | infinitetalk | off
+LIPSYNC_STEPS=6
+REPAIR_FRAMES=true
 PULL_HOST=             # optional: user@your-laptop
 DOWNLOAD_PORT=8000
 AUTO_SHUTDOWN=false
@@ -186,13 +189,14 @@ bash scripts/setup_aic_fast.sh
 | 7b | Frame quality audit + repair of failing frames | ~5–10 min |
 | 8 | **WAN 2.2 I2V render, 70 clips** | **~35–50 min** |
 | 9 | Face swap every 3rd frame | ~5–8 min |
+| 9b | **Lipsync (S2V, 44 narrated clips)** | **~15–25 min** |
 | 10a | Narration (Edge TTS, 44 speaking clips) | ~3–5 min |
 | 10b | Audio mux + final cut with continuous audio | ~5–8 min |
 | 10c | Package deliverable | ~2 min |
 | 11 | Publish results for download | ~5 s |
-| **Total** | | **~85–115 min** |
+| **Total** | | **~100–140 min** |
 
-Cost at ₹72.40/hr: **₹100–140**.
+Cost at ₹72.40/hr: **₹120–170**.
 
 ### Hard gates
 
@@ -224,10 +228,26 @@ The deliverable is **not silent**. Phase 10 does three things:
 Verified on a two-clip test: `final.mp4` 10.1 s, `mean_volume -22.0 dB`,
 `max_volume -5.1 dB` — real audio, not silence.
 
-**On lipsync:** the narration is timed to each clip, but mouth shapes are not
-driven by the audio. True phoneme-accurate lipsync needs a dedicated model
-(Wav2Lip, LatentSync, or MuseTalk) run as a post pass. The pipeline is
-structured so that pass can be added after phase 9 without touching the render.
+**On lipsync:** implemented. Phase 9b re-drives the mouth from the narration
+audio using Wan 2.2 S2V (default) or Wan 2.1 InfiniteTalk Multi.
+
+| Engine | Model | Speakers | Use when |
+|--------|-------|----------|----------|
+| `s2v` (default) | `wan2.2_s2v_14B_fp8_scaled` | 1 audio stream | one person speaking |
+| `infinitetalk` | `Wan2_1-InfiniteTalk-Multi_fp8_e4m3fn_scaled_KJ` | 2 streams + masks | both characters speak in frame |
+
+Set `LIPSYNC_ENGINE=infinitetalk` in `.env` for two-speaker clips, or
+`LIPSYNC_ENGINE=off` to skip the pass. `LIPSYNC_STEPS` defaults to 6.
+
+The node chain is verified against ComfyUI core, not guessed:
+
+```
+AudioEncoderLoader -> AudioEncoderEncode -> WanSoundImageToVideo
+AudioEncoderLoader -> AudioEncoderEncode -> WanInfiniteTalkToVideo
+```
+
+Only clips with narration are re-driven (44 of 70); the rest pass through
+untouched, and a single clip failure never aborts the run.
 
 ### Start frame quality
 
