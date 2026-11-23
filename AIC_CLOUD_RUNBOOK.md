@@ -137,7 +137,7 @@ COMFY_URL=http://127.0.0.1:8188
 COMFY_PORT=8188
 WAN_PRECISION=auto
 PARALLEL_DOWNLOADS=4
-LIPSYNC_ENGINE=s2v        # s2v | infinitetalk | off
+LIPSYNC_ENGINE=infinitetalk   # infinitetalk | s2v | off
 LIPSYNC_STEPS=6
 REPAIR_FRAMES=true
 PULL_HOST=             # optional: user@your-laptop
@@ -189,7 +189,7 @@ bash scripts/setup_aic_fast.sh
 | 7b | Frame quality audit + repair of failing frames | ~5–10 min |
 | 8 | **WAN 2.2 I2V render, 70 clips** | **~35–50 min** |
 | 9 | Face swap every 3rd frame | ~5–8 min |
-| 9b | **Lipsync (S2V, 44 narrated clips)** | **~15–25 min** |
+| 9b | **Lipsync (InfiniteTalk, 44 narrated clips)** | **~20–30 min** |
 | 10a | Narration (Edge TTS, 44 speaking clips) | ~3–5 min |
 | 10b | Audio mux + final cut with continuous audio | ~5–8 min |
 | 10c | Package deliverable | ~2 min |
@@ -228,23 +228,28 @@ The deliverable is **not silent**. Phase 10 does three things:
 Verified on a two-clip test: `final.mp4` 10.1 s, `mean_volume -22.0 dB`,
 `max_volume -5.1 dB` — real audio, not silence.
 
-**On lipsync:** implemented. Phase 9b re-drives the mouth from the narration
-audio using Wan 2.2 S2V (default) or Wan 2.1 InfiniteTalk Multi.
+**On lipsync:** implemented, defaulting to **InfiniteTalk** — the better engine
+for this project because every shot names both characters.
 
-| Engine | Model | Speakers | Use when |
-|--------|-------|----------|----------|
-| `s2v` (default) | `wan2.2_s2v_14B_fp8_scaled` | 1 audio stream | one person speaking |
-| `infinitetalk` | `Wan2_1-InfiniteTalk-Multi_fp8_e4m3fn_scaled_KJ` | 2 streams + masks | both characters speak in frame |
+| Engine | Base model | Patch | Speakers |
+|--------|-----------|-------|----------|
+| **`infinitetalk`** (default) | `wan2.1_i2v_480p_14B_fp8_scaled` | `Wan2_1-InfiniteTalk-Multi_fp8_e4m3fn_scaled_KJ` | **2 streams + per-speaker masks** |
+| `s2v` | `wan2.2_s2v_14B_fp8_scaled` | — | 1 stream |
 
-Set `LIPSYNC_ENGINE=infinitetalk` in `.env` for two-speaker clips, or
-`LIPSYNC_ENGINE=off` to skip the pass. `LIPSYNC_STEPS` defaults to 6.
+Set `LIPSYNC_ENGINE=s2v` for the cheaper single-speaker path, or `off` to skip.
 
-The node chain is verified against ComfyUI core, not guessed:
+The node chain is verified against ComfyUI source, not guessed:
 
 ```
-AudioEncoderLoader -> AudioEncoderEncode -> WanSoundImageToVideo
-AudioEncoderLoader -> AudioEncoderEncode -> WanInfiniteTalkToVideo
+UnetLoader(wan2.1_i2v_480p_14B_fp8_scaled)
+ModelPatchLoader(Wan2_1-InfiniteTalk-Multi_fp8_e4m3fn_scaled_KJ)
+  -> WanInfiniteTalkToVideo -> KSampler -> VAEDecode
 ```
+
+`model_patch` is **not** a diffusion model. `WanInfiniteTalkToVideo` calls
+`project_audio_features(model_patch.model.audio_proj, ...)`, so it needs the
+InfiniteTalk patch object that `ModelPatchLoader` builds when it detects
+`audio_proj.proj1.weight`.
 
 Only clips with narration are re-driven (44 of 70); the rest pass through
 untouched, and a single clip failure never aborts the run.
