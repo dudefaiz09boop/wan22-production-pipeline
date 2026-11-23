@@ -49,7 +49,7 @@ From the live AIC Cloud list, ranked for this pipeline:
 
 | GPU | VRAM | Price | Precision | Verdict |
 |-----|------|-------|-----------|---------|
-| **RTX A6000** | 45 GB | ₹81.02/hr | **FP16** | **Best value for full quality** |
+| **RTX A6000** | 45–48 GB | ₹81–95/hr | **FP16** | **Best value for full quality** |
 | RTX 6000 Ada | 48 GB | ₹120.40/hr | FP16 | Faster, 2× the price |
 | RTX PRO 5000 | 48 GB | ₹120.67/hr | FP16 | Same tier as 6000 Ada |
 | RTX 4090 | 48 GB | ₹73.60/hr | FP16 | Good, but only 267 GB max disk |
@@ -57,7 +57,8 @@ From the live AIC Cloud list, ranked for this pipeline:
 | A100 SXM4 | 80 GB | ₹94.00/hr | FP16 | **Avoid: only 29 GB disk** |
 | H100 SXM | 80 GB | ₹408.20/hr | FP16 | Overkill |
 
-**Recommendation: RTX A6000 at ₹81.02/hr.**
+**Recommendation: RTX A6000 at ₹81–95/hr.** Pick whichever listing is available;
+both select FP16. The 48 GB listing gives 4 GB more headroom.
 
 Why not the A100? Its host allows only **29 GB** of disk. The FP16 model pair
 alone is 53 GB, so it cannot hold the weights. Disk is the binding constraint,
@@ -66,25 +67,28 @@ not VRAM.
 ### Your proposed instance — verdict
 
 ```
-RTX A6000 · 45 GB VRAM · 48 vCPU · 71 GB RAM · 200 GB disk · PyTorch · Delaware US
-₹81.02/hr
+RTX A6000 · 48 GB VRAM · 32 vCPU · 54 GB RAM · 200 GB disk · PyTorch · Romania RO
+₹95.29/hr
 ```
 
 **This is good enough. Deploy it.**
 
 | Requirement | Needed | Yours | Verdict |
 |-------------|--------|-------|---------|
-| VRAM (FP16) | **44 GB** | **45 GB** | ✅ 1 GB spare |
+| VRAM (FP16) | **44 GB** | **48 GB** | ✅ 4 GB spare |
 | Disk | 115.5 GB | 200 GB | ✅ 84 GB spare |
-| RAM | 32 GB | 71 GB | ✅ |
-| vCPU | 8 | 48 | ✅ |
+| RAM | 32 GB | 54 GB | ✅ |
+| vCPU | 8 | 32 | ✅ |
 | Image | PyTorch | PyTorch | ✅ |
-| Bandwidth | any | — | ✅ |
 
-**Note on the 45 GB figure.** AIC lists the A6000 as 45 GB; the card reports
-46068 MiB, which is 44 GB after integer division. The precision selector now
-uses a **44 GB** FP16 threshold, not 48, so this instance correctly selects
-FP16. With the old 48 GB threshold it would have silently fallen back to FP8.
+This listing reports **48 GB**, which is better than the 45 GB Delaware
+listing — 4 GB of headroom instead of 1 GB. Both select FP16.
+
+**Note on the VRAM figure.** AIC listings vary between 45 and 48 GB for the
+same card; the hardware reports 46068 MiB, which is 44 GB after integer
+division. The precision selector uses a **44 GB** FP16 threshold, so either
+listing selects FP16. With the old 48 GB threshold the 45 GB listing would
+have silently fallen back to FP8.
 
 FP16 fits because ComfyUI swaps the HIGH and LOW UNETs — only one 26.62 GB
 UNET is resident at a time, plus the 6.27 GB text encoder, the VAE and
@@ -139,7 +143,7 @@ the first minute is normal.
 ## 3b. Exact steps after adding funds
 
 **Step 1 — Add funds.** Dashboard → Wallet → Top up. You need at least
-**₹200** to cover the first hours; ₹400 is safer for a full run with margin.
+**₹300** to cover the first hours; ₹500 is safer for a full run with margin.
 
 **Step 2 — Deploy.** On the launch page:
 
@@ -153,13 +157,30 @@ the first minute is normal.
 
 Click **Deploy**. The first hour is charged immediately.
 
-**Step 3 — Wait, then connect.** Wait 90–120 s, then:
+**Step 3 — Wait, then connect.** AIC Cloud states SSH takes **60–120 seconds**
+to become ready after deploy. "Connection refused" or "permission denied" in
+the first minute is normal and clears on its own. Wait 90 s, then:
 
 ```powershell
 ssh root@<instance-ip>
 ```
 
-The IP is on the instance card in the dashboard.
+**Where to find the terminal access.** Three options, all from the dashboard:
+
+1. **Your own terminal (recommended).** Dashboard → **Cloud GPU** → your
+   instance card. It shows the **IP address** and the exact `ssh` command to
+   copy. On Windows open **PowerShell** or **Windows Terminal** and paste it.
+   You log in as `root`.
+2. **Browser Console (fallback).** On the instance page there is a **Console**
+   button. It opens a web terminal in the browser — use this if your network
+   blocks outbound SSH (office/college firewalls often do).
+3. **Jupyter.** The PyTorch image ships Jupyter. Open it from the instance
+   card and use **File → New → Terminal** for a shell.
+
+**Note on the SSH port.** AIC Cloud VPS docs say the SSH port is not 22 but a
+higher assigned number. GPU instances normally use 22. If `ssh root@<ip>`
+fails, check the instance card for an explicit port and use
+`ssh root@<ip> -p <port>`.
 
 **Step 4 — Clone and configure.**
 
@@ -194,9 +215,10 @@ scp "C:\Users\FAIZ SAYYED\projects\wan22-production-pipeline\loras\juv_lora.safe
 cd /workspace/wan22-production-pipeline
 uv run python scripts/check_credentials.py
 uv run python scripts/disk_budget.py
+uv run python scripts/auto_model_selector.py
 ```
 
-Expect `8/8 checks passed` and `92.41 GB TOTAL`.
+Expect `8/8 checks passed`, `92.41 GB TOTAL`, and `fp16`.
 
 **Step 7 — Run.**
 
