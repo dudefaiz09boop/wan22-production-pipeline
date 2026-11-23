@@ -60,19 +60,57 @@ From the live AIC Cloud list, ranked for this pipeline:
 **Recommendation: RTX A6000 48 GB at ₹72.40/hr.**
 
 Why not the A100? Its host allows only **29 GB** of disk. The FP16 model pair
-alone is 57 GB, so it cannot hold the weights. Disk is the binding constraint,
+alone is 53 GB, so it cannot hold the weights. Disk is the binding constraint,
 not VRAM.
+
+### Your proposed instance — verdict
+
+```
+RTX A6000 · 48 GB VRAM · 28 vCPU · 55 GB RAM · 200 GB disk · PyTorch · UK
+```
+
+**This is good enough. Deploy it.** Every number clears the requirement:
+
+| Requirement | Needed | Yours | Verdict |
+|-------------|--------|-------|---------|
+| VRAM (FP16) | 48 GB | 48 GB | ✅ exactly fits |
+| Disk | 115 GB | 200 GB | ✅ 85 GB spare |
+| RAM | 32 GB | 55 GB | ✅ |
+| vCPU | 8 | 28 | ✅ |
+| Image | PyTorch | PyTorch | ✅ |
+| Location | any | UK | ✅ (bandwidth 861↓/915↑ Mbps) |
+
+The 200 GB disk is the right call — it leaves room for the FP16 pair, the
+lipsync models, three render passes, and the deliverable zip without ever
+touching a cleanup step.
 
 ### Disk sizing
 
-| Precision | Models | + ComfyUI + outputs | Minimum disk |
-|-----------|--------|---------------------|--------------|
-| FP16 | 57 GB | ~25 GB | **100 GB** |
-| FP8 | 29 GB | ~25 GB | **75 GB** |
-| GGUF/FP8 fallback | 29 GB | ~25 GB | **75 GB** |
+Measured with `scripts/disk_budget.py` (real sizes from the Hugging Face API):
 
-Set **Disk Size = 150 GB** on the A6000 (max 181 GB). Storage bills 24×7 even
-when the GPU is stopped, so destroy the instance when you are done.
+| Component | Size |
+|-----------|------|
+| Wan 2.2 I2V high fp16 | 26.62 GB |
+| Wan 2.2 I2V low fp16 | 26.62 GB |
+| UMT5 XXL fp8 scaled | 6.27 GB |
+| Wan 2.1 VAE | 0.24 GB |
+| Wan 2.1 I2V 480p fp8 (lipsync) | 15.27 GB |
+| InfiniteTalk Multi patch | 2.53 GB |
+| wav2vec2 audio encoder | 0.59 GB |
+| Juggernaut XL v9 (stills) | 7.11 GB |
+| LoRAs (8 files) | 2.43 GB |
+| inswapper_128.onnx | 0.52 GB |
+| startframes + references | 0.06 GB |
+| renders (3 passes × 70 clips) | 1.23 GB |
+| narration audio | 0.04 GB |
+| final output + zip | 0.39 GB |
+| ComfyUI + custom nodes + venv | 3.00 GB |
+| **Total** | **92.41 GB** |
+| **With 25% headroom** | **115.51 GB** |
+
+**200 GB is comfortable. 150 GB also works. Below 120 GB is risky.**
+
+For FP8 instead of FP16, subtract ~26.6 GB → **~66 GB total, ~82 GB with headroom.**
 
 ---
 
@@ -80,7 +118,7 @@ when the GPU is stopped, so destroy the instance when you are done.
 
 1. Select **RTX A6000**.
 2. **Instance Name**: `gpu-wan22`
-3. **Disk Size**: `150`
+3. **Disk Size**: `200`
 4. **SSH public key**: paste from §1
 5. **Image**: `PyTorch`
 6. Click **Deploy**.
@@ -89,6 +127,90 @@ The first hour is charged immediately and is non-refundable.
 
 **Wait 90–120 seconds** before your first SSH attempt. "Connection refused" in
 the first minute is normal.
+
+---
+
+## 3b. Exact steps after adding funds
+
+**Step 1 — Add funds.** Dashboard → Wallet → Top up. You need at least
+**₹200** to cover the first hours; ₹400 is safer for a full run with margin.
+
+**Step 2 — Deploy.** On the launch page:
+
+| Field | Value |
+|-------|-------|
+| GPU | RTX A6000 |
+| Instance Name | `gpu-wan22` |
+| Disk Size | `200` |
+| SSH public key | paste your `id_rsa.pub` |
+| Image | **PyTorch** |
+
+Click **Deploy**. The first hour is charged immediately.
+
+**Step 3 — Wait, then connect.** Wait 90–120 s, then:
+
+```powershell
+ssh root@<instance-ip>
+```
+
+The IP is on the instance card in the dashboard.
+
+**Step 4 — Clone and configure.**
+
+```bash
+cd /workspace
+git clone https://github.com/dudefaiz09boop/wan22-production-pipeline.git
+cd wan22-production-pipeline
+cp .env.example .env
+nano .env
+```
+
+Fill in exactly these three values, leave the rest as-is:
+
+```ini
+HF_TOKEN=hf_...
+CIVITAI_API_KEY=...
+AIC_API_KEY=...
+```
+
+Save with `Ctrl+O`, `Enter`, then `Ctrl+X`.
+
+**Step 5 — Copy the two trained LoRAs** from your laptop (new terminal):
+
+```powershell
+scp "C:\Users\FAIZ SAYYED\projects\wan22-production-pipeline\loras\faiz_lora.safetensors" root@<ip>:/workspace/wan22-production-pipeline/loras/
+scp "C:\Users\FAIZ SAYYED\projects\wan22-production-pipeline\loras\juv_lora.safetensors"  root@<ip>:/workspace/wan22-production-pipeline/loras/
+```
+
+**Step 6 — Verify before spending GPU time.**
+
+```bash
+cd /workspace/wan22-production-pipeline
+uv run python scripts/check_credentials.py
+uv run python scripts/disk_budget.py
+```
+
+Expect `8/8 checks passed` and `92.41 GB TOTAL`.
+
+**Step 7 — Run.**
+
+```bash
+bash scripts/setup_aic_fast.sh 2>&1 | tee /tmp/production.log
+```
+
+**Step 8 — Pull results** (from your laptop, before stopping):
+
+```powershell
+python scripts/pull_results.py --http http://<ip>:8000
+```
+
+**Step 9 — Stop billing.**
+
+```bash
+shutdown -h now
+```
+
+Then in the dashboard: **Destroy** (not just Stop) to end the 24×7 disk charge.
 
 ---
 
