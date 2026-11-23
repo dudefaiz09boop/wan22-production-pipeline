@@ -30,6 +30,13 @@ CHUNK = 8 * 1024 * 1024
 TIMEOUT = 300
 RETRIES = 4
 
+# Civitai sits behind Cloudflare, which rejects the default Python user agent
+# with "error code: 1010". A browser user agent is required.
+BROWSER_UA = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+)
+
 
 def load_registry(path: Path) -> dict:
     if not path.is_file():
@@ -65,7 +72,9 @@ def civitai_entries(registry: dict) -> dict[str, dict]:
 
 
 def api_get(path: str, token: str | None) -> dict:
-    headers = {"Authorization": f"Bearer {token}"} if token else {}
+    headers = {"User-Agent": BROWSER_UA, "Accept": "application/json"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
     last_error = None
     for attempt in range(RETRIES):
         try:
@@ -108,6 +117,10 @@ def resolve_download(model_id: int, version_id: int | None, token: str | None) -
     name = chosen.get("name")
     if not url or not name:
         raise SystemExit(f"incomplete file metadata for model {model_id}")
+    # Civitai requires the API token on the download URL itself.
+    if token and "token=" not in url:
+        separator = "&" if "?" in url else "?"
+        url = f"{url}{separator}token={token}"
     return url, name
 
 
@@ -128,7 +141,9 @@ def looks_like_safetensors(path: Path) -> bool:
 def download(url: str, dest: Path, token: str | None) -> bool:
     dest.parent.mkdir(parents=True, exist_ok=True)
     part = dest.with_suffix(dest.suffix + ".part")
-    headers = {"Authorization": f"Bearer {token}"} if token else {}
+    headers = {"User-Agent": BROWSER_UA}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
 
     resume = part.stat().st_size if part.exists() else 0
     if resume:
@@ -170,6 +185,33 @@ def _write(response, part: Path, mode: str) -> None:
     print(f"  wrote {total / 1024**2:.1f} MB")
 
 
+def load_env(path: Path = Path(".env")) -> None:
+    """Load .env into the environment without overriding existing values."""
+    if not path.is_file():
+        return
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        os.environ.setdefault(key.strip(), value.strip())
+
+
+def required_keys(spec_path: Path = Path("docs/beats.yaml")) -> set[str]:
+    """Return the LoRA keys the production spec actually declares."""
+    try:
+        import yaml
+        data = yaml.safe_load(spec_path.read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001 - fall back to the full registry
+        return set()
+    keys: set[str] = set()
+    for shot in (data or {}).get("shots") or []:
+        for key in shot.get("loras") or []:
+            if isinstance(key, str):
+                keys.add(key)
+    return keys
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Download anatomy LoRAs from Civitai")
     ap.add_argument("--registry", default=str(REGISTRY_PATH))
@@ -177,8 +219,14 @@ def main() -> int:
     ap.add_argument("--only", nargs="+", help="Only these registry keys")
     ap.add_argument("--check", action="store_true", help="Report status without downloading")
     ap.add_argument("--force", action="store_true", help="Re-download existing files")
+    ap.add_argument(
+        "--required-only",
+        action="store_true",
+        help="Only require the LoRAs declared in docs/beats.yaml",
+    )
     args = ap.parse_args()
 
+    load_env()
     token = os.environ.get("CIVITAI_API_KEY")
     if not token and not args.check:
         print("WARNING: CIVITAI_API_KEY is not set; downloads may be rate limited", file=sys.stderr)
@@ -187,6 +235,11 @@ def main() -> int:
     entries = civitai_entries(registry)
     if args.only:
         entries = {k: v for k, v in entries.items() if k in set(args.only)}
+    if args.required_only:
+        needed = required_keys()
+        if needed:
+            entries = {k: v for k, v in entries.items() if k in needed}
+            print(f"required by docs/beats.yaml: {sorted(needed)}")
 
     if not entries:
         print("no Civitai-backed LoRA entries found", file=sys.stderr)

@@ -264,10 +264,10 @@ phase "PHASE 4: LORAS"
 # 4a. Anatomy LoRAs. The beats declare penis_insert and vag_detail on
 # specific shots, so these must exist before ComfyUI runs.
 log "Checking anatomy LoRAs (Civitai)..."
-if ! uv run python scripts/download_anatomy_loras.py --dest "$MODEL_CACHE/loras"; then
+if ! uv run python scripts/download_anatomy_loras.py --dest "$MODEL_CACHE/loras" --required-only; then
     error "Anatomy LoRAs are missing and could not be downloaded."
     echo "Set CIVITAI_API_KEY in .env, or stage the files manually in $MODEL_CACHE/loras."
-    echo "Required: penis_insert_wan22_high/low, vag_detail_wan22_high/low"
+    echo "Required by docs/beats.yaml: penis_insert and vag_detail (high + low)."
     exit 1
 fi
 success "Anatomy LoRAs present"
@@ -499,11 +499,22 @@ SWAPPER="$MODEL_CACHE/insightface/inswapper_128.onnx"
 if [[ ! -f "$SWAPPER" ]]; then
     log "Downloading InsightFace inswapper model..."
     mkdir -p "$(dirname "$SWAPPER")"
-    if curl -fL --retry 3 -o "$SWAPPER.part" \
-        "https://huggingface.co/deepinsight/inswapper/resolve/main/inswapper_128.onnx"; then
-        mv "$SWAPPER.part" "$SWAPPER"
-    else
+    # deepinsight/inswapper is gated (403); these mirrors serve the same file.
+    SWAPPER_URLS=(
+        "https://huggingface.co/datasets/Gourieff/ReActor/resolve/main/models/inswapper_128.onnx"
+        "https://huggingface.co/ezioruan/inswapper_128.onnx/resolve/main/inswapper_128.onnx"
+    )
+    downloaded=false
+    for url in "${SWAPPER_URLS[@]}"; do
+        if curl -fL --retry 3 -H "Authorization: Bearer $HF_TOKEN" \
+            -o "$SWAPPER.part" "$url"; then
+            mv "$SWAPPER.part" "$SWAPPER"
+            downloaded=true
+            break
+        fi
         rm -f "$SWAPPER.part"
+    done
+    if [[ "$downloaded" != true ]]; then
         warn "Could not download inswapper_128.onnx - skipping face swap"
     fi
 fi

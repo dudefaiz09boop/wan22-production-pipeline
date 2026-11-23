@@ -84,50 +84,72 @@ def get_face_embedding(app: FaceAnalysis, image_path: Path) -> Optional[np.ndarr
 
 
 def load_swapper_model(model_path: Path):
-    """Load InsightFace swapper model (inswapper_128.onnx)."""
+    """Load the InsightFace inswapper ONNX model."""
     import onnxruntime as ort
-    session = ort.InferenceSession(str(model_path), providers=["CUDAExecutionProvider", "CPUExecutionProvider"])
-    return session
+    providers = ["CUDAExecutionProvider", "CPUExecutionProvider"]
+    return ort.InferenceSession(str(model_path), providers=providers)
 
 
-def swap_face_insightface(
+def _cosine(a: np.ndarray, b: np.ndarray) -> float:
+    return float(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b) + 1e-9))
+
+
+def swap_faces_in_frame(
     app: FaceAnalysis,
-    swapper_session,
+    swapper,
     frame: np.ndarray,
-    target_embedding: np.ndarray,
-    source_embedding: np.ndarray,
-) -> np.ndarray:
-    """Swap face in frame using InsightFace swapper."""
+    ref_faces: dict[str, object],
+    characters: list[str],
+    similarity_threshold: float = 0.40,
+) -> tuple[np.ndarray, dict[str, float]]:
+    """Swap every detected face toward the best-matching character reference.
+
+    Faces are assigned to characters by embedding similarity, so a frame with
+    both characters gets both swapped. A face is only replaced when it is
+    closer to a reference than the threshold, which keeps bystanders intact.
+    """
     faces = app.get(frame)
     if not faces:
-        return frame
+        return frame, {}
 
-    result = frame.copy()
+    result = frame
+    scores: dict[str, float] = {}
+
     for face in faces:
-        # Compute similarity with target embedding
-        sim = np.dot(face.embedding, target_embedding) / (
-            np.linalg.norm(face.embedding) * np.linalg.norm(target_embedding)
-        )
-        # Only swap if similarity is above threshold
-        if sim > 0.40:
-            # Prepare face for swapper
-            # The swapper expects aligned face crops
-            # This is a simplified version - full implementation needs face alignment
-            pass
-    return result
+        best_char = None
+        best_score = 0.0
+        for char in characters:
+            ref = ref_faces.get(char)
+            if ref is None:
+                continue
+            score = _cosine(face.normed_embedding, ref.normed_embedding)
+            if score > best_score:
+                best_score = score
+                best_char = char
+
+        if best_char is None or best_score < similarity_threshold:
+            continue
+
+        try:
+            result = swapper.get(result, face, ref_faces[best_char], paste_back=True)
+            scores[best_char] = max(scores.get(best_char, 0.0), best_score)
+        except Exception as error:  # noqa: BLE001 - keep the frame on failure
+            print(f"    swap failed for {best_char}: {error}")
+
+    return result, scores
 
 
 def process_video(
     input_path: Path,
     output_path: Path,
     app: FaceAnalysis,
-    swapper_session,
-    ref_embeddings: dict[str, np.ndarray],
+    swapper,
+    ref_faces: dict[str, object],
     characters: list[str],
     swap_every_n: int = 3,
     similarity_threshold: float = 0.40,
 ) -> bool:
-    """Process video: face swap every N frames."""
+    """Process a video, swapping faces every N frames."""
     print(f"  Processing: {input_path.name}")
 
     cap = cv2.VideoCapture(str(input_path))
@@ -135,34 +157,34 @@ def process_video(
         print(f"  ✗ Could not open video: {input_path}")
         return False
 
-    fps = cap.get(cv2.CAP_PROP_FPS)
+    fps = cap.get(cv2.CAP_PROP_FPS) or 16.0
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
     print(f"  Video: {width}x{height} @ {fps:.1f}fps, {total_frames} frames")
 
-    # Setup output writer
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
     out = cv2.VideoWriter(str(output_path), fourcc, fps, (width, height))
 
     frame_idx = 0
-    swapped_count = 0
+    swapped_frames = 0
+    per_char: dict[str, int] = {char: 0 for char in characters}
 
     while True:
         ret, frame = cap.read()
         if not ret:
             break
 
-        # Swap every N frames
         if frame_idx % swap_every_n == 0:
-            # For each character, try to swap
-            for char in characters:
-                if char in ref_embeddings:
-                    # In production, use the swapper model here
-                    # For now, just pass through
-                    pass
-            swapped_count += 1
+            frame, scores = swap_faces_in_frame(
+                app, swapper, frame, ref_faces, characters, similarity_threshold
+            )
+            if scores:
+                swapped_frames += 1
+                for char in scores:
+                    per_char[char] += 1
 
         out.write(frame)
         frame_idx += 1
@@ -173,7 +195,10 @@ def process_video(
     cap.release()
     out.release()
 
-    print(f"  ✓ Done: {swapped_count} frames swapped out of {total_frames}")
+    print(
+        f"  ✓ Done: {swapped_frames}/{total_frames} frames swapped "
+        f"({', '.join(f'{k}={v}' for k, v in per_char.items())})"
+    )
     return True
 
 
@@ -205,17 +230,30 @@ def main() -> int:
         print("  Download from: https://huggingface.co/deepinsight/inswapper/resolve/main/inswapper_128.onnx")
         swapper_session = None
 
-    # Load reference embeddings
-    ref_embeddings = {}
+    # Load reference faces (the swapper needs the detected Face object, not
+    # just its embedding).
+    ref_faces = {}
     for char, ref_stem in CHARACTER_REFS.items():
         full_path = resolve_ref(Path(args.references), Path(ref_stem).name)
-        if full_path is not None:
-            emb = get_face_embedding(app, full_path)
-            if emb is not None:
-                ref_embeddings[char] = emb
-                print(f"  [OK] Loaded reference for {char}: {full_path.name}")
-        else:
+        if full_path is None:
             print(f"  [FAIL] Reference not found for {char} in {args.references}")
+            continue
+        img = cv2.imread(str(full_path))
+        if img is None:
+            print(f"  [FAIL] Could not read reference: {full_path}")
+            continue
+        faces = app.get(img)
+        if not faces:
+            print(f"  [FAIL] No face detected in reference: {full_path.name}")
+            continue
+        ref_faces[char] = max(
+            faces, key=lambda f: (f.bbox[2] - f.bbox[0]) * (f.bbox[3] - f.bbox[1])
+        )
+        print(f"  [OK] Loaded reference for {char}: {full_path.name}")
+
+    if swapper_session is None or not ref_faces:
+        print("  [FAIL] Face swap cannot run without the swapper model and references.")
+        return 1
 
     # Determine input files
     if input_path.is_file():
@@ -242,7 +280,7 @@ def main() -> int:
                 out_file,
                 app,
                 swapper_session,
-                ref_embeddings,
+                ref_faces,
                 characters,
                 args.swap_every,
                 args.threshold,
