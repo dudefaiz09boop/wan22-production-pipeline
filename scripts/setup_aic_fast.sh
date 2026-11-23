@@ -83,6 +83,18 @@ fi
 success "HF token present"
 [[ -n "$KAGGLE_KEY" ]] && success "Kaggle key present" || warn "No KAGGLE_KEY - trained LoRAs must already be published"
 
+# Check required tools. AIC's minimized Ubuntu image omits several of these.
+MISSING_TOOLS=()
+for tool in jq bc curl aria2c ffmpeg git; do
+    command -v "$tool" &> /dev/null || MISSING_TOOLS+=("$tool")
+done
+if [[ ${#MISSING_TOOLS[@]} -gt 0 ]]; then
+    error "Missing tools: ${MISSING_TOOLS[*]}"
+    echo "Install with: apt-get update && apt-get install -y ${MISSING_TOOLS[*]}"
+    exit 1
+fi
+success "All required tools present"
+
 # Check GPU
 if ! command -v nvidia-smi &> /dev/null; then
     error "nvidia-smi not found - not a GPU instance?"
@@ -155,6 +167,7 @@ log "Installing system packages..."
 apt-get install -y -qq \
     git aria2 ffmpeg libgl1 libglib2.0-0 \
     python3 python3-venv python3-pip \
+    jq bc curl ca-certificates \
     2>/dev/null | tail -3
 
 # Wait for mkdir
