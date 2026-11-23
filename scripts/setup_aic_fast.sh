@@ -472,6 +472,10 @@ uv run python scripts/run_production.py \
     --server "http://127.0.0.1:$COMFYUI_PORT" \
     --force-precision "$PRECISION" \
     --hf-token "$HF_TOKEN" \
+    --skip-loras \
+    --skip-stills \
+    --skip-face-swap \
+    --skip-assemble \
     2>&1 | tee /tmp/render.log
 
 RENDER_EXIT=${PIPESTATUS[0]}
