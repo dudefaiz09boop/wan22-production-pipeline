@@ -8,16 +8,20 @@ This is a standalone, production-ready pipeline that merges the best of:
 
 ---
 
-## ⚡ Ultra-Fast Setup (NEW)
+## ⚡ One-Click Run
 
-**For AIC Cloud GPU instances - optimized for zero GPU waste:**
+**On a fresh AIC Cloud GPU instance, after SSH:**
 
 ```bash
-# On fresh AIC Cloud instance (after SSH)
-export HF_TOKEN="hf_your_token"
-export KAGGLE_KEY='{"username":"yourname","key":"your_key"}'
-curl -fsSL https://raw.githubusercontent.com/YOUR_USERNAME/wan22-production-pipeline/main/scripts/setup_aic_fast.sh | bash
+git clone https://github.com/faiz313560-spec/wan22-production-pipeline.git
+cd wan22-production-pipeline
+cp .env.example .env      # fill in HF_TOKEN (and KAGGLE_KEY if needed)
+bash scripts/setup_aic_fast.sh
 ```
+
+That single command does everything: installs dependencies, downloads models,
+starts ComfyUI, generates start frames, renders all 70 clips, face-swaps,
+assembles the deliverable, and publishes it for download.
 
 **Timeline (L40S 48GB):**
 - System + deps: ~90s
@@ -27,7 +31,39 @@ curl -fsSL https://raw.githubusercontent.com/YOUR_USERNAME/wan22-production-pipe
 - Face swap + assemble: ~5-8 min
 - **Total: ~45-60 min | Cost: ~₹42-56**
 
-See [`PREREQUISITES.md`](PREREQUISITES.md) for complete checklist.
+### Getting the videos back to your machine
+
+AIC Cloud GPU instances are created in the dashboard and expose **no GPU API**,
+so the instance cannot push to your laptop by itself. Two options:
+
+```bash
+# Option A (default): the instance serves results over HTTP
+python scripts/pull_results.py --http http://<instance-ip>:8000
+
+# Option B: set PULL_HOST in .env and the instance scp's results to you
+PULL_HOST=user@your-laptop
+```
+
+See [`PREREQUISITES.md`](PREREQUISITES.md) for the complete checklist.
+
+---
+
+## 🔑 Environment
+
+All configuration lives in `.env` (gitignored). Copy `.env.example` and fill it in.
+
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `HF_TOKEN` | ✅ | Model + base model downloads |
+| `KAGGLE_KEY` | optional | Only if LoRAs are not yet published |
+| `CIVITAI_API_KEY` | optional | Anatomy LoRA downloads |
+| `WAN_PRECISION` | optional | `auto` (default), `fp16`, `fp8`, `gguf_q8` |
+| `PULL_HOST` | optional | `user@host` to scp results automatically |
+| `AUTO_SHUTDOWN` | optional | `true` to stop the instance after rendering |
+
+**Note on AIC Cloud:** their API (`https://api.aiccloud.in`) covers VPS, email,
+domains and billing only — there are no GPU endpoints. GPU instances must be
+created in the dashboard, so provisioning cannot be automated end to end.
 
 ---
 
