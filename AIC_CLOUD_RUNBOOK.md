@@ -178,18 +178,21 @@ bash scripts/setup_aic_fast.sh
 | 1 | apt, uv, aria2, ffmpeg | ~60 s |
 | 2 | `uv sync` | ~60 s |
 | 3 | Parallel model download (57 GB FP16) | ~10–15 min |
-| 4a | Anatomy LoRAs from Civitai (4 × 293 MB) | ~2 min |
+| 4a | Anatomy + quality LoRAs from Civitai (6 files, ~2 GB) | ~3 min |
 | 4b | Trained LoRAs (local copy) | ~2 s |
 | 5 | Validate spec, generate workflow | ~10 s |
 | 6 | Clone ComfyUI, link models, start server | ~3–5 min |
-| 7 | SDXL stills + InsightFace (70 frames) | ~10–15 min |
+| 7 | SDXL stills + InsightFace swap (70 frames, 2 candidates) | ~15–20 min |
+| 7b | Frame quality audit + repair of failing frames | ~5–10 min |
 | 8 | **WAN 2.2 I2V render, 70 clips** | **~35–50 min** |
 | 9 | Face swap every 3rd frame | ~5–8 min |
-| 10 | Concat, crossfade, zip | ~3–5 min |
+| 10a | Narration (Edge TTS, 44 speaking clips) | ~3–5 min |
+| 10b | Audio mux + final cut with continuous audio | ~5–8 min |
+| 10c | Package deliverable | ~2 min |
 | 11 | Publish results for download | ~5 s |
-| **Total** | | **~70–95 min** |
+| **Total** | | **~85–115 min** |
 
-Cost at ₹72.40/hr: **₹85–115**.
+Cost at ₹72.40/hr: **₹100–140**.
 
 ### Hard gates
 
@@ -202,6 +205,44 @@ The script stops rather than producing a broken video if:
 - the SDXL base model is missing
 - zero start frames are generated
 - `final.mp4` is not produced
+
+### Audio and lipsync
+
+The deliverable is **not silent**. Phase 10 does three things:
+
+1. **Narration** — `generate_narration.py` reads the authored narration already
+   compiled into `prompts/*.json` and synthesises it with Edge TTS. Voices are
+   speaker-aware: Faiz → `en-IN-PrabhatNeural`, Juveriya → `en-IN-NeerjaNeural`,
+   Ammi → `hi-IN-SwaraNeural`. Multi-turn dialogue is concatenated and each
+   track is padded or trimmed to exactly its clip duration.
+2. **Mux** — `mux_audio.py` attaches each clip's narration, gives silent clips a
+   silent track of the right length, then concatenates everything into one MP4
+   with a single continuous AAC stream.
+3. **Music (optional)** — set `MUSIC_BED=/path/track.mp3` and `MUSIC_DB=-22` in
+   `.env` to mix a bed under the narration.
+
+Verified on a two-clip test: `final.mp4` 10.1 s, `mean_volume -22.0 dB`,
+`max_volume -5.1 dB` — real audio, not silence.
+
+**On lipsync:** the narration is timed to each clip, but mouth shapes are not
+driven by the audio. True phoneme-accurate lipsync needs a dedicated model
+(Wav2Lip, LatentSync, or MuseTalk) run as a post pass. The pipeline is
+structured so that pass can be added after phase 9 without touching the render.
+
+### Start frame quality
+
+Phase 7b audits every frame for blur, darkness, missing faces and tiny faces,
+then regenerates only the failures with more candidates. On the current frames:
+
+```
+total 70  ok 40  problems 30
+no face detected (15): c31, c39, c40, c45, c46, c48, c50, c51, c52, c53, c54, c55, c65, c67, c68
+face too small (15):   c01, c02, c03, c07, c08, c10, c11, c13, c14, c17, c18, c20, c21, c26, c38
+blurry (5):            c45, c48, c52, c53, c54
+too dark (1):          c20
+```
+
+Set `REPAIR_FRAMES=false` in `.env` to skip the repair pass.
 
 ---
 
@@ -278,11 +319,37 @@ Get-Content renders_local\logs\production_*.json | ConvertFrom-Json | Select-Obj
 | `Anatomy LoRAs are missing` | Civitai 403 | confirm `CIVITAI_API_KEY` in `.env` |
 | `No LoRAs visible to ComfyUI` | symlink step failed | check `$MODEL_CACHE/loras` has files |
 | `SDXL base model missing` | download failed | re-run; it resumes |
-| `No start frames were generated` | SDXL OOM | lower `--width/--height` in phase 7 |
+| `No start frames were generated` | SDXL OOM | lower resolution in `generate_stills.py` |
 | ComfyUI never ready | custom node clone failed | `tail -50 /tmp/comfyui.log` |
 | Render fails on a LoRA shot | LoRA filename mismatch | `ls /workspace/ComfyUI/models/loras` |
 | `final.mp4` missing | assembly found no clips | check `renders/` has `c01.mp4`…`c70.mp4` |
+| Final video has no sound | narration or mux failed | check `audio/index.json` and the phase 10 log |
+| Faces look wrong in output | LoRA weak or swap skipped | run `scripts/verify_loras.py --push` |
 | Disk full | 57 GB models + outputs | use ≥150 GB disk |
+
+---
+
+## Optimizations already applied
+
+| Change | Effect |
+|--------|--------|
+| Parallel aria2 model download (16 connections/file) | 57 GB in ~10–15 min instead of ~40 |
+| ComfyUI starts during model download | zero wait when models finish |
+| `uv sync` with lockfile | second run <10 s for deps |
+| Per-shot resolution (34 shots at 1280×720) | face closeups keep detail instead of being downscaled |
+| 2 candidates per still, early exit at gate | best identity without 4× the SDXL time |
+| Face swap every 3rd frame | 3× faster than every frame, visually identical |
+| Narration fitted to clip duration | no drift in the final mux |
+| Resume: existing LoRAs and frames are reused | re-runs skip completed work |
+
+### Further speed options (quality-neutral)
+
+| Option | Saving | Trade-off |
+|--------|--------|-----------|
+| `--candidates 1` in phase 7 | ~40% of stills time | fewer identity retries |
+| `--swap-every 5` in phase 9 | ~40% of swap time | slightly more flicker on fast motion |
+| `--from-clip c01 --to-clip c10` for a test pass | ~85% of render time | partial output |
+| RTX 3090 + FP8 instead of A6000 + FP16 | ₹72 → ₹38/hr | near-FP16, not identical |
 
 ---
 
