@@ -49,7 +49,14 @@ def _code_cell(text: str) -> dict:
     }
 
 
-def build_notebook() -> dict:
+def build_notebook(only: str = "all") -> dict:
+    """Build the training notebook.
+
+    only: 'all' trains every LoRA in one run; 'faiz', 'juv' or 'combined'
+    builds a single-LoRA notebook. Single-LoRA runs are the reliable path:
+    each gets its own Kaggle session, so one slow or failing LoRA cannot
+    take the others down with it.
+    """
     cells: list[dict] = []
 
     # 1. Environment
@@ -282,30 +289,31 @@ def build_notebook() -> dict:
         "assert smoke_ok, 'smoke test failed - see stderr above'",
     ])))
 
-    # 8. Train faiz
-    cells.append(_code_cell("\n".join([
-        "# 8. Train the Faiz LoRA (skipped if already produced)",
-        "faiz_ok = os.path.exists('/kaggle/working/faiz_lora.safetensors') or train('faiz', FAIZ_DIR)",
-        "print('faiz_ok =', faiz_ok)",
-    ])))
+    # 8-10. Training cells, filtered by the requested target
+    if only in ("all", "faiz"):
+        cells.append(_code_cell("\n".join([
+            "# 8. Train the Faiz LoRA (skipped if already produced)",
+            "faiz_ok = os.path.exists('/kaggle/working/faiz_lora.safetensors') or train('faiz', FAIZ_DIR)",
+            "print('faiz_ok =', faiz_ok)",
+        ])))
 
-    # 9. Train juv
-    cells.append(_code_cell("\n".join([
-        "# 9. Train the Juveriya LoRA (skipped if already produced)",
-        "juv_ok = os.path.exists('/kaggle/working/juv_lora.safetensors') or train('juv', JUV_DIR)",
-        "print('juv_ok =', juv_ok)",
-    ])))
+    if only in ("all", "juv"):
+        cells.append(_code_cell("\n".join([
+            "# 9. Train the Juveriya LoRA (skipped if already produced)",
+            "juv_ok = os.path.exists('/kaggle/working/juv_lora.safetensors') or train('juv', JUV_DIR)",
+            "print('juv_ok =', juv_ok)",
+        ])))
 
-    # 10. Train combined
-    cells.append(_code_cell("\n".join([
-        "# 10. Train the combined LoRA (skipped if already produced)",
-        "combined_ok = os.path.exists('/kaggle/working/faiz_juv_lora.safetensors') or train('faiz_juv', COMBINED_DIR)",
-        "print('combined_ok =', combined_ok)",
-    ])))
+    if only in ("all", "combined"):
+        cells.append(_code_cell("\n".join([
+            "# 10. Train the combined LoRA (skipped if already produced)",
+            "combined_ok = os.path.exists('/kaggle/working/faiz_juv_lora.safetensors') or train('faiz_juv', COMBINED_DIR)",
+            "print('combined_ok =', combined_ok)",
+        ])))
 
     # 11. Package
     cells.append(_code_cell("\n".join([
-        "# 11. Package the LoRAs",
+        "# 11. Package whatever LoRAs exist",
         "import os, zipfile",
         "",
         "LORA_FILES = [",
@@ -315,16 +323,19 @@ def build_notebook() -> dict:
         "]",
         "ZIP_PATH = '/kaggle/working/loras.zip'",
         "",
+        "packed = []",
         "with zipfile.ZipFile(ZIP_PATH, 'w', zipfile.ZIP_DEFLATED) as zf:",
         "    for path in LORA_FILES:",
         "        if os.path.exists(path):",
         "            zf.write(path, os.path.basename(path))",
+        "            packed.append(os.path.basename(path))",
         "            print('added', os.path.basename(path), os.path.getsize(path), 'bytes')",
         "        else:",
         "            print('MISSING', path)",
         "",
         "print('zip size:', os.path.getsize(ZIP_PATH), 'bytes')",
-        "print('status: faiz=%s juv=%s combined=%s' % (faiz_ok, juv_ok, combined_ok))",
+        "print('packed:', packed)",
+        "assert packed, 'no LoRAs were produced - check the training output above'",
     ])))
 
     return {
@@ -338,10 +349,12 @@ def build_notebook() -> dict:
     }
 
 
-def build_metadata() -> dict:
+def build_metadata(only: str = "all") -> dict:
+    kernel_id = KERNEL_ID if only == "all" else f"{KERNEL_ID}-{only}"
+    title = KERNEL_TITLE if only == "all" else f"{KERNEL_TITLE} {only}"
     return {
-        "id": KERNEL_ID,
-        "title": KERNEL_TITLE,
+        "id": kernel_id,
+        "title": title,
         "code_file": "train_loras_kaggle.ipynb",
         "language": "python",
         "kernel_type": "notebook",
@@ -362,16 +375,23 @@ def main() -> int:
     ap.add_argument("--push", action="store_true", help="Push the kernel to Kaggle")
     ap.add_argument("--output", action="store_true", help="Download the kernel output")
     ap.add_argument("--status", action="store_true", help="Check the kernel status")
+    ap.add_argument(
+        "--only",
+        choices=["all", "faiz", "juv", "combined"],
+        default="all",
+        help="Train one LoRA in its own kernel (recommended) or all in one run",
+    )
     args = ap.parse_args()
 
-    notebook = build_notebook()
+    notebook = build_notebook(args.only)
     nb_path = DEPLOY_DIR / "train_loras_kaggle.ipynb"
     nb_path.write_text(json.dumps(notebook, indent=1), encoding="utf-8")
     print(f"Notebook saved: {nb_path}")
 
+    metadata = build_metadata(args.only)
     meta_path = DEPLOY_DIR / "kernel-metadata.json"
-    meta_path.write_text(json.dumps(build_metadata(), indent=2), encoding="utf-8")
-    print(f"Metadata saved: {meta_path}")
+    meta_path.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
+    print(f"Metadata saved: {meta_path} (kernel {metadata['id']})")
 
     if args.push:
         print("Pushing to Kaggle...")
@@ -386,10 +406,10 @@ def main() -> int:
             return 1
 
     if args.status:
-        subprocess.run(["kaggle", "kernels", "status", KERNEL_ID])
+        subprocess.run(["kaggle", "kernels", "status", metadata["id"]])
 
     if args.output:
-        subprocess.run(["kaggle", "kernels", "output", KERNEL_ID, "-p", "/tmp/lora_output"])
+        subprocess.run(["kaggle", "kernels", "output", metadata["id"], "-p", "/tmp/lora_output"])
 
     return 0
 
