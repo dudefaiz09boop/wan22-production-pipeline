@@ -18,7 +18,7 @@
 | Token | Source | Purpose | Required |
 |-------|--------|---------|----------|
 | **HF_TOKEN** | https://huggingface.co/settings/tokens | Download WAN 2.2 models from Comfy-Org | ✅ YES |
-| **KAGGLE_KEY** | https://www.kaggle.com/settings (API → Create New Token) | Download trained LoRAs from sofiya009/lora-nuke-faiz-juv | ✅ YES |
+| **KAGGLE_KEY** | https://www.kaggle.com/settings (API → Create New Token) | Download trained LoRAs + free LoRA training | ✅ YES |
 | **WANDB_KEY** | https://wandb.ai/authorize | Optional: Experiment tracking | ❌ Optional |
 
 **Token Format:**
@@ -35,7 +35,46 @@
   ```
 - [ ] **Repo must be public** OR add deploy key to AIC instance
 
-### 4. Trained LoRAs Ready on Kaggle
+### 4. LoRA Training (FREE on Kaggle) - DO THIS FIRST
+
+**Option A: Use Automated Pipeline (Recommended)**
+```bash
+# 1. Prepare training data locally (uses startframes + existing datasets)
+cd wan22-production-pipeline
+python scripts/prepare_training_data.py \
+    --startframes-dir ../../startframes \
+    --output-dir ./training_data \
+    --existing-datasets /path/to/lora-train-faiz /path/to/lora-train-juveriya
+
+# 2. Upload datasets to Kaggle (one-time)
+kaggle datasets create -p training_data/faiz -t "lora-train-faiz"
+kaggle datasets create -p training_data/juv -t "lora-train-juveriya"
+kaggle datasets create -p training_data/combined -t "lora-train-combined"
+kaggle datasets create -p ../../startframes -t "startframes-c01-c70"
+# Upload base model (Juggernaut XL v9)
+kaggle datasets create -p /path/to/Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors -t "wan22-nsfw-lightning-q8"
+
+# 3. Deploy & run training kernel (free T4, ~2-3 hrs)
+python scripts/train_loras_kaggle.py --push
+kaggle kernels output sofiya009/lora-nuke-faiz-juv -p /tmp/lora_output
+
+# 4. Publish LoRAs as dataset
+cd /tmp/lora_output
+cat > dataset-metadata.json << 'EOF'
+{
+  "id": "sofiya009/lora-nuke-faiz-juv",
+  "title": "LoRA Nuke: Faiz + Juveriya (SDXL)",
+  "subtitle": "Character LoRAs for Wan 2.2 pipeline",
+  "description": "3 LoRAs: faiz, juv, faiz_juv combined. Trained on SDXL with Kohya-ss.",
+  "isPrivate": true,
+  "keywords": ["lora", "sdxl", "character", "wan22"],
+  "licenses": [{"name": "CC0-1.0"}]
+}
+EOF
+kaggle datasets version -p /tmp/lora_output -m "Updated LoRAs with startframes faces"
+```
+
+**Option B: Manual Training (if you have existing LoRAs)**
 - [ ] **Training complete** on `sofiya009/lora-nuke-faiz-juv`
 - [ ] **Dataset published** with these files:
   - `faiz_lora.safetensors`
@@ -48,6 +87,12 @@ Place in `references/` folder before running:
 - [ ] `references/faiz_ref.jpg` - Clear face photo of Faiz
 - [ ] `references/juv_ref.jpg` - Clear face photo of Juveriya
 - **Requirements**: Front-facing, good lighting, single person, >512px
+
+### 6. Training Data Sources (for LoRA training)
+- [ ] **Existing character datasets** (optional but recommended):
+  - `lora-train-faiz`: 20-50 clean Faiz images
+  - `lora-train-juveriya`: 20-50 clean Juveriya images
+- [ ] **Startframes** (auto-used): `D:\AI Pipeline\startframes\c01-c70.png` - faces extracted automatically
 
 ---
 
