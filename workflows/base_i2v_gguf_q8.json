@@ -1,0 +1,181 @@
+{
+  "1": {
+    "class_type": "UnetLoaderGGUF",
+    "_meta": {
+      "title": "HIGH - GGUF_Q8"
+    },
+    "inputs": {
+      "unet_name": "Wan2_2-I2V-A14B-NSFW_fast_move-HIGH_Q8(lightning_edition)V2.gguf"
+    }
+  },
+  "2": {
+    "class_type": "UnetLoaderGGUF",
+    "_meta": {
+      "title": "LOW - GGUF_Q8"
+    },
+    "inputs": {
+      "unet_name": "Wan2_2-I2V-A14B-NSFW_fast_move-LOW_Q8(lightning_edition)V2.gguf"
+    }
+  },
+  "3": {
+    "class_type": "CLIPLoader",
+    "inputs": {
+      "clip_name": "umt5_xxl_fp8_e4m3fn.safetensors",
+      "type": "wan"
+    }
+  },
+  "4": {
+    "class_type": "VAELoader",
+    "inputs": {
+      "vae_name": "wan_2.1_vae.safetensors"
+    }
+  },
+  "5": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "startframes/c01.png",
+      "upload": "image"
+    }
+  },
+  "6": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "__todo__": "positive",
+      "text": "",
+      "clip": [
+        "3",
+        0
+      ]
+    }
+  },
+  "7": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "__todo__": "negative",
+      "text": "",
+      "clip": [
+        "3",
+        0
+      ]
+    }
+  },
+  "8": {
+    "class_type": "Wan22ImageToVideo",
+    "inputs": {
+      "width": 832,
+      "height": 480,
+      "length": 80,
+      "batch_size": 1,
+      "positive": [
+        "6",
+        0
+      ],
+      "negative": [
+        "7",
+        0
+      ],
+      "vae": [
+        "4",
+        0
+      ],
+      "start_image": [
+        "5",
+        0
+      ]
+    }
+  },
+  "9": {
+    "class_type": "KSamplerAdvanced",
+    "_meta": {
+      "title": "HIGH 2 steps"
+    },
+    "inputs": {
+      "add_noise": "enable",
+      "noise_seed": 0,
+      "steps": 2,
+      "cfg": 1.0,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "start_at_step": 0,
+      "end_at_step": 2,
+      "return_with_leftover_noise": "enable",
+      "model": [
+        "1",
+        0
+      ],
+      "positive": [
+        "8",
+        0
+      ],
+      "negative": [
+        "8",
+        1
+      ],
+      "latent_image": [
+        "8",
+        2
+      ]
+    }
+  },
+  "10": {
+    "class_type": "KSamplerAdvanced",
+    "_meta": {
+      "title": "LOW 3 steps"
+    },
+    "inputs": {
+      "add_noise": "disable",
+      "noise_seed": 0,
+      "steps": 5,
+      "cfg": 1.0,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "start_at_step": 2,
+      "end_at_step": 5,
+      "return_with_leftover_noise": "disable",
+      "model": [
+        "2",
+        0
+      ],
+      "positive": [
+        "8",
+        0
+      ],
+      "negative": [
+        "8",
+        1
+      ],
+      "latent_image": [
+        "9",
+        0
+      ]
+    }
+  },
+  "11": {
+    "class_type": "VAEDecode",
+    "inputs": {
+      "samples": [
+        "10",
+        0
+      ],
+      "vae": [
+        "4",
+        0
+      ]
+    }
+  },
+  "12": {
+    "class_type": "VHS_VideoCombine",
+    "inputs": {
+      "frame_rate": 16,
+      "loop_count": 0,
+      "filename_prefix": "wan22/",
+      "format": "video/h264-mp4",
+      "pingpong": false,
+      "save_output": true,
+      "images": [
+        "11",
+        0
+      ]
+    }
+  }
+}

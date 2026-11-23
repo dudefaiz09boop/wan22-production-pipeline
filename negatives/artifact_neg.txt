@@ -1,0 +1,10 @@
+low quality, blurry, out of focus, compression artifacts, banding, oversharpened halo, jpeg blocking
+watermark, subtitle, text overlay, logo, letterbox bars
+distorted anatomy, malformed hands, extra fingers, fused fingers, missing limb, melted joints
+distorted face, identity drift, face swap between frames, two heads, features sliding
+hair fusing with fabric, clothing changing between frames, prop drift, duplicate person
+ghosting, double exposure, frame jump, stutter, flicker, temporal noise, popping
+plastic skin, waxy texture, doll face, over-smoothed, uncanny
+floating prop, prop teleporting, arm through body, feet sliding, torso twist too far
+camera drift when static, unexplained zoom, horizon tilt, focus hunting, rolling shutter
+lip sync drift, mouth closed while speaking, dead eyes, no blink, frozen frame, slideshow

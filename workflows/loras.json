@@ -1,0 +1,101 @@
+{
+  "penis_insert": {
+    "high": "loras/penis_insert_wan22_high.safetensors",
+    "low": "loras/penis_insert_wan22_low.safetensors",
+    "w": 0.9,
+    "trigger": null,
+    "trigger_scope": null,
+    "source": {
+      "high": { "civitai_model": 2100959, "civitai_version": 2377035 },
+      "low": { "civitai_model": 2100959, "civitai_version": 2377244 }
+    }
+  },
+  "vag_detail": {
+    "high": "loras/vag_detail_wan22_high.safetensors",
+    "low": "loras/vag_detail_wan22_low.safetensors",
+    "w": 0.75,
+    "trigger": "Vagina",
+    "trigger_scope": "prompt_suffix",
+    "source": {
+      "high": { "civitai_model": 2109996, "civitai_version": 3034683 },
+      "low": { "civitai_model": 2109996, "civitai_version": 3034713 }
+    }
+  },
+  "oral_insert": {
+    "high": "loras/oral_insert_wan22_high.safetensors",
+    "low": "loras/oral_insert_wan22_low.safetensors",
+    "w": 0.85,
+    "trigger": null,
+    "trigger_scope": null,
+    "source": {
+      "civitai_model": 1874153,
+      "civitai_version": 2494821
+    }
+  },
+  "pov_finish": {
+    "high": null,
+    "low": "loras/pov_finish_wan22_low.safetensors",
+    "w": 0.8,
+    "trigger": null,
+    "trigger_scope": null,
+    "source": {
+      "civitai_model": 2031069,
+      "civitai_version": null
+    }
+  },
+  "nsfw_helper": {
+    "high": "loras/nsfw_helper_wan22_high.safetensors",
+    "low": null,
+    "w": 0.45,
+    "trigger": "nsfwsks",
+    "trigger_scope": "prompt_prefix",
+    "conflicts": ["vag_detail"],
+    "source": {
+      "civitai_model": 1307155,
+      "civitai_version": null
+    }
+  },
+  "orbit": {
+    "high": "loras/orbit_wan22_high.safetensors",
+    "low": "loras/orbit_wan22_low.safetensors",
+    "w": 1.0,
+    "trigger": "orbit 360",
+    "trigger_scope": "prompt_prefix",
+    "source": {
+      "huggingface_repo": "ostris/wan22_i2v_14b_orbit_shot_lora"
+    }
+  },
+  "faiz_trained": {
+    "high": "models/loras/trained/faiz_lora.safetensors",
+    "low": "models/loras/trained/faiz_lora.safetensors",
+    "w": 0.85,
+    "trigger": "faiz",
+    "trigger_scope": "prompt_prefix",
+    "source": {
+      "kaggle_dataset": "sofiya009/lora-nuke-faiz-juv",
+      "kaggle_file": "faiz_lora.safetensors"
+    }
+  },
+  "juv_trained": {
+    "high": "models/loras/trained/juv_lora.safetensors",
+    "low": "models/loras/trained/juv_lora.safetensors",
+    "w": 0.85,
+    "trigger": "juv",
+    "trigger_scope": "prompt_prefix",
+    "source": {
+      "kaggle_dataset": "sofiya009/lora-nuke-faiz-juv",
+      "kaggle_file": "juv_lora.safetensors"
+    }
+  },
+  "both_trained": {
+    "high": "models/loras/trained/faiz_juv_lora.safetensors",
+    "low": "models/loras/trained/faiz_juv_lora.safetensors",
+    "w": 0.8,
+    "trigger": "faiz juv",
+    "trigger_scope": "prompt_prefix",
+    "source": {
+      "kaggle_dataset": "sofiya009/lora-nuke-faiz-juv",
+      "kaggle_file": "faiz_juv_lora.safetensors"
+    }
+  }
+}

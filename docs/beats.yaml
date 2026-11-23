@@ -1,0 +1,2340 @@
+meta:
+  duration: 5
+  sampler: euler_simple
+  steps: [2, 3]
+  cfg: 1
+  res_base: [832, 480]
+  res_face: [1280, 720]
+  negative: negatives/artifact_neg.txt
+
+story:
+  characters:
+    - name: Faiz
+      adult: true
+    - name: Juveriya
+      adult: true
+    - name: Ammi
+      adult: true
+  relations:
+    faiz: "son of ammi"
+    juveriya: "daughter of ammi"
+    faiz_juveriya: "siblings"
+    ammi: "mother"
+    on_screen: false
+    threat_source: true
+    ammi_depiction:
+      # Basis: Ammi present by any channel: caller ID, voice, hands. Phone is a legitimate proxy; no literal string is required.
+      c34: phone
+      c35: phone
+      c36: phone
+      c37: phone
+      c48: voice
+      c49: hands
+      c50: hands
+      c51: voice
+      c52: voice
+      c54: voice
+      c56: voice
+      c65: voice
+      c66: voice
+      c67: hands
+  title: "Midnight Heat"
+  synopsis: >-
+    Faiz and Juveriya, adult siblings alone in the family flat, spend one evening
+    from the hallway to the study desk. Ammi's phone call interrupts them mid-fuck;
+    they finish anyway, then wash, tidy and put themselves back together before
+    anyone comes home. Ammi arrives at dawn regardless, looks them over, and leaves
+    them a countdown: ten o'clock.
+  logline: "Two adult siblings wreck a study desk and have to look holy by nine — and again by ten."
+  theme: "Appetite versus the performance of respectability."
+  boundaries:
+    characters_are_adults: true
+    intimacy: >-
+      Explicit penetrative sex, manual and oral contact, spanking, biting, marking.
+      Fluid shown. No toys, no restraints beyond hands, no third party in frame.
+      Ammi exists as a phone voice only and is never visible.
+    consent: "Established mutual appetite. She initiates and directs from c55; c25 asks once and obeys; revocable throughout."
+    consent_beats: [c25, c58, c61, c68, c70]
+    revocable: true
+  secrecy:
+    threat: "Ammi is the gatekeeper whose verdict remains pending."
+    verdict_time: "ten o'clock"
+  thread_beats: [c09, c30, c66, c69, c70]
+  scenes:
+    1:
+      title: "Hallway"
+      description: "Faiz corners Juveriya in the passage and tears the skirt off her."
+      time_of_day: "night"
+    2:
+      title: "Against the wall"
+      description: "First penetration, standing, her back to the plaster."
+    3:
+      title: "Onto the desk"
+      description: "He carries her across the room and folds her flat on the study desk."
+    4:
+      title: "Face down"
+      description: "Turned over, spanked, counted, held down on the varnish."
+    5:
+      title: "Blackout"
+      description: "The tube light fails and they keep going in the dark."
+    6:
+      title: "Over the edge"
+      description: "She comes, then he does, the desk shoved out of square."
+    7:
+      title: "Aftermath"
+      description: "Tenderness, torn panties, his shirt, the prayer mat."
+    8:
+      title: "Ammi calls"
+      description: "The phone goes mid-thrust; she talks her mother through it."
+    9:
+      title: "Tidying"
+      description: "Wash, dress, straighten the room, chain the door, sit down to study."
+    10:
+      title: "Dawn"
+      description: "Ammi comes home early; the dupatta check at the door and the lie about studying."
+      time_of_day: "dawn"
+    11:
+      title: "She starts it"
+      description: "The next evening, the same desk, and this time Juveriya is the one who says sit down."
+      time_of_day: "night"
+    12:
+      title: "Ten o'clock"
+      description: "The house awake, the sibling secret stated out loud, and the door shut behind Ammi."
+      time_of_day: "morning"
+      
+shots:
+  - id: c01
+    scene: 1
+    build: fm
+    start_frame: startframes/c01.png
+    loras: []
+    speaker: Faiz
+    say: "You've been a bitch all day, haven't you."
+    language: en
+    chain: true
+    noise: 2
+    duration: 5
+    light: tube_flicker
+    mark_state: none
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "kurti and grey skirt intact, hem mid-thigh; henna both hands; taveez at throat, six bangles each wrist; kurti worn; dupatta on left shoulder"
+      light: "tube_flicker"
+      geography: "narrow hallway"
+    continuity: "kurti and grey skirt intact, hem mid-thigh; henna both hands; taveez at throat, six bangles each wrist; kurti worn; dupatta on left shoulder"
+    cam:
+      - "static wide: Juveriya in grey skirt and loose kurti, dupatta slipping, narrow hallway"
+      - "tilt up: her hem at mid-thigh to peeling wallpaper, damp patch spreading"
+      - "zoom in: past Juveriya's shoulder to the dark doorway where Faiz stands"
+      - "dolly in: tight on her face, jaw clenching, sweat at the temple"
+      - "handheld shake: she flinches, eyes snapping sideways, bangles ringing"
+      - "static hold: Faiz's outline in the doorway, her chest rising, fogging breath"
+
+  - id: c02
+    scene: 1
+    build: fm
+    start_frame: startframes/c02.png
+    loras: []
+    speaker: Faiz
+    say: "Look at you. Rubbing your little pussy all over the place all day."
+    language: en
+    chain: true
+    noise: 2
+    duration: 5
+    light: tube_flicker
+    mark_state: none
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "kurti and skirt intact; dupatta slipping, one end under his foot; bangles intact; henna both hands"
+      light: "tube_flicker"
+      geography: "narrow hallway"
+    continuity: "kurti and skirt intact; dupatta slipping, one end under his foot; bangles intact; henna both hands"
+    cam:
+      - "static medium: POV, Faiz in the doorway, bare chest, shalwar low on the hips"
+      - "zoom in: slow on his face, tube light flickering"
+      - "track back: following Faiz advancing, Juveriya's dupatta under his heel"
+      - "tilt down: low angle, his bare feet on cold mosaic"
+      - "arc 30deg: profile, chest to chest, her kurti pressed flat"
+      - "static hold: standoff, Juveriya's eyes locked on his, her hem trembling"
+
+  - id: c03
+    scene: 1
+    build: fm
+    start_frame: startframes/c03.png
+    loras: []
+    chain: true
+    noise: 2
+    duration: 5
+    light: tube_flicker
+    mark_state: none
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "kurti and skirt intact; bangles digging at the wrist; dupatta trailing behind her; henna both hands"
+      light: "tube_flicker"
+      geography: "narrow hallway"
+    continuity: "kurti and skirt intact; bangles digging at the wrist; dupatta trailing behind her; henna both hands"
+    cam:
+      - "static close-up: Faiz's hand snapping around Juveriya's wrist, bangle edge digging"
+      - "track side: yanking her, heels skidding on mosaic"
+      - "whip pan: bedroom doorway, her hair swinging, dupatta trailing"
+      - "dolly in: slam into the wall, dust puffing off plaster"
+      - "static medium: his forearm braced by her head, Juveriya's chest heaving"
+      - "zoom in: Faiz's fingers pressing white into her wrist"
+
+  - id: c04
+    scene: 1
+    build: fm
+    start_frame: startframes/c04.png
+    loras: []
+    speaker: Faiz
+    say: "Tonight we're gonna burn this whole damn house down."
+    language: en
+    chain: true
+    noise: 2
+    duration: 5
+    light: tube_flicker
+    mark_state: none
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt split to the hip, panties torn off; kurti worn, bunched; dupatta sliding off shoulder; bangles intact"
+      light: "tube_flicker"
+      geography: "narrow hallway"
+    continuity: "skirt split to the hip, panties torn off; kurti worn, bunched; dupatta sliding off shoulder; bangles intact"
+    cam:
+      - "static close-up: Faiz's fist bunching Juveriya's grey hem at her thigh"
+      - "tilt up: rip upward, skirt splitting to the hip, thread snapping"
+      - "static close-up: his thumb hooking her waistband, cotton straining"
+      - "tilt down: panties dragged down her calves, elastic biting"
+      - "tilt up: Juveriya's face flushed, dupatta sliding off her shoulder"
+      - "static hold: shredded fabric on the floor, Faiz's knee between hers"
+
+  - id: c05
+    scene: 2
+    build: fm
+    start_frame: startframes/c05.png
+    loras: []
+    speaker: Faiz
+    say: "You like that, you dirty slut?"
+    language: en
+    chain: true
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: none
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt shoved to waist, panties gone; kurti still on, hem under the ribs; dupatta on floor by the door; henna visible"
+      light: "night_tube"
+      geography: "study room and desk"
+    continuity: "skirt shoved to waist, panties gone; kurti still on, hem under the ribs; dupatta on floor by the door; henna visible"
+    cam:
+      - "static ECU: Faiz's hand under Juveriya's torn hem, fingers on bare skin"
+      - "zoom in: two fingers sliding out, wet webbing between them"
+      - "static close-up: fingers pushing back in, her vulva stretching glossy"
+      - "handheld: her head knocking plaster, mouth open"
+      - "static close-up: wet fingers lifted to Juveriya's mouth, strings breaking"
+      - "zoom in: her lips closing on Faiz's fingers, sucking, cheeks hollowing, chin slick"
+
+  - id: c06
+    scene: 2
+    build: fm
+    start_frame: startframes/c06.png
+    loras: [vag_detail]
+    speaker: Faiz
+    say: "Look at you. Dripping down your own fucking thigh."
+    language: en
+    chain: true
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: none
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt at waist; kurti pushed to collarbone; dupatta on floor; bangles ringing"
+      light: "night_tube"
+      geography: "study room and desk"
+    continuity: "skirt at waist; kurti pushed to collarbone; dupatta on floor; bangles ringing"
+    cam:
+      - "static close-up: Faiz's thumb circling Juveriya's clit, hood pulled back, slick"
+      - "tilt down: her thighs trembling, inner thigh streaked and shining"
+      - "track in: dragging her flush against him, her hips lifting"
+      - "arc profile: Juveriya's nails raking Faiz's shoulder, red lines rising"
+      - "dolly in: his palm slapping the wall beside her head"
+      - "zoom in: her eyes rolling up, mouth slack"
+
+  - id: c07
+    scene: 2
+    build: fm
+    start_frame: startframes/c07.png
+    loras: [vag_detail]
+    chain: true
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: none
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt at waist, kurti ridden up to the ribs; taveez swinging; dupatta on floor, one end under the desk"
+      light: "night_tube"
+      geography: "study room and desk"
+    continuity: "skirt at waist, kurti ridden up to the ribs; taveez swinging; dupatta on floor, one end under the desk"
+    cam:
+      - "static medium: Faiz's hips drawn back, cock head at Juveriya's entrance, gaping"
+      - "handheld jolt: driving in to the base, her body shifting up the wall"
+      - "static close-up: his shaft buried, her lips stretched around it, wet ring"
+      - "orbit slow: Juveriya's spine arching off plaster, kurti riding her ribs"
+      - "handheld rhythm: her breasts moving loose under the kurti, dupatta swinging"
+      - "zoom in: Faiz withdrawing wet, slick smear down her inner thigh"
+
+  - id: c08
+    scene: 2
+    build: fm
+    start_frame: startframes/c08.png
+    loras: [vag_detail]
+    speaker: Faiz
+    say: "You're mine, you filthy whore."
+    language: en
+    chain: false
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: none
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt at waist; kurti at the ribs; dupatta on floor; one bangle gone, rest intact"
+      light: "night_tube"
+      geography: "study room and desk"
+    continuity: "skirt at waist; kurti at the ribs; dupatta on floor; one bangle gone, rest intact"
+    cam:
+      - "static low angle: Juveriya's chin tipped to the ceiling, throat working"
+      - "handheld: Faiz driving harder, plaster cracking, her heels off the floor"
+      - "whip pan: his hand snatching the fan pull-cord, cord swinging"
+      - "tilt down: wet shine on both thighs, fluid at the crease"
+      - "dolly in: his jaw clenched, tendon standing in his neck"
+      - "static hold: wet impact, Juveriya's grunt, Faiz's hips slapping"
+
+  - id: c09
+    scene: 2
+    build: fm
+    start_frame: startframes/c09.png
+    loras: [penis_insert]
+    chain: true
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: none
+    thread: "secrecy"
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt at waist, kurti twisted; dupatta left behind in the hallway; bangles intact"
+      light: "night_tube"
+      geography: "study room and desk"
+    continuity: "skirt at waist, kurti twisted; dupatta left behind in the hallway; bangles intact"
+    cam:
+      - "static wide: Faiz hoisting Juveriya up, legs wrapping his waist, cock still inside"
+      - "track: carrying her across the room, her back dragging the wall"
+      - "static: dropping her onto the desk, papers scattering"
+      - "handheld low: landing hard, splayed legs, her vulva still slick and open"
+      - "static close-up: the desk sliding on mosaic, his shaft slipping out, wet"
+      - "zoom out: Faiz standing over Juveriya, both breathing hard"
+
+  - id: c10
+    scene: 3
+    build: fm
+    start_frame: startframes/c10.png
+    loras: [vag_detail]
+    speaker: Faiz
+    say: "One day. Not tonight. Tonight your pussy's a furnace and I wanna see it boil over."
+    language: en
+    chain: true
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: none
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt rucked to waist, kurti open at the chest; taveez on bare skin; dupatta on floor by the door"
+      light: "night_tube"
+      geography: "study desk"
+    continuity: "skirt rucked to waist, kurti open at the chest; taveez on bare skin; dupatta on floor by the door"
+    cam:
+      - "static medium: Faiz gripping both of Juveriya's ankles, folding her legs back"
+      - "static close-up: knees bent deep, her vulva spread open and shining, skirt at waist"
+      - "dolly in: slick labia, fluid pooling at the entrance"
+      - "static medium: Faiz bracing the desk edge, hips settling"
+      - "tilt down: cock head dragging down through the wet to Juveriya's anus"
+      - "zoom in ECU: grinding circles against the ring, her rim fluttering"
+
+  - id: c11
+    scene: 3
+    build: fm
+    start_frame: startframes/c11.png
+    loras: [penis_insert, vag_detail]
+    chain: true
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: none
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt at waist, bunched; kurti open; dupatta on floor; bangles intact"
+      light: "night_tube"
+      geography: "study desk"
+    continuity: "skirt at waist, bunched; kurti open; dupatta on floor; bangles intact"
+    cam:
+      - "static wide: Juveriya's ankles pinned apart, Faiz driving in, her hips rocking the desk"
+      - "handheld jolt: slam, desk shrieking on mosaic, Juveriya's hands flying up"
+      - "dolly in: Juveriya's face mid-scream, Faiz's palm clamping over her mouth"
+      - "pan side: bare wall, the neighbour's TV bleeding through it"
+      - "handheld low: Faiz thrusting, her breasts jerking under the bunched kurti"
+      - "static close-up: her heel bouncing off his back, shaft wet and glistening"
+
+  - id: c12
+    scene: 3
+    build: fm
+    start_frame: startframes/c12.png
+    loras: [penis_insert, vag_detail]
+    speaker: Faiz
+    say: "Look at you. Fucking wrecked and it's not even close to over."
+    language: en
+    chain: true
+    noise: 3
+    duration: 4
+    light: night_tube
+    mark_state: none
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt at waist; taveez pressed into the sternum; kurti open; dupatta on floor"
+      light: "night_tube"
+      geography: "study desk"
+    continuity: "skirt at waist; taveez pressed into the sternum; kurti open; dupatta on floor"
+    cam:
+      - "static close-up: sweat bead rolling down Juveriya's stomach, skirt rucked"
+      - "tilt up: Faiz's jaw, sweat beading at the hinge"
+      - "arc profile: her palm shoving his chest, arm shaking"
+      - "static close-up: his hand pinning her wrist above her head"
+      - "handheld: Faiz's chaotic rhythm, the whole desk jumping"
+      - "zoom in: joined hips, Juveriya's lips clinging to his shaft, wet friction"
+
+  - id: c13
+    scene: 3
+    build: fm
+    start_frame: startframes/c13.png
+    loras: [penis_insert, vag_detail]
+    chain: true
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: none
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt at waist; hair pulled loose from its tie; kurti open; dupatta on floor"
+      light: "night_tube"
+      geography: "study desk"
+    continuity: "skirt at waist; hair pulled loose from its tie; kurti open; dupatta on floor"
+    cam:
+      - "static medium: Faiz's fist in Juveriya's curls, pulling her head back, throat bared"
+      - "handheld close: her laugh breaking into his throat"
+      - "static: Faiz driving hard, his grip slipping in her hair"
+      - "pan up: framed art rattling on the nail"
+      - "tilt down: textbook sliding off the desk, pages fanning"
+      - "static hold: Juveriya's legs shaking, toes curling, wet sound continuous"
+
+  - id: c14
+    scene: 4
+    build: fm
+    start_frame: startframes/c14.png
+    loras: [penis_insert, vag_detail]
+    speaker: Faiz
+    say: "You're a bitch who loves being broken."
+    language: en
+    chain: true
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: none
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt at waist; kurti open to the navel; dupatta on floor; bangles intact"
+      light: "night_tube"
+      geography: "study desk"
+    continuity: "skirt at waist; kurti open to the navel; dupatta on floor; bangles intact"
+    cam:
+      - "static wide: desk shuddering, Juveriya's thighs slapping Faiz's hips"
+      - "dolly in: her head thrown back, throat straining, tendons tight"
+      - "static close-up: Faiz's fist wrenching her hair, scalp pulling white"
+      - "zoom in: carotid pulsing under her jaw, sweat running"
+      - "track in: her mouth open, silent, breath cut off"
+      - "pan out: desk knocking, Juveriya's eyes shut, whole body loose"
+
+  - id: c15
+    scene: 4
+    build: fm
+    start_frame: startframes/c15.png
+    loras: []
+    speaker: Faiz
+    say: "That's it. Marked you. Now everyone knows whose bitch you are."
+    language: en
+    chain: true
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: fresh
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt at waist; taveez displaced by his mouth; kurti open; dupatta on floor"
+      light: "night_tube"
+      geography: "study desk"
+    continuity: "skirt at waist; taveez displaced by his mouth; kurti open; dupatta on floor"
+    cam:
+      - "static ECU: Faiz's mouth against Juveriya's neck and shoulder, jaw open"
+      - "zoom in: biting down, her skin whitening around his teeth"
+      - "handheld: her body jerking, gasp, her hand slapping his arm"
+      - "static close-up: his tongue dragging over the welt, spit shining"
+      - "arc: Faiz's grin, laughing against her skin"
+      - "zoom in: four tooth dents rising red in Juveriya's skin"
+
+  - id: c16
+    scene: 4
+    build: fm
+    start_frame: startframes/c16.png
+    loras: [penis_insert, vag_detail]
+    speaker: Faiz
+    say: "Squeezing me like you're trying to keep me. Greedy little cunt."
+    language: en
+    chain: true
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: fresh
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt at waist, twisted; kurti open, one sleeve off the shoulder; bangles cutting; dupatta on floor"
+      light: "night_tube"
+      geography: "study desk"
+    continuity: "skirt at waist, twisted; kurti open, one sleeve off the shoulder; bangles cutting; dupatta on floor"
+    cam:
+      - "static medium: Juveriya's hair twisted in Faiz's fist, head wrenched sideways"
+      - "tilt down: her heel clattering off, foot dropping"
+      - "tilt up: her jaw slack, hair tangled across her wet mouth"
+      - "static: her cheek pushed into the wood grain, one eye open"
+      - "dolly down: her breath fogging the varnish, lips skidding"
+      - "static hold: Faiz's rhythm, Juveriya's fingers scrabbling at the desk edge"
+
+  - id: c17
+    scene: 4
+    build: fm
+    start_frame: startframes/c17.png
+    loras: [penis_insert, vag_detail]
+    chain: true
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: fresh
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt at waist, hem under her knee; taveez flat on the desk; kurti open; dupatta on floor"
+      light: "night_tube"
+      geography: "study desk"
+    continuity: "skirt at waist, hem under her knee; taveez flat on the desk; kurti open; dupatta on floor"
+    cam:
+      - "static top-down: Juveriya pinned face down, spine curved, skirt at her waist"
+      - "handheld: Faiz slamming, her whole body sliding forward on the desk"
+      - "static close-up: her hand gripping the desk edge, knuckles white"
+      - "orbit slow: sweat on Juveriya's spine, the welt on her neck"
+      - "tilt up: Faiz leaning his weight onto her back, shaft buried to the base"
+      - "zoom in: their faces side by side, ragged breath, wet mouth"
+
+  - id: c18
+    scene: 4
+    build: fm
+    start_frame: startframes/c18.png
+    loras: []
+    speaker: Faiz
+    say: "Count them, Juveriya. Out loud. I want to hear you."
+    say_script: "उन्हें गिनो, जुवेरिया। ज़ोर से। मैं तुम्हें सुनना चाहता हूँ।"
+    language: hi
+    chain: false
+    noise: 3
+    duration: 4
+    light: night_tube
+    mark_state: fresh
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt at waist, raised over the arse; kurti open; dupatta on floor; bangles intact"
+      light: "night_tube"
+      geography: "study desk"
+    continuity: "skirt at waist, raised over the arse; kurti open; dupatta on floor; bangles intact"
+    cam:
+      - "static close-up: Juveriya's bare arse raised, skin pink, Faiz's palm lifted"
+      - "handheld jolt: slap, flesh rebounding, her yelp"
+      - "static: Faiz landing a second slap, deeper pink, her small cry"
+      - "static: third slap, the mirror ringing on the wall"
+      - "dolly in: Juveriya's hand knocked away from her own cheek"
+      - "zoom in: Faiz's thumb pressing the hot print, skin blanching"
+
+  - id: c19
+    scene: 4
+    build: fm
+    start_frame: startframes/c19.png
+    loras: [penis_insert, vag_detail]
+    speaker: Faiz
+    say: "Good girl."
+    language: en
+    chain: true
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: fresh
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt at waist; taveez swinging with the push; kurti open; dupatta on floor"
+      light: "night_tube"
+      geography: "study desk"
+    continuity: "skirt at waist; taveez swinging with the push; kurti open; dupatta on floor"
+    cam:
+      - "static close-up: Faiz's two fingers sliding into Juveriya from behind, slick"
+      - "tilt up: twisting them, her hips shoving back onto his hand"
+      - "static close-up: Faiz's other hand pinning her lower back flat"
+      - "zoom in: knuckles disappearing, her rim wet"
+      - "pan down: wiping his fingers along her arse cheek, shiny trail"
+      - "tilt up: lining up, cock head pressing at Juveriya's entrance"
+
+  - id: c20
+    scene: 5
+    build: fm
+    start_frame: startframes/c20.png
+    loras: [penis_insert, vag_detail]
+    chain: true
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: fresh
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt at waist; kurti open, bunched at the armpits; dupatta on floor; bangles intact"
+      light: "night_tube"
+      geography: "study room in blackout"
+    continuity: "skirt at waist; kurti open, bunched at the armpits; dupatta on floor; bangles intact"
+    cam:
+      - "static wide: Faiz driving deep, Juveriya's spine dipping into the desk"
+      - "static close-up: Juveriya's nails raking the varnish, curls of wax"
+      - "handheld: Faiz grinding, his hips rolling, hers answering"
+      - "dolly down: his head dropping level with hers, her mouth open"
+      - "static: his forehead on her shoulder blade, sweat transferring"
+      - "zoom out: her hand sliding off the desk, hanging"
+
+  - id: c21
+    scene: 5
+    build: fm
+    start_frame: startframes/c21.png
+    loras: [penis_insert, vag_detail]
+    speaker: Faiz
+    say: "Even the fucking lights can't take it."
+    language: en
+    chain: false
+    noise: 2
+    duration: 5
+    light: blackout_moonlight
+    mark_state: fresh
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt at waist; taveez catching moonlight; kurti open; dupatta on floor"
+      light: "blackout_moonlight"
+      geography: "study room in blackout"
+    continuity: "skirt at waist; taveez catching moonlight; kurti open; dupatta on floor"
+    cam:
+      - "static wide: tube light strobing, Faiz and Juveriya lit in pulses"
+      - "static: light cuts out, only the red standby dot"
+      - "tilt up: fan winding down, blades ticking"
+      - "tilt down: shapes in the dark, moving, her hands braced"
+      - "handheld: his hand gripping her hip in black, fingers digging"
+      - "static: moonlight stripes across Juveriya's back, Faiz's shaft sliding"
+
+  - id: c22
+    scene: 5
+    build: fm
+    start_frame: startframes/c22.png
+    loras: [penis_insert, vag_detail]
+    chain: true
+    noise: 3
+    duration: 4
+    light: blackout_moonlight
+    mark_state: fresh
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt at waist; bangles faint in the dark; kurti open; dupatta on floor"
+      light: "blackout_moonlight"
+      geography: "study room in blackout"
+    continuity: "skirt at waist; bangles faint in the dark; kurti open; dupatta on floor"
+    cam:
+      - "static near-black: Juveriya's hand sliding on the desk, knocking a steel glass"
+      - "tilt down: the glass falling, bouncing, rolling"
+      - "tilt up: Juveriya's hand gripping the desk edge again, wet knuckles"
+      - "static: Faiz pushing deep, slow grind, her outline flattening"
+      - "dolly in: her forehead down on the desk, a low sound"
+      - "static hold: dark, wet, breath, Faiz's hips still working"
+
+  - id: c23
+    scene: 5
+    build: fm
+    start_frame: startframes/c23.png
+    loras: [penis_insert, vag_detail]
+    speaker: Faiz
+    say: "Don't you dare hold it. Give it to me."
+    language: en
+    chain: true
+    noise: 2
+    duration: 5
+    light: blackout_moonlight
+    mark_state: fresh
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt at waist; taveez at her throat; kurti open; dupatta on floor"
+      light: "blackout_moonlight"
+      geography: "study room in blackout"
+    continuity: "skirt at waist; taveez at her throat; kurti open; dupatta on floor"
+    cam:
+      - "static ECU: Faiz's mouth against Juveriya's ear, whispering, lips touching"
+      - "zoom out: Juveriya's eyes opening, unfocused, lashes wet"
+      - "tilt down: her hand hunting between her legs, fingers finding clit"
+      - "static: fingers pressing, her hips bucking back onto his shaft"
+      - "handheld: twisting away, Faiz's weight pinning her flat again"
+      - "zoom in: her open mouth, gasp, no sound out"
+
+  - id: c24
+    scene: 6
+    build: fm
+    start_frame: startframes/c24.png
+    loras: [penis_insert, vag_detail]
+    speaker: Faiz
+    say: "Fuck — there it is — that's my girl."
+    language: en
+    chain: true
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: fresh
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt at waist; kurti open; dupatta on floor; bangles intact"
+      light: "night_tube"
+      geography: "study desk"
+    continuity: "skirt at waist; kurti open; dupatta on floor; bangles intact"
+    cam:
+      - "static tight: Juveriya's face, moonlight stripe across the eyes"
+      - "handheld shake: Juveriya breaking, spine bowing off the desk"
+      - "whip pan: textbooks sweeping off the desk edge"
+      - "static: her walls clamping, Faiz's hips stalling mid-thrust"
+      - "dolly in: Faiz's groan, forehead dropping to her shoulder"
+      - "zoom out: her body rippling, the wrecked desk"
+
+  - id: c25
+    scene: 6
+    build: fm
+    start_frame: startframes/c25.png
+    loras: [penis_insert, vag_detail]
+    dialogue:
+      - speaker: Faiz
+        text: "Where do you want it?"
+      - speaker: Juveriya
+        text: "Inside. Inside, please, don't stop."
+    language: en
+    chain: true
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: fresh
+    thread: ""
+    profile: hero
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt at waist; his fingers bruising her hip above the fabric; kurti open; dupatta on floor"
+      light: "night_tube"
+      geography: "study desk"
+    continuity: "skirt at waist; his fingers bruising her hip above the fabric; kurti open; dupatta on floor"
+    cam:
+      - "static medium: frantic rhythm, Faiz's hips snapping, Juveriya's hips meeting"
+      - "dolly in: his fingers denting her hip, the marks holding"
+      - "static: Juveriya's hand grabbing his wrist, holding it there"
+      - "arc up: her face, throat corded, mouth shaping the words"
+      - "static: Faiz's mouth at her ear, asking, breath hot"
+      - "zoom in: her head turning, eyes finding his, wet"
+
+  - id: c26
+    scene: 6
+    build: fm
+    start_frame: startframes/c26.png
+    loras: [penis_insert, vag_detail]
+    chain: true
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: fresh
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt at waist; taveez flat on the desk; kurti open; dupatta on floor"
+      light: "night_tube"
+      geography: "study desk"
+    continuity: "skirt at waist; taveez flat on the desk; kurti open; dupatta on floor"
+    cam:
+      - "static wide: driven to the hilt, the desk shoved out of square"
+      - "static: Faiz's hand slamming flat on the desk, Juveriya's hip bruised"
+      - "handheld: him coming, jaw clenched, hips stuttering"
+      - "tilt down: Juveriya's hips twitching, knees buckling, his shaft still seated"
+      - "zoom in: joined hips, wet friction, fluid at the base"
+      - "dolly out: Faiz sagging onto her, forehead on her spine"
+
+  - id: c27
+    scene: 7
+    build: cf
+    start_frame: startframes/c27.png
+    loras: []
+    speaker: Faiz
+    say: "Perfect timing. Now you can go wash up and pretend you're holy."
+    language: en
+    chain: true
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: tender
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt at waist; kurti open; dupatta on floor; bangles intact"
+      light: "night_tube"
+      geography: "study aftermath area"
+    continuity: "skirt at waist; kurti open; dupatta on floor; bangles intact"
+    cam:
+      - "static: Faiz's weight down on Juveriya, ribs compressing, both gasping"
+      - "tilt up: the desk creaking, her leg sliding to the floor"
+      - "zoom in: her hand patting his shoulder twice"
+      - "tilt up: azaan bleeding in, Faiz's head lifting"
+      - "handheld: he laughs into her hair, shoulders shaking"
+      - "zoom in slow: back of Faiz's neck, sweat, Juveriya's matted hair"
+
+  - id: c28
+    scene: 7
+    build: cf
+    start_frame: startframes/c28.png
+    loras: []
+    speaker: Faiz
+    say: "There. Now don't move."
+    language: en
+    chain: true
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: tender
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt at waist, fluid on the thigh; taveez on the desk edge; kurti open; dupatta on floor"
+      light: "night_tube"
+      geography: "study aftermath area"
+    continuity: "skirt at waist, fluid on the thigh; taveez on the desk edge; kurti open; dupatta on floor"
+    cam:
+      - "static medium: Faiz pulls out of Juveriya, her hips lifting after him, shaft wet"
+      - "tilt down: fluid sliding down her inner thigh, thick and slow"
+      - "static: Juveriya sprawls flat, cheek on the desk, skirt at her waist"
+      - "dolly in: Faiz stands over her, chest heaving, cock still shining"
+      - "static: two fingers scoop and smear it across her arse cheek"
+      - "zoom in: skin shine, fingers withdrawing, panties on the floor"
+
+  - id: c29
+    scene: 7
+    build: cf
+    start_frame: startframes/c29.png
+    loras: []
+    speaker: Faiz
+    say: "You look like you got hit by a truck. A very good truck."
+    language: en
+    chain: true
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: tender
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt at waist; kurti open; dupatta on floor; bangles intact"
+      light: "night_tube"
+      geography: "study aftermath area"
+    continuity: "skirt at waist; kurti open; dupatta on floor; bangles intact"
+    cam:
+      - "static low angle: Faiz crouches, hooks Juveriya's chin up with one finger"
+      - "zoom in: Juveriya's wrecked eyes finding his, Faiz's grin spreading"
+      - "track in: the back of his hand sweeping hair off her cheek"
+      - "dolly in: he kisses her forehead, lips staying a beat"
+      - "static: a slow kiss on her mouth, her hand climbing to his neck"
+      - "zoom out slow: the kiss holding, Juveriya's leg hanging off the desk"
+
+  - id: c30
+    scene: 7
+    build: cf
+    start_frame: startframes/c30.png
+    loras: []
+    dialogue:
+      - speaker: Juveriya
+        text: "You tore my panties."
+      - speaker: Faiz
+        text: "Bought you new ones last month."
+      - speaker: Juveriya
+        text: "You're paying."
+    language: en
+    chain: false
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: tender
+    thread: "secrecy"
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt at waist, one strap broken; his shirt on her shoulders, unbuttoned; dupatta on floor"
+      light: "night_tube"
+      geography: "study aftermath area"
+    continuity: "skirt at waist, one strap broken; his shirt on her shoulders, unbuttoned; dupatta on floor"
+    cam:
+      - "static medium: Juveriya pushes up on shaking arms, skirt still at her waist"
+      - "tilt down: her legs swing off the desk, one strap broken"
+      - "handheld: she buckles, catches the desk edge"
+      - "track: Faiz tosses his shirt, it lands on her shoulder"
+      - "static: she drags the shirt on, unbuttoned, hanging past her hips"
+      - "zoom out: Juveriya standing in Faiz's shirt and the ruined skirt"
+
+  - id: c31
+    scene: 7
+    build: cf
+    start_frame: startframes/c31.png
+    loras: []
+    chain: true
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: tender
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "his shirt on, skirt at waist; shredded panties in hand, then thrown; dupatta on floor"
+      light: "night_tube"
+      geography: "study aftermath area"
+    continuity: "his shirt on, skirt at waist; shredded panties in hand, then thrown; dupatta on floor"
+    cam:
+      - "static close-up: shredded cotton on the mosaic floor, elastic snapped"
+      - "tilt up: Juveriya's bare foot nudges the fabric"
+      - "static: she picks the panties up, holds them out at arm's length"
+      - "tilt up: Juveriya's face, eyebrow raised, unimpressed"
+      - "pan out: Faiz shrugs off-frame, palms up"
+      - "handheld: she balls them up and throws them at Faiz"
+
+  - id: c32
+    scene: 7
+    build: cf
+    start_frame: startframes/c32.png
+    loras: []
+    chain: true
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: tender
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "fresh panties on, skirt dropped to the knee; Faiz's shirt still on; dupatta on floor; kajal smeared"
+      light: "night_tube"
+      geography: "study aftermath area"
+    continuity: "fresh panties on, skirt dropped to the knee; Faiz's shirt still on; dupatta on floor; kajal smeared"
+    cam:
+      - "static medium: wardrobe open, Juveriya in Faiz's shirt pulling fresh panties from a stack"
+      - "static: she steps into them, pulling up under the skirt"
+      - "zoom in: snapping the waistband, the skirt dropping over them"
+      - "dolly in: she turns to the mirror, wiping kajal with her thumb"
+      - "zoom in: tilting her chin to see the welt, hissing"
+      - "static: her reflection, Faiz's shirt hanging off her, shock and something alienated"
+
+  - id: c33
+    scene: 7
+    build: cf
+    start_frame: startframes/c33.png
+    loras: []
+    chain: true
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: tender
+    thread: ""
+    profile: hero
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "Faiz's shirt on, open; fresh panties and skirt on; welt visible at the neck; dupatta still on floor; henna both hands"
+      light: "night_tube"
+      geography: "study aftermath area"
+    continuity: "Faiz's shirt on, open; fresh panties and skirt on; welt visible at the neck; dupatta still on floor; henna both hands"
+    cam:
+      - "static top-down: Juveriya's foot rolling the prayer mat open"
+      - "static: she kneels, straightening the mat corner, Faiz's shirt still open on her"
+      - "zoom in: her hands raising to her ears, eyes closing"
+      - "orbit slow: folding into sujood, forehead to the mat"
+      - "static: palms flat, the welt showing under Faiz's open shirt"
+      - "tilt up: Juveriya lifting her head slowly, eyes shut"
+
+  - id: c34
+    scene: 8
+    build: cf
+    start_frame: startframes/c34.png
+    loras: []
+    dialogue:
+      - speaker: Faiz
+        text: "Answer it."
+        text_script: "इसका जवाब दो।"
+      - speaker: Juveriya
+        text: "Haan Ammi."
+        text_script: "ہاں امی۔"
+        language: ur
+    language: hi
+    chain: true
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: tender
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "his shirt on, open; skirt and fresh panties on; welt at the neck; dupatta on floor"
+      light: "night_tube"
+      geography: "study and flat phone position"
+    continuity: "his shirt on, open; skirt and fresh panties on; welt at the neck; dupatta on floor"
+    cam:
+      - "static close-up: phone buzzing on the desk, AMMI on the screen"
+      - "static: Juveriya's hand slapping down on it"
+      - "zoom in: Juveriya's face, mouthing a curse, eyes wide"
+      - "static: phone to her ear, other hand bracing the desk"
+      - "handheld: Faiz slides back in from behind, her face contorting"
+      - "zoom in: Faiz mouths against her ear, she bites her lip"
+
+  - id: c35
+    scene: 8
+    build: cf
+    start_frame: startframes/c35.png
+    loras: [penis_insert]
+    speaker: Juveriya
+    say: "Padh rahi hoon. Books."
+    say_script: "पढ़ रही हूँ। किताबें।"
+    language: hi
+    chain: true
+    noise: 3
+    duration: 4
+    light: night_tube
+    mark_state: tender
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "his shirt on, open; skirt at the knee; welt at the neck; dupatta on floor; bangles intact"
+      light: "night_tube"
+      geography: "study and flat phone position"
+    continuity: "his shirt on, open; skirt at the knee; welt at the neck; dupatta on floor; bangles intact"
+    cam:
+      - "static medium: phone at Juveriya's ear, voice pitched high"
+      - "static: Faiz pulls out to the tip, pushes slowly back in"
+      - "zoom in: Juveriya's jaw clenching, eyes shut, voice strangling"
+      - "static: he mouths 'books', she swats his hip"
+      - "tilt down: Faiz laces his fingers through hers, pinning them to her stomach"
+      - "zoom in: their laced hands, her thin bright voice on the phone"
+
+  - id: c36
+    scene: 8
+    build: cf
+    start_frame: startframes/c36.png
+    loras: [penis_insert]
+    speaker: Juveriya
+    say: "He's helping me with the chapter."
+    say_script: "वह अध्याय में मेरी मदद कर रहा है।"
+    language: hi
+    chain: true
+    noise: 3
+    duration: 4
+    light: night_tube
+    mark_state: tender
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "his shirt on, open; skirt at the knee; welt at the neck; dupatta on floor"
+      light: "night_tube"
+      geography: "study and flat phone position"
+    continuity: "his shirt on, open; skirt at the knee; welt at the neck; dupatta on floor"
+    cam:
+      - "static: Faiz laughs into her shoulder, she pinches his arm"
+      - "static: Juveriya holds the phone away from her ear, grimacing"
+      - "dolly in: Faiz bottoms out, slow grind, her belly flattening"
+      - "zoom in: Juveriya bites her knuckles, eyes watering"
+      - "handheld: harder thrust, the desk creaking, her voice jumping"
+      - "static: her shaky exhale into the phone"
+
+  - id: c37
+    scene: 8
+    build: cf
+    start_frame: startframes/c37.png
+    loras: [penis_insert]
+    dialogue:
+      - speaker: Juveriya
+        text: "Theek hai, Ammi. Bye."
+        text_script: "ٹھیک ہے، امی۔ بائے۔"
+        language: ur
+      - speaker: Faiz
+        text: "Another hour. Then we're doing that again."
+        text_script: "एक और घंटा। फिर हम यह दोबारा करेंगे।"
+    language: hi
+    chain: true
+    noise: 3
+    duration: 4
+    light: night_tube
+    mark_state: tender
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "his shirt on, open; skirt at the knee; welt at the neck; dupatta on floor; phone dropped"
+      light: "night_tube"
+      geography: "study and flat phone position"
+    continuity: "his shirt on, open; skirt at the knee; welt at the neck; dupatta on floor; phone dropped"
+    cam:
+      - "static close-up: Juveriya mouthing 'another hour', brows up"
+      - "arc: Faiz's face, the filthy grin spreading"
+      - "tilt down: Faiz's hand flat on the desk, grind slowing"
+      - "zoom in: Juveriya's eyes closing in despair"
+      - "handheld: she ends the call, drops the phone, loud moan"
+      - "static: her head dropping, hand slapping the desk flat"
+
+  - id: c38
+    scene: 8
+    build: cf
+    start_frame: startframes/c38.png
+    loras: []
+    dialogue:
+      - speaker: Faiz
+        text: "Knew you'd see it my way."
+      - speaker: Juveriya
+        text: "Shut up and get the water."
+    language: en
+    chain: true
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: tender
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "his shirt on, sleeves rolled; skirt at the knee; welt at the neck; dupatta on floor in the other room"
+      light: "night_tube"
+      geography: "study and flat phone position"
+    continuity: "his shirt on, sleeves rolled; skirt at the knee; welt at the neck; dupatta on floor in the other room"
+    cam:
+      - "static wide: bathroom, bucket half full, cloth floating"
+      - "dolly in: Faiz wrings the cloth, water running over his wrists"
+      - "static: cold cloth pressed between Juveriya's thighs, her flinch"
+      - "tilt up: Faiz wiping her inner thigh, her stomach, her neck"
+      - "zoom in: her reflection in the taped mirror, the wedding photo beside it"
+      - "zoom in slow: the wedding photo, then Juveriya's current face"
+
+  - id: c39
+    scene: 9
+    build: cf
+    start_frame: startframes/c39.png
+    loras: []
+    dialogue:
+      - speaker: Juveriya
+        text: "There's a wet patch."
+      - speaker: Faiz
+        text: "Whose fault is that?"
+    language: en
+    chain: true
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: tender
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "his shirt on; skirt smoothed down; welt at the neck; dupatta on floor; hair tied back"
+      light: "night_tube"
+      geography: "study and flat passage"
+    continuity: "his shirt on; skirt smoothed down; welt at the neck; dupatta on floor; hair tied back"
+    cam:
+      - "static close-up: the wet patch on the desk varnish"
+      - "tilt down: Faiz wiping the cloth across it, leaving a wider smear"
+      - "static: Faiz wipes again, uselessly, and shrugs"
+      - "tilt up: Juveriya's arms crossed, hair tied back, unimpressed"
+      - "handheld: Juveriya takes the cloth, scrubbing with her elbow"
+      - "pan out: straightening the desk, pausing at an ink stain"
+
+  - id: c40
+    scene: 9
+    build: cf
+    start_frame: startframes/c40.png
+    loras: []
+    chain: true
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: tender
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "his shirt on; skirt and fresh panties on; welt at the neck; dupatta retrieved from the floor, unfolded"
+      light: "night_tube"
+      geography: "study and flat passage"
+    continuity: "his shirt on; skirt and fresh panties on; welt at the neck; dupatta retrieved from the floor, unfolded"
+    cam:
+      - "static wide: tube light flickering on, the fan lurching, Faiz's textbook open on the desk"
+      - "pan: the room, textbooks, dented pillow, Juveriya's dupatta in her hand"
+      - "zoom in: she screws her eyes shut against the brightness"
+      - "pan slow: crooked frame, her heel under the bed, torn panties by the door"
+      - "static: Juveriya straightens the picture frame"
+      - "dolly back: the room looking normal, welt on her neck, Faiz's shirt on the chair"
+
+  - id: c41
+    scene: 9
+    build: cf
+    start_frame: startframes/c41.png
+    loras: []
+    chain: true
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: tender
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "fresh shalwar on, skirt off; his shirt off; dupatta pinned to the left shoulder; welt just above the dupatta edge"
+      light: "night_tube"
+      geography: "study and flat passage"
+    continuity: "fresh shalwar on, skirt off; his shirt off; dupatta pinned to the left shoulder; welt just above the dupatta edge"
+    cam:
+      - "static medium: Juveriya stepping into fresh shalwar, pulling the string tight"
+      - "zoom in: smoothing the fabric over her hips, pausing"
+      - "static: Juveriya's short surprise laugh, hand over her mouth"
+      - "pan: Faiz appears in the doorway, shirt off, watching her"
+      - "static: she pins the dupatta to her shoulder, Faiz still watching"
+      - "zoom in: the mirror, the welt just above the dupatta edge"
+
+  - id: c42
+    scene: 9
+    build: cf
+    start_frame: startframes/c42.png
+    loras: []
+    dialogue:
+      - speaker: Faiz
+        text: "You look holy."
+      - speaker: Juveriya
+        text: "I feel like a crime scene."
+      - speaker: Faiz
+        text: "Same thing."
+    language: en
+    chain: true
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: tender
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "shalwar and dupatta on, dupatta pulled down to show the welt; henna both hands; taveez at the throat"
+      light: "night_tube"
+      geography: "study and flat passage"
+    continuity: "shalwar and dupatta on, dupatta pulled down to show the welt; henna both hands; taveez at the throat"
+    cam:
+      - "static two-shot: Faiz in frame, Juveriya at the mirror, both reflections"
+      - "zoom in slow: his face, soft expression"
+      - "static: Juveriya's eyes finding him in the reflection"
+      - "dolly in: she lifts her chin to show the welt, pulls the dupatta down"
+      - "static: Faiz comes up behind her, hands settling on her hips"
+      - "zoom in: both reflections, his chin on her shoulder"
+
+  - id: c43
+    scene: 9
+    build: cf
+    start_frame: startframes/c43.png
+    loras: []
+    chain: true
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: tender
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "shalwar and dupatta on; Faiz's shirt discarded on the chair; shredded panties binned; welt at the neck"
+      light: "night_tube"
+      geography: "study and flat passage"
+    continuity: "shalwar and dupatta on; Faiz's shirt discarded on the chair; shredded panties binned; welt at the neck"
+    cam:
+      - "static top-down: Juveriya gathering pages off the floor, neatening them"
+      - "tilt down: her bare foot nudging the heel out from under the bed"
+      - "static: Juveriya picking up the shredded panties, shaking her head"
+      - "track: dropping them in the bin by the almirah"
+      - "static: palms pressed to her lower back, arching, wincing, Faiz watching from the door"
+      - "zoom out: standing in the tidied room, Faiz's shirt on the chair"
+
+  - id: c44
+    scene: 9
+    build: cf
+    start_frame: startframes/c44.png
+    loras: []
+    chain: true
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: tender
+    thread: ""
+    profile: hero
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "shalwar and dupatta on; dupatta at the shoulder; welt visible; henna both hands"
+      light: "night_tube"
+      geography: "study and flat passage"
+    continuity: "shalwar and dupatta on; dupatta at the shoulder; welt visible; henna both hands"
+    cam:
+      - "static ECU: Juveriya's reflection, the welt, the dupatta, hair tied back"
+      - "zoom in: Juveriya's fingers touching the mark gently"
+      - "zoom in: the smile breaking, bitten back"
+      - "static: lips pressed, eyes creasing, a private smile at Faiz"
+      - "dolly in slow: the reflection holding it, Faiz's shirt-tail behind her"
+      - "pan out: she turns away, the reflection going empty"
+
+  - id: c45
+    scene: 9
+    build: cf
+    start_frame: startframes/c45.png
+    loras: []
+    chain: true
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: tender
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "shalwar and dupatta on; welt covered by the dupatta; bangles intact"
+      light: "night_tube"
+      geography: "study and flat passage"
+    continuity: "shalwar and dupatta on; welt covered by the dupatta; bangles intact"
+    cam:
+      - "static wide: front door, chain loose, the hallway dark beyond"
+      - "zoom in: Juveriya's fingers hooking the chain into the slide"
+      - "dolly in: Juveriya presses her forehead to the door, eyes shut"
+      - "static: the fridge starting, the fan ticking, the room settling"
+      - "tilt up: she squares her shoulders, turning back to the flat, Faiz's shirt on the chair"
+      - "dolly back: walking to the kitchen, Faiz's marks hidden"
+
+  - id: c46
+    scene: 9
+    build: cf
+    start_frame: startframes/c46.png
+    loras: []
+    chain: false
+    noise: 2
+    duration: 5
+    light: night_tube
+    mark_state: tender
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "shalwar and dupatta on, welt half-covered; henna both hands; textbook and pen squared on the desk"
+      light: "night_tube"
+      geography: "study and flat passage"
+    continuity: "shalwar and dupatta on, welt half-covered; henna both hands; textbook and pen squared on the desk"
+    cam:
+      - "static wide: the desk neat, Faiz's textbook open, pen laid straight"
+      - "zoom in slow: the varnish, a faint smear under the shine"
+      - "static: Juveriya's hand covering the smear"
+      - "tilt down: Juveriya sits, pulling the book closer"
+      - "orbit: over her shoulder to the page, Faiz's handwriting in the margin"
+      - "static hold: writing, the mark on her neck catching the light"
+
+  - id: c47
+    scene: 10
+    build: cf
+    start_frame: startframes/c47.png
+    loras: []
+    chain: false
+    noise: 2
+    duration: 5
+    light: daylight
+    mark_state: fading
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "shalwar and dupatta on, dupatta pinned at the left shoulder; welt covered; hair tied back; henna both hands; desk squared, Faiz's shirt still on the chair"
+      light: "daylight"
+      geography: "hallway, kitchen and front door"
+    continuity: "shalwar and dupatta on, dupatta pinned at the left shoulder; welt covered; hair tied back; henna both hands; desk squared, Faiz's shirt still on the chair"
+    cam:
+      - "static wide: first grey light, Juveriya at the front door in shalwar and dupatta"
+      - "tilt down: her fingers at the chain slide, checking it sits right"
+      - "zoom in: the peephole, the corridor dark, one bulb out"
+      - "pan: the flat behind her, Faiz's shirt still on the chair"
+      - "track: Faiz crossing fast, tucking his shirt in, one arm in a sleeve"
+      - "static: Juveriya at the mirror, pressing the dupatta flat, Faiz behind her"
+
+  - id: c48
+    scene: 10
+    build: cf
+    start_frame: startframes/c48.png
+    loras: []
+    dialogue:
+      - speaker: Ammi
+        text: "Kholo, mein hoon."
+        text_script: "کھولو، میں ہوں۔"
+        language: ur
+    language: ur
+    chain: true
+    noise: 2
+    duration: 5
+    light: daylight
+    mark_state: fading
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "shalwar and dupatta on; welt under the dupatta; Faiz's shirt tucked, hair damp"
+      light: "daylight"
+      geography: "hallway, kitchen and front door"
+    continuity: "shalwar and dupatta on; welt under the dupatta; Faiz's shirt tucked, hair damp"
+    cam:
+      - "static close-up: the buzzer box rattling on the wall"
+      - "handheld: Juveriya's hand freezing mid-air, Faiz's head snapping up"
+      - "zoom in: her eyes in the mirror, wide, then steadying"
+      - "track: she turns from the mirror, dupatta swinging"
+      - "static: Faiz flattening himself against the passage wall, out of sightline"
+      - "zoom in: Juveriya's hand on the latch, the chain still on"
+
+  - id: c49
+    scene: 10
+    build: cf
+    start_frame: startframes/c49.png
+    loras: []
+    dialogue:
+      - speaker: Ammi
+        text: "Haath bhare hain. Side ho."
+        text_script: "ہاتھ بھرے ہیں۔ سائیڈ ہو۔"
+        language: ur
+    language: ur
+    chain: true
+    noise: 2
+    duration: 5
+    light: daylight
+    mark_state: fading
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "shalwar and dupatta on; two bags of vegetables; Faiz in the passage, shirt buttoned wrong"
+      light: "daylight"
+      geography: "hallway, kitchen and front door"
+    continuity: "shalwar and dupatta on; two bags of vegetables; Faiz in the passage, shirt buttoned wrong"
+    cam:
+      - "static medium: door swinging back, Ammi's hands gripping bags just inside the frame"
+      - "tilt down: two bags of vegetables, leaking onto the mosaic"
+      - "track: Juveriya stepping back, hands lifting to take a bag"
+      - "pan: Faiz in the passage, buttoning his cuffs, one button wrong"
+      - "zoom in: Ammi's eyes going over Juveriya once, top to hem"
+      - "static: Juveriya's chin lifting under the look, Faiz behind her, still buttoning"
+
+  - id: c50
+    scene: 10
+    build: cf
+    start_frame: startframes/c50.png
+    loras: []
+    dialogue:
+      - speaker: Ammi
+        text: "Yeh dupatta tirha hai."
+        text_script: "یہ دوپٹہ ترھا ہے۔"
+        language: ur
+    language: ur
+    chain: true
+    noise: 2
+    duration: 5
+    light: daylight
+    mark_state: fading
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "shalwar and dupatta on; dupatta pinned but slipping; welt just under the edge; henna both hands"
+      light: "daylight"
+      geography: "hallway, kitchen and front door"
+    continuity: "shalwar and dupatta on; dupatta pinned but slipping; welt just under the edge; henna both hands"
+    cam:
+      - "static close-up: Ammi's thumb catching the dupatta edge, starting a slow drag across the welt"
+      - "zoom in: the fabric dragging, the welt half uncovered, Faiz's eyes on it"
+      - "static ECU: Juveriya's throat, the mark, breath held"
+      - "handheld: Ammi's thumb smoothing the dupatta back over the welt, Juveriya not breathing"
+      - "tilt up: Juveriya's face, smile fixed, eyes not"
+      - "pan: Faiz at the kitchen door, watching, saying nothing"
+
+  - id: c51
+    scene: 10
+    build: cf
+    start_frame: startframes/c51.png
+    loras: []
+    dialogue:
+      - speaker: Ammi
+        text: "Raat bhar padhai ki?"
+        text_script: "رات بھر پڑھائی کی؟"
+        language: ur
+      - speaker: Juveriya
+        text: "Haan. Chapter khatam."
+        text_script: "ہاں۔ چیپٹر ختم۔"
+        language: ur
+    language: ur
+    chain: true
+    noise: 2
+    duration: 5
+    light: daylight
+    mark_state: fading
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "shalwar and dupatta on; dupatta pinned straight; welt hidden; Faiz's shirt buttoned right now"
+      light: "daylight"
+      geography: "hallway, kitchen and front door"
+    continuity: "shalwar and dupatta on; dupatta pinned straight; welt hidden; Faiz's shirt buttoned right now"
+    cam:
+      - "static medium: Ammi dropping the bags on the counter, not turning round"
+      - "tilt down: a tomato rolling off, stopping at Faiz's foot"
+      - "track: Faiz bending, picking it up, saying nothing"
+      - "zoom in: Juveriya's hands folded in front of her, knuckles pale"
+      - "static: Ammi turning, wiping her hands, looking at Juveriya"
+      - "dolly in: Juveriya holding the look, Faiz straightening behind her"
+
+  - id: c52
+    scene: 10
+    build: cf
+    start_frame: startframes/c52.png
+    loras: []
+    dialogue:
+      - speaker: Ammi
+        text: "Kamra theek kiya hai. Achha."
+        text_script: "کمرہ ٹھیک کیا ہے۔ اچھا۔"
+        language: ur
+    language: ur
+    chain: true
+    noise: 2
+    duration: 5
+    light: daylight
+    mark_state: fading
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "shalwar and dupatta on; desk squared; welt hidden; bags on the counter"
+      light: "daylight"
+      geography: "hallway, kitchen and front door"
+    continuity: "shalwar and dupatta on; desk squared; welt hidden; bags on the counter"
+    cam:
+      - "static wide: Ammi in the study doorway, the room neat, the chair pushed in"
+      - "pan slow: the squared desk, the pen straight, the bin with the shredded cotton"
+      - "zoom in: the bin, the torn elastic just visible under a page"
+      - "track: Juveriya drifting in behind her, hands behind her back"
+      - "static: Faiz in the passage, arms folded, weight on one hip"
+      - "zoom in: Ammi's shoe nudging the bin an inch, Juveriya's toes curling, Faiz still"
+
+  - id: c53
+    scene: 10
+    build: cf
+    start_frame: startframes/c53.png
+    loras: []
+    chain: true
+    noise: 2
+    duration: 5
+    light: daylight
+    mark_state: fading
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "shalwar and dupatta on; desk squared; welt hidden; bathroom door shut"
+      light: "daylight"
+      geography: "hallway, kitchen and front door"
+    continuity: "shalwar and dupatta on; desk squared; welt hidden; bathroom door shut"
+    cam:
+      - "static: bathroom door clicking shut, water starting"
+      - "handheld: Juveriya's shoulders dropping, a long breath out"
+      - "zoom in: Faiz's mouth shaping sorry with no sound"
+      - "static: Juveriya pointing at him, then at the desk, silent"
+      - "tilt down: Faiz's hand pushing the bin under the desk with his foot"
+      - "dolly out: the two of them in the neat room, standing apart, not touching"
+
+  - id: c54
+    scene: 10
+    build: cf
+    start_frame: startframes/c54.png
+    loras: []
+    dialogue:
+      - speaker: Ammi
+        text: "Chai bana de."
+        text_script: "چائے بنا دے۔"
+        language: ur
+    language: ur
+    chain: true
+    noise: 2
+    duration: 5
+    light: daylight
+    mark_state: fading
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "shalwar and dupatta on; welt hidden; bathroom door shut, water running"
+      light: "daylight"
+      geography: "hallway, kitchen and front door"
+    continuity: "shalwar and dupatta on; welt hidden; bathroom door shut, water running"
+    cam:
+      - "static: the bathroom door, Ammi's voice coming through it"
+      - "zoom in: Juveriya's face, eyes closing, a private curse"
+      - "pan: Faiz grinning at the ceiling, hands on his hips"
+      - "track: Juveriya turning for the kitchen, dupatta swinging"
+      - "static: Faiz catching her wrist as she passes, thumb on the pulse"
+      - "zoom in: her hand turning, fingers lacing his for one second, then letting go"
+
+  - id: c55
+    scene: 11
+    build: fm
+    start_frame: startframes/c55.png
+    loras: []
+    chain: true
+    noise: 2
+    duration: 5
+    light: evening_tube
+    mark_state: yellow
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "fresh kurti and skirt, dupatta off, hair loose; desk cleared; welt faded to yellow"
+      light: "evening_tube"
+      geography: "study desk"
+    continuity: "fresh kurti and skirt, dupatta off, hair loose; desk cleared; welt faded to yellow"
+    cam:
+      - "static wide: evening, the study, the tube light on, door shut"
+      - "pan: Juveriya crossing the room and sitting back on the desk edge"
+      - "tilt up: her heel hooking the chair rung, pushing it away"
+      - "zoom in: Faiz at the bookshelf, half turned, reading her"
+      - "static: Juveriya's hands flat on the desk, Faiz's book still open in his hand"
+      - "zoom in: her chin up, one eyebrow, waiting"
+
+  - id: c56
+    scene: 11
+    build: fm
+    start_frame: startframes/c56.png
+    loras: []
+    speaker: Juveriya
+    say: "Ammi's asleep. Sit down."
+    language: en
+    chain: true
+    noise: 2
+    duration: 5
+    light: evening_tube
+    mark_state: yellow
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "fresh kurti and skirt, dupatta off; hair loose; welt yellow at the neck"
+      light: "evening_tube"
+      geography: "study desk"
+    continuity: "fresh kurti and skirt, dupatta off; hair loose; welt yellow at the neck"
+    cam:
+      - "static close-up: Juveriya's mouth, the words flat, unhurried"
+      - "tilt down: her hand patting the desk once, twice"
+      - "track: Faiz putting the book down and crossing"
+      - "zoom in: his palm landing on the desk beside her hip"
+      - "static: Juveriya's hand going to his collar, straightening it, then not"
+      - "arc: Faiz's face, close, surprised, pleased"
+
+  - id: c57
+    scene: 11
+    build: fm
+    start_frame: startframes/c57.png
+    loras: []
+    chain: true
+    noise: 2
+    duration: 5
+    light: evening_tube
+    mark_state: yellow
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "fresh kurti and skirt; dupatta off; kurti tucked, skirt at the knee; hair loose"
+      light: "evening_tube"
+      geography: "study desk"
+    continuity: "fresh kurti and skirt; dupatta off; kurti tucked, skirt at the knee; hair loose"
+    cam:
+      - "static close-up: Juveriya's fist in Faiz's collar, pulling him down"
+      - "handheld: the kiss, off-centre, her teeth catching his lip"
+      - "zoom in: Faiz's hand braced on the desk, arm going rigid"
+      - "tilt down: her leg coming up around his hip, skirt riding"
+      - "static: she pushes the skirt down herself, unhurried, watching him"
+      - "zoom in: Faiz's throat, a swallow, her eyes on it"
+
+  - id: c58
+    scene: 11
+    build: fm
+    start_frame: startframes/c58.png
+    loras: []
+    speaker: Juveriya
+    say: "Shirt off. Not the rest."
+    language: en
+    chain: true
+    noise: 2
+    duration: 5
+    light: evening_tube
+    mark_state: yellow
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt pushed to the thigh; kurti on; Faiz's shirt open and off; welt yellow"
+      light: "evening_tube"
+      geography: "study desk"
+    continuity: "skirt pushed to the thigh; kurti on; Faiz's shirt open and off; welt yellow"
+    cam:
+      - "static medium: Juveriya's hands working Faiz's buttons from the bottom"
+      - "zoom in: the shirt parting, his chest, her knuckles against it"
+      - "tilt down: the shirt off his shoulders, dropping"
+      - "static: Faiz reaching for her kurti hem, Juveriya's hand stopping him"
+      - "zoom in: her head shake, small, absolute"
+      - "pan: Faiz's hands going to the desk instead, gripping the edge"
+
+  - id: c59
+    scene: 11
+    build: fm
+    start_frame: startframes/c59.png
+    loras: [penis_insert]
+    chain: true
+    noise: 2
+    duration: 5
+    light: evening_tube
+    mark_state: yellow
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt at the waist, kurti on and tucked up; panties pulled aside; Faiz's shirt off"
+      light: "evening_tube"
+      geography: "study desk"
+    continuity: "skirt at the waist, kurti on and tucked up; panties pulled aside; Faiz's shirt off"
+    cam:
+      - "static close-up: Juveriya's fingers pulling her own panties to one side"
+      - "zoom in: Faiz's cock, wet at the tip, her hand guiding it"
+      - "static: her hips tipping, the head pressing, both of them still"
+      - "handheld: she takes him in one slow push, her jaw locking"
+      - "tilt up: Faiz's head dropping back, breath out loud"
+      - "zoom in: Juveriya's face, eyes open, watching him come apart"
+
+  - id: c60
+    scene: 11
+    build: fm
+    start_frame: startframes/c60.png
+    loras: [penis_insert, vag_detail]
+    chain: true
+    noise: 2
+    duration: 5
+    light: evening_tube
+    mark_state: yellow
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt at waist; kurti on, bunched at the ribs; Faiz's hands on the desk edge"
+      light: "evening_tube"
+      geography: "study desk"
+    continuity: "skirt at waist; kurti on, bunched at the ribs; Faiz's hands on the desk edge"
+    cam:
+      - "static wide: Juveriya seated on the desk, driving up into Faiz, heels on the drawer"
+      - "handheld: the desk rocking, short strokes, her hands behind her on the wood"
+      - "zoom in: the wet join, her rim stretched, fluid at the base"
+      - "tilt up: Faiz's arm shaking where he braces"
+      - "static close-up: Juveriya's mouth, bitten, pleased"
+      - "arc: Faiz bending to her throat, her hand coming up to hold his head there"
+
+  - id: c61
+    scene: 11
+    build: fm
+    start_frame: startframes/c61.png
+    loras: [penis_insert, vag_detail]
+    speaker: Juveriya
+    say: "Don't move. Let me."
+    language: en
+    chain: true
+    noise: 2
+    duration: 5
+    light: evening_tube
+    mark_state: yellow
+    thread: ""
+    profile: hero
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt at waist; kurti bunched at the ribs; Faiz's hands still on the desk edge"
+      light: "evening_tube"
+      geography: "study desk"
+    continuity: "skirt at waist; kurti bunched at the ribs; Faiz's hands still on the desk edge"
+    cam:
+      - "static close-up: Juveriya's palm flat on Faiz's sternum, holding him off"
+      - "zoom in: Faiz's hips twitching, obeying, the strain in his thigh"
+      - "static: Juveriya's own hand between them, two fingers on her clit"
+      - "handheld: her rhythm changing, harder, shorter, Faiz's jaw going tight"
+      - "tilt down: Juveriya's heel slipping off the drawer, foot finding the chair"
+      - "zoom in: her eyes shutting, mouth opening, Faiz watching her do it"
+
+  - id: c62
+    scene: 11
+    build: fm
+    start_frame: startframes/c62.png
+    loras: [penis_insert, vag_detail]
+    speaker: Faiz
+    say: "There she is. Go on."
+    language: en
+    chain: true
+    noise: 2
+    duration: 5
+    light: evening_tube
+    mark_state: yellow
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt at waist; kurti bunched; her palm on his chest; welt yellow at the neck"
+      light: "evening_tube"
+      geography: "study desk"
+    continuity: "skirt at waist; kurti bunched; her palm on his chest; welt yellow at the neck"
+    cam:
+      - "static tight: Juveriya's face, light behind her, teeth bared"
+      - "handheld shake: Juveriya's whole body folding forward onto Faiz's chest"
+      - "zoom in: her fingers digging into his shoulder, nails white"
+      - "static: her hips stuttering, grinding down, spent"
+      - "tilt up: Faiz's hand cradling the back of Juveriya's head"
+      - "dolly out: the two of them folded together, the desk still"
+
+  - id: c63
+    scene: 11
+    build: fm
+    start_frame: startframes/c63.png
+    loras: [penis_insert, vag_detail]
+    chain: true
+    noise: 2
+    duration: 5
+    light: evening_tube
+    mark_state: yellow
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt at waist; kurti bunched; sweat at the collarbone; Faiz's shirt on the floor"
+      light: "evening_tube"
+      geography: "study desk"
+    continuity: "skirt at waist; kurti bunched; sweat at the collarbone; Faiz's shirt on the floor"
+    cam:
+      - "static close-up: Faiz's hips snapping, three strokes, no rhythm"
+      - "zoom in: his hand slamming the desk beside Juveriya's hip"
+      - "static: him coming, head down, teeth in his own lip"
+      - "handheld: Juveriya's hand running up his spine, feeling it"
+      - "tilt down: fluid at the join, her thigh wet"
+      - "zoom out: Faiz collapsing onto her, the desk taking the weight"
+
+  - id: c64
+    scene: 11
+    build: fm
+    start_frame: startframes/c64.png
+    loras: []
+    dialogue:
+      - speaker: Juveriya
+        text: "See. That's how it's done."
+      - speaker: Faiz
+        text: "That's how it's done when you're showing off."
+    language: en
+    chain: true
+    noise: 2
+    duration: 5
+    light: evening_tube
+    mark_state: yellow
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "skirt at waist; kurti bunched; Faiz's shirt on the floor; hair loose"
+      light: "evening_tube"
+      geography: "study desk"
+    continuity: "skirt at waist; kurti bunched; Faiz's shirt on the floor; hair loose"
+    cam:
+      - "static medium: Juveriya flat on her back on the desk, Faiz's head on her stomach"
+      - "zoom in: her hand in his hair, lazy"
+      - "tilt up: her face, grinning at the ceiling"
+      - "static: Faiz lifting his head to look at her, unimpressed"
+      - "handheld: she props on her elbows, still grinning"
+      - "zoom out: the wrecked desk again, both of them half dressed"
+
+  - id: c65
+    scene: 12
+    build: cf
+    start_frame: startframes/c65.png
+    loras: []
+    dialogue:
+      - speaker: Ammi
+        text: "Rishta hai. Shaadi nahi. Abhi tak."
+        text_script: "رشتہ ہے۔ شادی نہیں۔ ابھی تک۔"
+        language: ur
+    language: ur
+    chain: true
+    noise: 2
+    duration: 5
+    light: daylight
+    mark_state: yellow
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "daylight, shalwar kameez and dupatta; welt yellow; Faiz in a pressed kurta; hallway swept"
+      light: "daylight"
+      geography: "hallway and front door"
+    continuity: "daylight, shalwar kameez and dupatta; welt yellow; Faiz in a pressed kurta; hallway swept"
+    cam:
+      - "static wide: daylight, the passage swept, Ammi's voice from the kitchen off-screen"
+      - "pan: Juveriya folding a dupatta at the almirah"
+      - "zoom in: Faiz at the door with his shoes, laces in hand"
+      - "static: Ammi talking through the kitchen hatch without looking up"
+      - "track: Juveriya glancing at Faiz, Faiz's mouth pulling sideways"
+      - "zoom in: her hands stopping on the folded cloth"
+
+  - id: c66
+    scene: 12
+    build: cf
+    start_frame: startframes/c66.png
+    loras: []
+    dialogue:
+      - speaker: Juveriya
+        text: "Abhi tak."
+        text_script: "अभी तक।"
+        language: hi
+    language: hi
+    chain: true
+    noise: 2
+    duration: 5
+    light: daylight
+    mark_state: yellow
+    thread: "secrecy"
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "daylight; shalwar and dupatta on; welt yellow; Faiz's shoes still in his hand"
+      light: "daylight"
+      geography: "hallway and front door"
+    continuity: "daylight; shalwar and dupatta on; welt yellow; Faiz's shoes still in his hand"
+    cam:
+      - "static medium: Faiz straightening, shoes still in hand, Ammi's voice off-screen"
+      - "zoom in: Ammi's face through the hatch, flat, final"
+      - "tilt down: Juveriya's hand pressing the folded dupatta flat"
+      - "handheld: Faiz glancing at Juveriya, getting nothing back"
+      - "static: Juveriya's shoulder lifting a half inch, not a shrug"
+      - "pan: Ammi going back to the steel, done with the subject"
+
+  - id: c67
+    scene: 12
+    build: cf
+    start_frame: startframes/c67.png
+    loras: []
+    dialogue:
+      - speaker: Ammi
+        text: "Wapas dus baje. Khaana garam rakho."
+        text_script: "واپس دس بجے۔ کھانا گرم رکھو۔"
+        language: ur
+    language: ur
+    chain: true
+    noise: 2
+    duration: 5
+    light: daylight
+    mark_state: yellow
+    thread: ""
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "daylight; shalwar and dupatta on; Ammi's bag on her shoulder, dupatta wound tight"
+      light: "daylight"
+      geography: "hallway and front door"
+    continuity: "daylight; shalwar and dupatta on; Ammi's bag on her shoulder, dupatta wound tight"
+    cam:
+      - "static wide: the doorway, Ammi's hand closing on the bag strap, face out of frame"
+      - "tilt down: her sandals, the strap being done up"
+      - "track: Juveriya coming to see her off, hands at her sides"
+      - "zoom in: Faiz at the far end of the passage, leaning, waiting"
+      - "static: the door opening, Juveriya's hands knotting, corridor light coming in"
+      - "zoom in: Ammi's last look back, Faiz behind Juveriya, unreadable"
+
+  - id: c68
+    scene: 12
+    build: cf
+    start_frame: startframes/c68.png
+    loras: []
+    chain: true
+    noise: 2
+    duration: 5
+    light: daylight
+    mark_state: yellow
+    thread: ""
+    profile: hero
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "daylight; shalwar and dupatta on; Faiz in pressed kurta; door shut"
+      light: "daylight"
+      geography: "hallway and front door"
+    continuity: "daylight; shalwar and dupatta on; Faiz in pressed kurta; door shut"
+    cam:
+      - "static: the door closing, the latch dropping"
+      - "handheld: Juveriya's back against it, head tipping to the wood"
+      - "zoom in: Faiz not moving from the far end of the passage"
+      - "static: three seconds of nothing, Faiz still at the far end, Juveriya still against the door"
+      - "tilt up: Juveriya's eyes opening, finding him"
+      - "zoom in: her hand lifting, one finger, come here"
+
+  - id: c69
+    scene: 12
+    build: cf
+    start_frame: startframes/c69.png
+    loras: []
+    dialogue:
+      - speaker: Faiz
+        text: "Ten o'clock."
+      - speaker: Juveriya
+        text: "Ten o'clock."
+    language: en
+    chain: true
+    noise: 2
+    duration: 5
+    light: daylight
+    mark_state: yellow
+    thread: "secrecy"
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "daylight; shalwar and dupatta on; hallway swept; shoes under the rack"
+      light: "daylight"
+      geography: "hallway and front door"
+    continuity: "daylight; shalwar and dupatta on; hallway swept; shoes under the rack"
+    cam:
+      - "static medium: Faiz pushing off the wall, walking down the passage"
+      - "track: Juveriya coming off the door to meet Faiz halfway"
+      - "zoom in: the gap closing, neither hurrying now"
+      - "static: Faiz's hand finding Juveriya's waist, hers on his chest"
+      - "tilt up: Juveriya's face, tired, decided"
+      - "zoom in: his forehead touching hers, both eyes shut"
+
+  - id: c70
+    scene: 12
+    build: cf
+    start_frame: startframes/c70.png
+    loras: []
+    dialogue:
+      - speaker: Juveriya
+        text: "Ten o'clock. And this time the desk stays put."
+      - speaker: Faiz
+        text: "No promises."
+    language: en
+    chain: true
+    noise: 2
+    duration: 5
+    light: daylight
+    mark_state: yellow
+    thread: "secrecy"
+    profile: draft
+    audio_mode: none
+    anchors:
+      face: "Faiz and Juveriya faces as authored"
+      body: "adult posture as established by the authored cam line"
+      wardrobe: "tracked wardrobe and undressing state"
+      prop: "daylight; shalwar and dupatta slipping off the shoulder; study door shut"
+      light: "daylight"
+      geography: "hallway and front door"
+    continuity: "daylight; shalwar and dupatta slipping off the shoulder; study door shut"
+    cam:
+      - "static wide: the passage, Faiz and Juveriya, the study door behind"
+      - "pan: the swept floor, the shoes kicked under the rack"
+      - "tilt up: Juveriya's dupatta slipping off her shoulder, she lets it"
+      - "static: Faiz pulling the study door open with one finger"
+      - "track: Juveriya walking through it, unhurried"
+      - "dolly back: the door closing on both of them, the flat going quiet"
