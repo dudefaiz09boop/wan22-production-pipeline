@@ -1,31 +1,48 @@
 #!/bin/bash
 # AIC Cloud - Ultra-Fast WAN 2.2 Production Pipeline Setup
 # Optimized for L40S 48GB / RTX 3090 24GB / A100 instances
-# Run on fresh AIC Cloud GPU instance after SSH
+#
+# One-click: run on a fresh AIC Cloud GPU instance after SSH.
+#   bash setup_aic_fast.sh
+#
+# Configuration is read from .env in the repo root (see .env.example).
+# Any value already exported in the environment wins over .env.
 
 set -euo pipefail
 
 # ──────────────────────────────────────────────
-# CONFIGURATION - EDIT THESE BEFORE RUNNING
+# CONFIGURATION
 # ──────────────────────────────────────────────
 
-# Required tokens (set via environment or edit here)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR_DEFAULT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# Load .env if present (does not override already-exported values)
+if [[ -f "$REPO_DIR_DEFAULT/.env" ]]; then
+    while IFS='=' read -r key value; do
+        [[ -z "$key" || "$key" == \#* ]] && continue
+        key="$(echo "$key" | tr -d '[:space:]')"
+        [[ -z "${!key:-}" ]] && export "$key=$value"
+    done < "$REPO_DIR_DEFAULT/.env"
+fi
+
 HF_TOKEN="${HF_TOKEN:-}"           # Hugging Face token (required for model downloads)
-KAGGLE_KEY="${KAGGLE_KEY:-}"       # Kaggle API key (required for trained LoRAs)
-WANDB_KEY="${WANDB_KEY:-}"         # Optional: Weights & Biases for logging
+KAGGLE_KEY="${KAGGLE_KEY:-}"       # Kaggle API key (optional; LoRAs may already be published)
+CIVITAI_API_KEY="${CIVITAI_API_KEY:-}"
 
 # Pipeline config
-REPO_URL="https://github.com/YOUR_USERNAME/wan22-production-pipeline.git"
-BRANCH="main"
-WORKSPACE="/workspace"
-REPO_DIR="$WORKSPACE/wan22-production-pipeline"
-MODEL_CACHE="$WORKSPACE/models"
-OUTPUT_DIR="$WORKSPACE/output"
+REPO_URL="${REPO_URL:-}"
+BRANCH="${BRANCH:-main}"
+WORKSPACE="${WORKSPACE:-/workspace}"
+REPO_DIR="${REPO_DIR:-$WORKSPACE/wan22-production-pipeline}"
+MODEL_CACHE="${MODEL_DIR:-$WORKSPACE/models}"
+OUTPUT_DIR="${OUTPUT_DIR:-$WORKSPACE/output}"
 
 # Performance tuning
-PARALLEL_DOWNLOADS=4
-COMFYUI_PORT=8188
-SKIP_VALIDATION=false
+PARALLEL_DOWNLOADS="${PARALLEL_DOWNLOADS:-4}"
+COMFYUI_PORT="${COMFY_PORT:-8188}"
+SKIP_VALIDATION="${SKIP_VALIDATION:-false}"
+WAN_PRECISION="${WAN_PRECISION:-auto}"
 
 # ──────────────────────────────────────────────
 # COLORS & LOGGING
@@ -57,14 +74,14 @@ fi
 # Check tokens
 MISSING_TOKENS=()
 [[ -z "$HF_TOKEN" ]] && MISSING_TOKENS+=("HF_TOKEN")
-[[ -z "$KAGGLE_KEY" ]] && MISSING_TOKENS+=("KAGGLE_KEY")
 
 if [[ ${#MISSING_TOKENS[@]} -gt 0 ]]; then
     error "Missing required tokens: ${MISSING_TOKENS[*]}"
-    echo "Set them via: export HF_TOKEN=... KAGGLE_KEY=..."
+    echo "Set them in .env (see .env.example) or export them before running."
     exit 1
 fi
-success "All tokens present"
+success "HF token present"
+[[ -n "$KAGGLE_KEY" ]] && success "Kaggle key present" || warn "No KAGGLE_KEY - trained LoRAs must already be published"
 
 # Check GPU
 if ! command -v nvidia-smi &> /dev/null; then
@@ -77,8 +94,15 @@ VRAM_GB=$((VRAM_MB / 1024))
 GPU_NAME=$(nvidia-smi --query-gpu=name --format=csv,noheader | head -1)
 success "GPU: $GPU_NAME (${VRAM_GB} GB VRAM)"
 
-# Determine precision
-if [[ $VRAM_GB -ge 48 ]]; then
+# Determine precision (WAN_PRECISION=auto picks from VRAM)
+if [[ "$WAN_PRECISION" != "auto" ]]; then
+    PRECISION="$WAN_PRECISION"
+    case "$PRECISION" in
+        fp16) MODEL_SIZE_GB=57 ;;
+        fp8)  MODEL_SIZE_GB=29 ;;
+        *)    MODEL_SIZE_GB=15 ;;
+    esac
+elif [[ $VRAM_GB -ge 48 ]]; then
     PRECISION="fp16"
     MODEL_SIZE_GB=57
 elif [[ $VRAM_GB -ge 24 ]]; then
@@ -145,22 +169,31 @@ success "System setup complete"
 # ──────────────────────────────────────────────
 phase "PHASE 2: REPO & PYTHON DEPS"
 
-cd "$WORKSPACE"
-
-# Clone repo (shallow for speed)
-if [[ ! -d "$REPO_DIR/.git" ]]; then
-    log "Cloning repository..."
-    git clone --depth 1 --branch "$BRANCH" "$REPO_URL" "$REPO_DIR" 2>/dev/null
+# If this script is already running from inside a checkout, use it as-is.
+if [[ -d "$REPO_DIR_DEFAULT/.git" ]]; then
+    REPO_DIR="$REPO_DIR_DEFAULT"
+    log "Using existing checkout: $REPO_DIR"
 else
-    log "Updating repository..."
-    cd "$REPO_DIR" && git pull --ff-only 2>/dev/null
+    cd "$WORKSPACE"
+    if [[ ! -d "$REPO_DIR/.git" ]]; then
+        if [[ -z "$REPO_URL" ]]; then
+            error "No checkout found and REPO_URL is unset."
+            echo "Either run this script from inside the repo, or set REPO_URL in .env."
+            exit 1
+        fi
+        log "Cloning repository..."
+        git clone --depth 1 --branch "$BRANCH" "$REPO_URL" "$REPO_DIR"
+    else
+        log "Updating repository..."
+        cd "$REPO_DIR" && git pull --ff-only 2>/dev/null || true
+    fi
 fi
 
 cd "$REPO_DIR"
 
 # Install Python dependencies with uv (parallel, cached)
 log "Installing Python dependencies..."
-uv sync --extra test --no-cache 2>&1 | tail -5
+uv sync --extra test 2>&1 | tail -5
 
 success "Python environment ready"
 
@@ -397,7 +430,49 @@ uv run python scripts/assemble_final.py \
 success "Final deliverable created"
 
 # ──────────────────────────────────────────────
-# COMPLETE - SUMMARY & DOWNLOAD INFO
+# PHASE 11: PUSH RESULTS TO LOCAL MACHINE
+# ──────────────────────────────────────────────
+phase "PHASE 11: SAVE RESULTS LOCALLY"
+
+# AIC Cloud GPU instances are dashboard-only (no GPU API), so the instance
+# cannot reach out to your laptop on its own. Instead it publishes the
+# deliverable over HTTP and prints a one-line pull command.
+#
+# Set PULL_HOST in .env to your laptop's reachable address to have the
+# instance push directly with scp instead.
+
+DELIVERABLE="$OUTPUT_DIR/deliverable.zip"
+FINAL_VIDEO="$OUTPUT_DIR/final.mp4"
+
+if [[ -n "${PULL_HOST:-}" ]]; then
+    log "Pushing results to $PULL_HOST ..."
+    if scp -o StrictHostKeyChecking=accept-new "$DELIVERABLE" "$FINAL_VIDEO" "$PULL_HOST"; then
+        success "Results copied to $PULL_HOST"
+    else
+        warn "scp failed - falling back to HTTP download"
+        PULL_HOST=""
+    fi
+fi
+
+if [[ -z "${PULL_HOST:-}" ]]; then
+    log "Starting HTTP download server on port ${DOWNLOAD_PORT:-8000} ..."
+    cd "$OUTPUT_DIR"
+    nohup python3 -m http.server "${DOWNLOAD_PORT:-8000}" --bind 0.0.0.0 \
+        > /tmp/download-server.log 2>&1 &
+    echo $! > /tmp/download-server.pid
+    sleep 2
+    INSTANCE_IP=$(hostname -I | awk '{print $1}')
+    success "Download server running (pid $(cat /tmp/download-server.pid))"
+    echo ""
+    echo -e "${CYAN}FROM YOUR LOCAL MACHINE, RUN:${NC}"
+    echo "  curl -O http://$INSTANCE_IP:${DOWNLOAD_PORT:-8000}/deliverable.zip"
+    echo "  curl -O http://$INSTANCE_IP:${DOWNLOAD_PORT:-8000}/final.mp4"
+    echo ""
+    echo -e "${YELLOW}The server stops when the instance stops. Download before shutting down.${NC}"
+fi
+
+# ──────────────────────────────────────────────
+# COMPLETE - SUMMARY
 # ──────────────────────────────────────────────
 TOTAL_TIME=$(($(date +%s) - START_RENDER))
 phase "PRODUCTION COMPLETE"
@@ -415,15 +490,6 @@ echo "║  Deliverable: $OUTPUT_DIR/deliverable.zip"
 echo "╚══════════════════════════════════════════════════════════════╝"
 echo -e "${NC}"
 
-# Show download command
-INSTANCE_IP=$(hostname -I | awk '{print $1}')
-echo -e "${CYAN}DOWNLOAD FROM YOUR LOCAL MACHINE:${NC}"
-echo "  scp root@$INSTANCE_IP:$OUTPUT_DIR/deliverable.zip ."
-echo "  scp root@$INSTANCE_IP:$OUTPUT_DIR/final.mp4 ."
-echo ""
-echo -e "${CYAN}OR USE AIC CLOUD DASHBOARD:${NC}"
-echo "  Files tab → Navigate to $OUTPUT_DIR → Download"
-
 # Cost estimate
 if [[ "$GPU_NAME" == *"L40S"* ]]; then
     HOURLY_RATE=84.60
@@ -438,9 +504,15 @@ EST_COST=$(echo "scale=2; $HOURLY_RATE * $TOTAL_TIME / 3600" | bc)
 echo -e "\n${YELLOW}Estimated cost: ₹${EST_COST} (${TOTAL_TIME}s @ ₹${HOURLY_RATE}/hr)${NC}"
 
 # Auto-shutdown option
-read -t 30 -p "Shutdown instance now? (y/N) " -n 1 -r || true
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    log "Shutting down..."
+if [[ "${AUTO_SHUTDOWN:-false}" == "true" ]]; then
+    warn "AUTO_SHUTDOWN=true - stopping instance in 60s. Download now!"
+    sleep 60
     shutdown -h now
+else
+    read -t 60 -p "Shutdown instance now? (y/N) " -n 1 -r || true
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        log "Shutting down..."
+        shutdown -h now
+    fi
 fi
