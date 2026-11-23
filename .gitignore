@@ -103,3 +103,7 @@ yarn-error.log*
 juv_out/
 recover/
 
+
+swap_test.png
+models/
+
