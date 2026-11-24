@@ -218,6 +218,12 @@ def main() -> int:
     }
     meta = data.get("meta") if isinstance(data.get("meta"), dict) else {}
     default_duration = meta.get("duration")
+    # Episode 2 continues the numbering from c71. start_index lets a spec
+    # declare its first shot number instead of always assuming c01.
+    start_index = meta.get("start_index", 1)
+    if not isinstance(start_index, int) or isinstance(start_index, bool) or start_index < 1:
+        fail("meta.start_index must be a positive integer")
+        start_index = 1
     relations = story.get("relations")
     if relations is not None:
         if not isinstance(relations, dict):
@@ -325,7 +331,7 @@ def main() -> int:
             continue
         seen.append(sid)
 
-        expected_id = f"c{index:02d}"
+        expected_id = f"c{start_index + index - 1:02d}"
         if sid != expected_id:
             fail(f"{where} id {sid!r} != {expected_id!r} (order broken)")
 
@@ -598,7 +604,12 @@ def main() -> int:
                             f"not in {sorted(allowed_langs)}"
                         )
 
-    if seen != sorted(seen):
+    # Numeric id order: c100 must come after c11, which lexicographic
+    # sorting gets wrong on any spec with 100+ shots.
+    def shot_number(sid: str) -> int:
+        return int(sid[1:]) if sid[1:].isdigit() else -1
+
+    if seen != sorted(seen, key=shot_number):
         fail("shots not in id order")
 
     neg = (data.get("meta") or {}).get("negative") if isinstance(data.get("meta"), dict) else None
