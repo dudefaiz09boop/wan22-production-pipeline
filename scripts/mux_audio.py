@@ -35,6 +35,29 @@ def load_durations(spec: Path) -> dict[str, float]:
     return out
 
 
+def load_meta(spec: Path) -> dict:
+    data = yaml.safe_load(spec.read_text(encoding="utf-8")) or {}
+    meta = data.get("meta")
+    return meta if isinstance(meta, dict) else {}
+
+
+def resolve_target_size(
+    meta: dict, width: int | None, height: int | None
+) -> tuple[int, int] | None:
+    """Pick the frame size every clip is normalised to before concat.
+
+    The spec renders `build: cf` shots at res_face and everything else at
+    res_base, so the clips arrive at two different sizes. The concat demuxer
+    requires one size, so everything is scaled to res_base unless overridden.
+    """
+    if width and height:
+        return (width, height)
+    base = meta.get("res_base")
+    if isinstance(base, list) and len(base) == 2:
+        return (int(base[0]), int(base[1]))
+    return None
+
+
 def probe_duration(path: Path) -> float:
     result = subprocess.run(
         [
@@ -60,23 +83,95 @@ def has_audio(path: Path) -> bool:
     return bool(result.stdout.strip())
 
 
-def mux_clip(video: Path, audio: Path | None, dest: Path, duration: float) -> bool:
-    """Attach audio to a clip, generating silence when narration is absent."""
+def realism_filters(width: int, height: int, fps: int, grade: bool) -> str:
+    """Normalise geometry and, when grading, add camera-footage texture.
+
+    The scale/pad/setsar/fps part is mandatory: the concat demuxer requires
+    one resolution and one frame rate, and the spec renders `build: cf` at
+    res_face while everything else is res_base.
+
+    The grade part is what stops the output reading as AI video. Grain is
+    applied *after* scaling so it stays a constant size instead of being
+    resampled, and it is luma-weighted so shadows stay clean. Chromatic
+    aberration is a 1px channel shift, not a visible fringe.
+    """
+    chain = [
+        f"scale={width}:{height}:force_original_aspect_ratio=decrease",
+        f"pad={width}:{height}:(ow-iw)/2:(oh-ih)/2",
+        "setsar=1",
+        f"fps={fps}",
+    ]
+    if grade:
+        chain += [
+            # 1px lateral CA: red left, blue right.
+            "rgbashift=rh=-1:bh=1",
+            # Gentle S-curve, warm highlights, cool shadows.
+            "eq=contrast=1.06:saturation=1.04:gamma=0.99",
+            "colorbalance=rs=0.02:bs=-0.02:rh=0.03:bh=-0.03",
+            # Halation: bloom the highlights only, then recombine.
+            "split=2[base][hi]",
+            "[hi]lutyuv=y='if(gt(val,190),val,0)':u=128:v=128,"
+            "gblur=sigma=6[bloom]",
+            "[base][bloom]blend=all_mode=screen:all_opacity=0.18",
+            # Grain last, luma-weighted so shadows do not turn to noise.
+            "noise=alls=7:allf=t+u",
+            # Recover a little bite lost to the bloom.
+            "unsharp=5:5:0.5:5:5:0.0",
+        ]
+    return ",".join(chain)
+
+
+def mux_clip(
+    video: Path,
+    audio: Path | None,
+    dest: Path,
+    duration: float,
+    target: tuple[int, int] | None = None,
+    fps: int = 16,
+    grade: bool = False,
+) -> bool:
+    """Attach audio to a clip, generating silence when narration is absent.
+
+    ``target`` normalises the frame size. The concat demuxer used by
+    ``concat_with_audio`` requires every input to share a resolution and a
+    frame rate, and the spec renders `build: cf` shots at res_face (1280x720)
+    and everything else at res_base (832x480). Without this the final concat
+    fails.
+
+    ``grade`` adds the realism chain (grain, halation, CA, grade). It forces a
+    re-encode, so it is off by default and the plain mux keeps `-c:v copy`.
+    """
     dest.parent.mkdir(parents=True, exist_ok=True)
+
+    # Only re-encode when the frame size, frame rate, or grade actually has to
+    # change. A plain mux keeps the original stream with `-c:v copy`.
+    vf: list[str] = []
+    video_codec: list[str] = ["-c:v", "copy"]
+    if target is not None:
+        width, height = target
+        vf = ["-vf", realism_filters(width, height, fps, grade)]
+        video_codec = [
+            "-c:v", "libx264", "-crf", "18", "-preset", "medium",
+            "-pix_fmt", "yuv420p",
+        ]
 
     if audio is not None and audio.is_file():
         cmd = [
             "ffmpeg", "-y", "-i", str(video), "-i", str(audio),
+            *vf,
             "-map", "0:v:0", "-map", "1:a:0",
-            "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
+            *video_codec,
+            "-c:a", "aac", "-b:a", "192k",
             "-shortest", str(dest),
         ]
     else:
         cmd = [
             "ffmpeg", "-y", "-i", str(video),
-            "-f", "lavfi", "-i", f"anullsrc=r=48000:cl=stereo",
+            "-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo",
+            *vf,
             "-map", "0:v:0", "-map", "1:a:0",
-            "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
+            *video_codec,
+            "-c:a", "aac", "-b:a", "192k",
             "-t", f"{duration:.3f}", str(dest),
         ]
 
@@ -139,9 +234,29 @@ def main() -> int:
     ap.add_argument("--preset", default="slow")
     ap.add_argument("--from-clip", default="c01")
     ap.add_argument("--to-clip", default="c70")
+    ap.add_argument(
+        "--width",
+        type=int,
+        default=None,
+        help="Normalise every clip to this width before concat (default: meta.res_base)",
+    )
+    ap.add_argument("--height", type=int, default=None, help="Normalise to this height")
+    ap.add_argument(
+        "--fps",
+        type=int,
+        default=16,
+        help="Normalise every clip to this frame rate before concat (default 16)",
+    )
+    ap.add_argument(
+        "--grade",
+        action="store_true",
+        help="Add the realism grade: grain, halation, chromatic aberration, colour",
+    )
     args = ap.parse_args()
 
     durations = load_durations(Path(args.spec))
+    meta = load_meta(Path(args.spec))
+    target = resolve_target_size(meta, args.width, args.height)
     audio_index_path = Path(args.audio) / "index.json"
     audio_index = {}
     if audio_index_path.is_file():
@@ -164,7 +279,11 @@ def main() -> int:
         if not candidates:
             missing_video.append(clip_id)
             continue
-        video = candidates[0]
+        # Prefer the lipsynced clip when the render dir contains both. A plain
+        # sorted() puts renders/c01.mp4 before renders/lipsync/c01.mp4, so the
+        # lipsync pass would be silently discarded.
+        lipsynced = [c for c in candidates if "lipsync" in c.parts]
+        video = lipsynced[0] if lipsynced else candidates[0]
         duration = durations.get(clip_id, 5.0)
 
         audio_name = audio_index.get(clip_id)
@@ -173,7 +292,10 @@ def main() -> int:
             with_narration += 1
 
         dest = muxed_dir / f"{clip_id}.mp4"
-        if mux_clip(video, audio, dest, duration):
+        if mux_clip(
+            video, audio, dest, duration,
+            target=target, fps=args.fps, grade=args.grade,
+        ):
             muxed.append(dest)
 
     print(f"muxed {len(muxed)} clip(s), {with_narration} with narration")

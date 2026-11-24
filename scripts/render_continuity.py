@@ -22,8 +22,7 @@ SHOT_IDS = [f"c{number:02d}" for number in range(1, 71)]
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 VIDEO_KEYFRAME_MAX_BYTES = 5 * 1024 * 1024
 # Wan 2.2 is trained at 16 fps with 81 frames (wan/configs/shared_config.py:
-# sample_fps=16, frame_num=81). Generating at 8 fps / 41 frames halves the
-# temporal information the model expects, which is why motion looked choppy.
+# sample_fps=16, frame_num=81). The rest of the pipeline now matches.
 VIDEO_FPS = 16
 # Native render resolution from docs/beats.yaml meta.res_base. Segments are kept
 # at this size instead of being upscaled to 1280x720, which added no detail.
@@ -353,7 +352,7 @@ def extract_last_frame(ffmpeg: str, segment: Path, destination: Path) -> None:
     temporary.unlink(missing_ok=True)
     # Seek back a full second and let -update 1 overwrite the output for every
     # decoded frame, so the file left behind is the last frame. A short -sseof
-    # window is unreliable: at 8 fps a 0.05s seek lands past the final frame.
+    # window is unreliable: at 16 fps a 0.05s seek lands past the final frame.
     run_media([
         ffmpeg, "-y", "-hide_banner", "-loglevel", "error",
         "-sseof", "-1", "-i", str(segment),

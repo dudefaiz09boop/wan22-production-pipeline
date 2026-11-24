@@ -10,6 +10,10 @@ import render
 
 ROOT = Path(__file__).resolve().parents[1]
 
+# base_i2v.json already uses 1-14 (13/14 are the ModelSamplingSD3 nodes), so
+# injected LoRA loaders start at 15.
+FIRST_LORA_ID = 15
+
 
 def base_workflow():
     return json.loads((ROOT / "workflows" / "base_i2v.json").read_text(encoding="utf-8"))
@@ -33,24 +37,29 @@ class LoraInjectedPerPassTests(unittest.TestCase):
             base_workflow(),
             "p",
             "n",
-            {"width": 832, "height": 480, "duration": 5, "loras": ["penis_insert", "vag_detail"]},
+            {
+                "width": 832, "height": 480, "duration": 5,
+                "loras": ["penis_insert", "vag_detail"],
+                "no_default_loras": True,
+            },
             "frame.png",
             registry=real_registry(),
         )
         nodes = lora_nodes(wf)
         self.assertEqual(len(nodes), 4)
-        self.assertEqual(nodes["13"]["inputs"]["lora_name"], "penis_insert_wan22_high.safetensors")
-        self.assertEqual(nodes["13"]["inputs"]["strength_model"], 0.9)
-        self.assertEqual(nodes["13"]["inputs"]["model"], ["1", 0])
-        self.assertEqual(nodes["14"]["inputs"]["lora_name"], "penis_insert_wan22_low.safetensors")
-        self.assertEqual(nodes["14"]["inputs"]["model"], ["2", 0])
-        self.assertEqual(nodes["15"]["inputs"]["lora_name"], "vag_detail_wan22_high.safetensors")
-        self.assertEqual(nodes["15"]["inputs"]["strength_model"], 0.75)
-        self.assertEqual(nodes["15"]["inputs"]["model"], ["13", 0])
-        self.assertEqual(nodes["16"]["inputs"]["lora_name"], "vag_detail_wan22_low.safetensors")
-        self.assertEqual(nodes["16"]["inputs"]["model"], ["14", 0])
-        self.assertEqual(wf["9"]["inputs"]["model"], ["15", 0])
-        self.assertEqual(wf["10"]["inputs"]["model"], ["16", 0])
+        a, b, c, d = (str(FIRST_LORA_ID + i) for i in range(4))
+        self.assertEqual(nodes[a]["inputs"]["lora_name"], "penis_insert_wan22_high.safetensors")
+        self.assertEqual(nodes[a]["inputs"]["strength_model"], 0.9)
+        self.assertEqual(nodes[a]["inputs"]["model"], ["13", 0])
+        self.assertEqual(nodes[b]["inputs"]["lora_name"], "penis_insert_wan22_low.safetensors")
+        self.assertEqual(nodes[b]["inputs"]["model"], ["14", 0])
+        self.assertEqual(nodes[c]["inputs"]["lora_name"], "vag_detail_wan22_high.safetensors")
+        self.assertEqual(nodes[c]["inputs"]["strength_model"], 0.75)
+        self.assertEqual(nodes[c]["inputs"]["model"], [a, 0])
+        self.assertEqual(nodes[d]["inputs"]["lora_name"], "vag_detail_wan22_low.safetensors")
+        self.assertEqual(nodes[d]["inputs"]["model"], [b, 0])
+        self.assertEqual(wf["9"]["inputs"]["model"], [c, 0])
+        self.assertEqual(wf["10"]["inputs"]["model"], [d, 0])
 
     def test_null_slots_skip_only_that_pass(self):
         registry = {
@@ -66,17 +75,21 @@ class LoraInjectedPerPassTests(unittest.TestCase):
             base_workflow(),
             "p",
             "n",
-            {"width": 832, "height": 480, "duration": 5, "loras": ["pov_finish"]},
+            {
+                "width": 832, "height": 480, "duration": 5,
+                "loras": ["pov_finish"], "no_default_loras": True,
+            },
             "frame.png",
             registry=registry,
         )
         nodes = lora_nodes(wf)
         self.assertEqual(len(nodes), 1)
-        self.assertEqual(nodes["13"]["inputs"]["lora_name"], "pov_finish_wan22_low.safetensors")
-        self.assertEqual(nodes["13"]["inputs"]["strength_model"], 0.8)
-        self.assertEqual(nodes["13"]["inputs"]["model"], ["2", 0])
-        self.assertEqual(wf["9"]["inputs"]["model"], ["1", 0])
-        self.assertEqual(wf["10"]["inputs"]["model"], ["13", 0])
+        node_id = str(FIRST_LORA_ID)
+        self.assertEqual(nodes[node_id]["inputs"]["lora_name"], "pov_finish_wan22_low.safetensors")
+        self.assertEqual(nodes[node_id]["inputs"]["strength_model"], 0.8)
+        self.assertEqual(nodes[node_id]["inputs"]["model"], ["14", 0])
+        self.assertEqual(wf["9"]["inputs"]["model"], ["13", 0])
+        self.assertEqual(wf["10"]["inputs"]["model"], [node_id, 0])
 
     def test_missing_lora_file_warns_loudly_but_still_injects(self):
         registry = {
@@ -94,7 +107,10 @@ class LoraInjectedPerPassTests(unittest.TestCase):
                 base_workflow(),
                 "p",
                 "n",
-                {"width": 832, "height": 480, "duration": 5, "loras": ["orbit"]},
+                {
+                    "width": 832, "height": 480, "duration": 5,
+                    "loras": ["orbit"], "no_default_loras": True,
+                },
                 "frame.png",
                 registry=registry,
             )
@@ -103,7 +119,7 @@ class LoraInjectedPerPassTests(unittest.TestCase):
         self.assertIn("definitely_missing_here.safetensors", output)
         nodes = lora_nodes(wf)
         self.assertEqual(len(nodes), 1)
-        self.assertEqual(wf["9"]["inputs"]["model"], ["13", 0])
+        self.assertEqual(wf["9"]["inputs"]["model"], [str(FIRST_LORA_ID), 0])
 
     def test_unknown_lora_key_warns_and_never_silent_skips(self):
         stderr = io.StringIO()
@@ -112,7 +128,10 @@ class LoraInjectedPerPassTests(unittest.TestCase):
                 base_workflow(),
                 "p",
                 "n",
-                {"width": 832, "height": 480, "duration": 5, "loras": ["nope_lora"]},
+                {
+                    "width": 832, "height": 480, "duration": 5,
+                    "loras": ["nope_lora"], "no_default_loras": True,
+                },
                 "frame.png",
                 registry=real_registry(),
             )
@@ -124,13 +143,62 @@ class LoraInjectedPerPassTests(unittest.TestCase):
             base_workflow(),
             "p",
             "n",
-            {"width": 832, "height": 480, "duration": 5, "loras": []},
+            {
+                "width": 832, "height": 480, "duration": 5,
+                "loras": [], "no_default_loras": True,
+            },
             "frame.png",
             registry=real_registry(),
         )
         self.assertEqual(lora_nodes(wf), {})
-        self.assertEqual(wf["9"]["inputs"]["model"], ["1", 0])
-        self.assertEqual(wf["10"]["inputs"]["model"], ["2", 0])
+        self.assertEqual(wf["9"]["inputs"]["model"], ["13", 0])
+        self.assertEqual(wf["10"]["inputs"]["model"], ["14", 0])
+
+
+class DefaultLoraTests(unittest.TestCase):
+    """Registry entries flagged `default: true` land on every shot."""
+
+    def test_defaults_are_injected_without_being_declared(self):
+        wf = render.inject(
+            base_workflow(),
+            "p",
+            "n",
+            {"width": 832, "height": 480, "duration": 5, "loras": []},
+            "frame.png",
+            registry=real_registry(),
+        )
+        names = {n["inputs"]["lora_name"] for n in lora_nodes(wf).values()}
+        self.assertIn("realism_wan22_high.safetensors", names)
+        self.assertIn("skin_morph_wan22_low.safetensors", names)
+
+    def test_no_default_loras_opts_out(self):
+        wf = render.inject(
+            base_workflow(),
+            "p",
+            "n",
+            {
+                "width": 832, "height": 480, "duration": 5,
+                "loras": [], "no_default_loras": True,
+            },
+            "frame.png",
+            registry=real_registry(),
+        )
+        self.assertEqual(lora_nodes(wf), {})
+
+    def test_defaults_come_before_shot_loras(self):
+        wf = render.inject(
+            base_workflow(),
+            "p",
+            "n",
+            {"width": 832, "height": 480, "duration": 5, "loras": ["vag_detail"]},
+            "frame.png",
+            registry=real_registry(),
+        )
+        names = [n["inputs"]["lora_name"] for n in lora_nodes(wf).values()]
+        self.assertLess(
+            names.index("realism_wan22_high.safetensors"),
+            names.index("vag_detail_wan22_high.safetensors"),
+        )
 
 
 if __name__ == "__main__":

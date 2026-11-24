@@ -130,12 +130,15 @@ else
 fi
 success "Selected precision: $PRECISION (est. ${MODEL_SIZE_GB} GB models)"
 
-# Check disk space
+# Check disk space. 16 fps doubles the frame count, so the render tree is
+# roughly twice what an 8 fps run produced; the allowance covers models,
+# renders, lipsync output, muxed clips and the final cut.
 AVAIL_GB=$(df -BG "$WORKSPACE" | tail -1 | awk '{print $4}' | sed 's/G//')
-REQUIRED_GB=$((MODEL_SIZE_GB + 20))  # models + workspace + outputs
+REQUIRED_GB=$((MODEL_SIZE_GB + 40))
 if [[ $AVAIL_GB -lt $REQUIRED_GB ]]; then
-    warn "Low disk: ${AVAIL_GB}GB available, need ~${REQUIRED_GB}GB"
-    warn "Consider adding more disk in AIC Cloud dashboard"
+    error "Low disk: ${AVAIL_GB}GB available, need ~${REQUIRED_GB}GB"
+    error "Add disk in the AIC Cloud dashboard before continuing."
+    exit 1
 fi
 
 # ──────────────────────────────────────────────
@@ -273,6 +276,19 @@ DOWNLOADED=$(find "$MODEL_CACHE" -name "*.safetensors" -o -name "*.gguf" | wc -l
 EXPECTED=$(echo $HF_FILES | wc -w)
 success "Downloaded $DOWNLOADED/$EXPECTED model files"
 
+# ────────────────────────────────────────────────────────────
+# Civitai GGUF checkpoints
+# ────────────────────────────────────────────────────────────
+# The workflows load the Civitai 2053259 pair, which the Comfy-Org repo does
+# not publish. Without this the first clip fails with a missing model.
+if [[ "$PRECISION" == "gguf_q8" ]]; then
+    log "Downloading Civitai GGUF checkpoints (fm + cf)..."
+    if ! uv run python scripts/download_wan22_gguf.py --dest "$MODEL_CACHE"; then
+        warn "Civitai GGUF download incomplete - renders will fail until staged"
+        warn "Set CIVITAI_API_KEY in .env, or run: python scripts/download_wan22_gguf.py --dest $MODEL_CACHE"
+    fi
+fi
+
 # Lipsync models. Only fetched when lipsync is enabled.
 #   s2v          -> Wan 2.2 S2V diffusion model + wav2vec2 audio encoder
 #   infinitetalk -> Wan 2.1 I2V base + InfiniteTalk patch + audio encoder
@@ -317,16 +333,17 @@ fi
 # ──────────────────────────────────────────────
 phase "PHASE 4: LORAS"
 
-# 4a. Anatomy LoRAs. The beats declare penis_insert and vag_detail on
-# specific shots, so these must exist before ComfyUI runs.
-log "Checking anatomy LoRAs (Civitai)..."
+# 4a. Anatomy + realism LoRAs. The beats declare penis_insert and vag_detail
+# on specific shots, and the registry flags realism/skin_morph as defaults on
+# every shot, so all of them must exist before ComfyUI runs.
+log "Checking anatomy and realism LoRAs (Civitai)..."
 if ! uv run python scripts/download_anatomy_loras.py --dest "$MODEL_CACHE/loras" --required-only; then
-    error "Anatomy LoRAs are missing and could not be downloaded."
+    error "Required LoRAs are missing and could not be downloaded."
     echo "Set CIVITAI_API_KEY in .env, or stage the files manually in $MODEL_CACHE/loras."
-    echo "Required by docs/beats.yaml: penis_insert and vag_detail (high + low)."
+    echo "Required: penis_insert, vag_detail, realism, skin_morph (high + low)."
     exit 1
 fi
-success "Anatomy LoRAs present"
+success "Anatomy and realism LoRAs present"
 
 # 4b. Trained character LoRAs. A locally staged copy wins over Kaggle.
 log "Resolving trained character LoRAs..."
@@ -600,6 +617,14 @@ phase "PHASE 8: RENDER CLIPS (WAN 2.2 I2V)"
 log "Starting full production render..."
 START_RENDER=$(date +%s)
 
+# NAG makes the negative prompt bite at CFG 1.0. Off by default: it roughly
+# doubles render time.
+NAG_ARGS=()
+if [[ "${NAG:-false}" == "true" ]]; then
+    NAG_ARGS=(--nag --nag-scale "${NAG_SCALE:-11.0}" --nag-alpha "${NAG_ALPHA:-0.25}" --nag-tau "${NAG_TAU:-2.5}")
+    log "NAG enabled (scale ${NAG_SCALE:-11.0})"
+fi
+
 uv run python scripts/run_production.py \
     --spec docs/beats.yaml \
     --prompts prompts \
@@ -614,6 +639,7 @@ uv run python scripts/run_production.py \
     --skip-stills \
     --skip-face-swap \
     --skip-assemble \
+    ${NAG_ARGS[@]+"${NAG_ARGS[@]}"} \
     2>&1 | tee /tmp/render.log
 
 RENDER_EXIT=${PIPESTATUS[0]}
@@ -745,6 +771,11 @@ if [[ -n "${MUSIC_BED:-}" && -f "${MUSIC_BED:-}" ]]; then
     MUSIC_ARGS=(--music "$MUSIC_BED" --music-db "${MUSIC_DB:--22}")
 fi
 
+GRADE_ARGS=()
+if [[ "${GRADE:-true}" == "true" ]]; then
+    GRADE_ARGS=(--grade)
+fi
+
 if ! uv run python scripts/mux_audio.py \
     --spec docs/beats.yaml \
     --renders "$RENDER_SOURCE" \
@@ -752,6 +783,8 @@ if ! uv run python scripts/mux_audio.py \
     --muxed renders/muxed \
     --output output/final.mp4 \
     --crf 18 --preset slow \
+    --fps 16 \
+    ${GRADE_ARGS[@]+"${GRADE_ARGS[@]}"} \
     ${MUSIC_ARGS[@]+"${MUSIC_ARGS[@]}"} \
     2>&1 | tail -12; then
     warn "Audio mux failed - falling back to silent assembly"
@@ -763,7 +796,8 @@ if ! uv run python scripts/mux_audio.py \
         2>&1 | tail -6
 fi
 
-# 10c. Package the deliverable.
+# 10c. Package the deliverable. --keep-existing stops this from re-concatenating
+# over output/final.mp4 and throwing away the muxed audio track.
 log "Packaging deliverable..."
 uv run python scripts/assemble_final.py \
     --spec docs/beats.yaml \
@@ -771,6 +805,7 @@ uv run python scripts/assemble_final.py \
     --output output \
     --crf 18 \
     --preset slow \
+    --keep-existing \
     --zip \
     --include-frames \
     2>&1 | tail -6
@@ -779,7 +814,15 @@ if [[ ! -f output/final.mp4 ]]; then
     error "Final video was not produced. Check the assemble output above."
     exit 1
 fi
-success "Final deliverable created"
+
+# The deliverable must have sound. A silent final.mp4 means the mux fell back
+# to the silent assembly path, which is a broken deliverable, not a warning.
+if ! ffprobe -v error -select_streams a -show_entries stream=index \
+        -of csv=p=0 output/final.mp4 | grep -q .; then
+    error "final.mp4 has no audio stream - the mux did not run."
+    exit 1
+fi
+success "Final deliverable created (with audio)"
 
 # ──────────────────────────────────────────────
 # PHASE 11: PUSH RESULTS TO LOCAL MACHINE

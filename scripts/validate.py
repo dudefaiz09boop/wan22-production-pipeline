@@ -26,6 +26,9 @@ MAX_LEN = 220
 MAX_TURNS = 8
 MAX_PROMPT_CHARS = 2000
 MAX_LORAS = 3
+# Registry entries flagged `default: true` are injected into every shot by
+# render.inject_loras, so they count against the per-shot budget too.
+MAX_TOTAL_LORAS = 5
 LANGS = {"en", "hi", "ur"}
 RESET_BEATS = {"c08", "c18", "c21", "c30", "c46", "c47"}
 STABLE_ANCHOR_KEYS = ("face", "body", "wardrobe")
@@ -391,6 +394,17 @@ def main() -> int:
             loras = []
         if len(loras) > MAX_LORAS:
             fail(f"{sid} declares {len(loras)} loras (max {MAX_LORAS})")
+        default_count = sum(
+            1
+            for entry in (known_loras or {}).values()
+            if isinstance(entry, dict) and entry.get("default") is True
+        )
+        if not shot.get("no_default_loras") and len(loras) + default_count > MAX_TOTAL_LORAS:
+            fail(
+                f"{sid} would load {len(loras) + default_count} loras "
+                f"({len(loras)} declared + {default_count} default, "
+                f"max {MAX_TOTAL_LORAS})"
+            )
         declared_keys = set()
         for lora in loras:
             if not isinstance(lora, str) or not re.fullmatch(r"[a-z0-9_]+", lora):

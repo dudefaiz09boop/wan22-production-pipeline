@@ -198,13 +198,26 @@ def load_env(path: Path = Path(".env")) -> None:
 
 
 def required_keys(spec_path: Path = Path("docs/beats.yaml")) -> set[str]:
-    """Return the LoRA keys the production spec actually declares."""
+    """Return the LoRA keys the production spec actually declares.
+
+    Registry entries flagged `default: true` are applied to every shot by
+    render.inject_loras, so they are required too.
+    """
+    keys: set[str] = set()
+    try:
+        registry = load_registry(REGISTRY_PATH)
+        keys.update(
+            key
+            for key, entry in registry.items()
+            if isinstance(entry, dict) and entry.get("default") is True
+        )
+    except SystemExit:
+        pass
     try:
         import yaml
         data = yaml.safe_load(spec_path.read_text(encoding="utf-8"))
-    except Exception:  # noqa: BLE001 - fall back to the full registry
-        return set()
-    keys: set[str] = set()
+    except Exception:  # noqa: BLE001 - fall back to the registry defaults
+        return keys
     for shot in (data or {}).get("shots") or []:
         for key in shot.get("loras") or []:
             if isinstance(key, str):

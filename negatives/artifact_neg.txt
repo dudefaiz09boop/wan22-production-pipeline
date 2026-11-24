@@ -7,4 +7,8 @@ ghosting, double exposure, frame jump, stutter, flicker, temporal noise, popping
 plastic skin, waxy texture, doll face, over-smoothed, uncanny
 floating prop, prop teleporting, arm through body, feet sliding, torso twist too far
 camera drift when static, unexplained zoom, horizon tilt, focus hunting, rolling shutter
-lip sync drift, mouth closed while speaking, dead eyes, no blink, frozen frame, slideshow
+lip sync drift, mouth closed while speaking, dead eyes, no blink, frozen frame, slideshow3d render, cgi, video game cutscene, unreal engine, octane render, ray traced, cg look
+airbrushed, beauty filter, poreless, porcelain skin, instagram filter, hdr glow
+anime, cartoon, illustration, painting, sketch, cel shaded
+oversaturated, teal and orange, crushed blacks, blown highlights, flat lighting
+slow motion, stop motion, low framerate, judder, duplicate frames

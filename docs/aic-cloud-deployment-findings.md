@@ -268,34 +268,273 @@ LOW  B5722E8E01A21F89A1C0B5E9DE9A3B907CE92324D1951D5CE70307956790DAAE
 Load with `UnetLoaderGGUF` (requires the ComfyUI-GGUF custom node). Lightning
 is baked in, so **no LightX2V LoRA** and no separate Lightning LoRA.
 
+### The 58-version trap
+
+Model 2053259 has **58 versions** and the naming encodes whether Lightning is
+baked in. Getting this wrong reproduces the §4 gray-video bug exactly.
+
+| Version family | IDs | Lightning | Recipe |
+|---|---|---|---|
+| NSFW FAST MOVE V2 Q8 | 2540892 / 2540896 | **baked in** | 2+3 steps, CFG 1, **no LoRA** |
+| NSFW V2 Q8 | 2584698 / 2584707 | **baked in** | 2+3 steps, CFG 1, **no LoRA** |
+| nolightning SVI cf Q8 | 2668710 / 2668712 | none | LightX2V LoRA **or** 20+ steps |
+| nolightning SVI cf fp8 | 2609141 / 2609148 | none | LightX2V LoRA **or** 20+ steps |
+| nolightning SVI fm fp8 | 2606405 / 2606408 | none | LightX2V LoRA **or** 20+ steps |
+
+The author states it twice: *"This model already includes the Lightning LoRAs,
+don't use them, or the quality will be degraded"* and *"For SVI models, you can
+use Lightning LoRAs if you want faster video generation."*
+
+`generate_workflow.py` encodes this as `LIGHTNING_BAKED = {"gguf_q8"}` and
+`render.py` as `NEEDS_LIGHTX2V = {"cf"}`.
+
+### Correction: the SVI models are not missing
+
+An earlier reading of the huchukato workflow concluded that
+`wan22EnhancedNSFWSVICamera_nolightningSVICfFp8H/L` did not exist. They do —
+they are model 2053259 versions 2609141 / 2609148, whose real filenames are:
+
+```
+Wan2_2-I2V-A14B-HIGH_SVI_consistent_face_nsfw_fp8.safetensors
+Wan2_2-I2V-A14B-LOW_SVI_consistent_face_nsfw_fp8.safetensors
+```
+
+The huchukato description simply never links to model 2053259. It is a
+documentation gap, not a missing model.
+
+### FM vs CF
+
+| | Fast Move (FM) | Consistent Face (CF) |
+|---|---|---|
+| Motion | more, faster | less |
+| Prompt / camera adherence | better | weaker |
+| Image quality | good | slightly better |
+| Lightning baked in | **yes** | **no** |
+
+`build: fm` is the default. `build: cf` swaps to the Consistent Face pair and
+chains the LightX2V LoRAs automatically, because that pair has no distillation.
+
 ### Do not
 
 - Run 3 steps. The LightX2V LoRA is trained at 4; three is visibly mushier.
 - Raise CFG above 1.0 to "compensate". It burns skin and roughly halves speed.
 - Use `--lowvram` on a 44 GB card.
+- Stack LightX2V on the Lightning-baked pair. It degrades quality.
 
 ---
 
 ## 5. Frame count and fps
 
-The project contract is **8 fps, 41 frames for a 5 s clip, 33 for 4 s**.
-`WanImageToVideo` requires `(length - 1) % 4 == 0`; both satisfy it.
+The project contract is **16 fps**, the rate Wan 2.2 is trained at.
+`WanImageToVideo` requires `(length - 1) % 4 == 0`, so frames are
+`duration * fps + 1` snapped up to that grid: **81 frames for a 5 s clip, 65
+for 4 s**.
 
-The generator was computing `duration * 16 + 1` = **81 frames at 16 fps**,
-which doubled sampling cost for no authored benefit.
+The pipeline originally ran at 8 fps. Two things were wrong with that:
+
+1. 8 fps reads as stop-motion on any camera move. Wan 2.2's own training rate
+   is 16, so half the temporal detail the model can produce was being thrown
+   away.
+2. The lipsync pass has always rendered at 16 fps. Mixing 8 fps renders with
+   16 fps lipsync output in one concat is a frame-rate mismatch, not just a
+   look problem.
 
 ```python
-# scripts/render.py
-inputs["length"] = 41 if cfg["duration"] >= 5 else 33
+# scripts/generate_workflow.py
+FPS = 16
+FRAMES_5S = 81
+FRAMES_4S = 65
+
+def frames_for(duration: float, fps: int = FPS) -> int:
+    length = int(round(duration * fps)) + 1
+    while (length - 1) % 4:
+        length += 1
+    return length
 ```
 
-```python
-# scripts/generate_workflow.py — VHS_VideoCombine
-"frame_rate": 8,
+`render.py` and `lipsync.py` both call `frames_for`, so the two stages can
+never drift apart again. `mux_audio.py --fps` normalises every clip to one
+rate before concat.
+
+**Cost:** 81 frames is roughly double the sampling of 41. Budget for it.
+
+---
+## 5b. Negative prompts are dead code at CFG 1.0
+`negatives/artifact_neg.txt` is referenced by every prompt JSON and read by
+`render.py`, but it **has no effect on any render**.
+
+At CFG 1.0 the sampler never evaluates the negative branch — it is
+mathematically ignored. The author confirms: *"The model must be used with CFG
+set to 1, so negative prompts do not work by default."*
+
+### Enabling them
+
+KJNodes ships `WanVideoNAG`, which patches cross-attention with the negative
+conditioning. It sits between `ModelSamplingSD3` and the sampler:
+
+```
+UNETLoader -> [LightX2V] -> ModelSamplingSD3 -> WanVideoNAG -> KSamplerAdvanced
+```
+
+```bash
+python scripts/generate_workflow.py --precision gguf_q8 --output workflows/nag.json --nag
+```
+
+Defaults: `nag_scale 11.0`, `nag_alpha 0.25`, `nag_tau 2.5`.
+
+**Cost: roughly doubles generation time.** Only enable it when a specific
+artifact must be suppressed. Otherwise delete `negatives/artifact_neg.txt` and
+stop pretending it is applied.
+
+In the production path:
+
+```bash
+python scripts/run_production.py --nag --nag-scale 11.0 --nag-alpha 0.25 --nag-tau 2.5
 ```
 
 ---
 
+## 5c. The GGUF checkpoints are not on Hugging Face
+
+`auto_model_selector.py` only knows about Hugging Face, and
+`Comfy-Org/Wan_2.2_ComfyUI_Repackaged` publishes **no GGUF files at all**. The
+workflows load the Civitai 2053259 pair, so a fresh instance used to fail on
+the first clip with a missing model.
+
+`scripts/download_wan22_gguf.py` stages all four checkpoints plus the LightX2V
+LoRAs the CF pair needs:
+
+```bash
+python scripts/download_wan22_gguf.py --dest /workspace/models
+python scripts/download_wan22_gguf.py --check          # status only
+python scripts/download_wan22_gguf.py --only fm        # skip the CF pair
+```
+
+`setup_aic_fast.sh` calls it automatically when `PRECISION=gguf_q8`.
+
+| Build | Version | File | Size |
+|---|---|---|---|
+| fm/high | 2540892 | `..._fast_move-HIGH_Q8(lightning_edition)V2.gguf` | 14.35 GB |
+| fm/low | 2540896 | `..._fast_move-LOW_Q8lightning_edition)V2.gguf` | 14.35 GB |
+| cf/high | 2668710 | `Wan2_2-I2V-A14B-HIGH_consistent_face_Q8.gguf` | 14.35 GB |
+| cf/low | 2668712 | `Wan2_2-I2V-A14B-LOW_consistent_face_Q8.gguf` | 14.35 GB |
+
+Plus `wan2.2_i2v_lightx2v_4steps_lora_v1_{high,low}_noise.safetensors`
+(1.23 GB each) from `Comfy-Org/Wan_2.2_ComfyUI_Repackaged/split_files/loras/`.
+
+The FM pair is SHA-256 pinned; the CF pair is not (Civitai publishes no hash
+for those versions), so it is validated by GGUF magic bytes only.
+
+---
+
+## 5d. Mixed resolutions break the final concat
+
+The spec renders `build: cf` shots at `res_face` (1280x720) and everything else
+at `res_base` (832x480). The ffmpeg **concat demuxer requires one resolution**,
+so the final cut failed.
+
+`mux_audio.py` now normalises every clip to `res_base` before concat:
+
+```bash
+python scripts/mux_audio.py --width 832 --height 480   # explicit override
+python scripts/mux_audio.py                            # defaults to meta.res_base
+```
+
+Scaling uses `force_original_aspect_ratio=decrease` plus `pad`, so a 1280x720
+clip is letterboxed rather than stretched.
+
+---
+
+## 5e. Lipsync must skip narration-only beats
+
+19 of the 70 beats carry narration but have **no speaker on screen** — c48 is
+*"static close-up: the buzzer box rattling on the wall"*. Driving a mouth from
+a voice-over animates whatever face happens to be in frame.
+
+`lipsync.py` now skips any beat whose `say` is empty. Those beats are still
+muxed with their narration; they are just never lipsynced.
+
+```
+lipsync engine: infinitetalk
+clips with narration: 25
+skipped (narration only, no speaker on screen): 19
+```
+
+---
+
+## 5f. TTS voice selection follows the script, not the `language` field
+
+The spec's `language` field is unreliable: c18 is tagged `hi` but its `say` is
+English. `generate_narration.py` therefore classifies each turn by the script
+of the text itself.
+
+| Script | Faiz | Juveriya |
+|---|---|---|
+| Latin (incl. romanized Hindi/Urdu) | `en-IN-PrabhatNeural` | `en-IN-NeerjaNeural` |
+| Devanagari | `hi-IN-MadhurNeural` | `hi-IN-SwaraNeural` |
+| Arabic (Urdu) | `ur-PK-AsadNeural` | `ur-PK-UzmaNeural` |
+
+Romanized Hindi/Urdu stays on the Indian-English voices, which pronounce it
+correctly. Only real Devanagari/Arabic script switches to a native voice.
+
+---
+
+## 5g. Ambient bed
+
+`mux_audio.py --music <file> --music-db -22` mixes a looping bed under the
+narration. MMAudio is **not** wired into the render graph; it is a
+video-conditioned foley model and cannot produce scripted dialogue. Use it (or
+any music file) only as a bed under the TTS track.
+
+---
+
+## 5h. Realism LoRAs are defaults, not per-shot
+
+`workflows/loras.json` entries flagged `"default": true` are injected into
+every shot by `render.inject_loras`, ahead of the shot's own list. The spec
+does not have to repeat them on 70 beats.
+
+| Key | Weight | What it fixes |
+|---|---|---|
+| `realism` | 0.7 | Photoreal skin and lens response |
+| `skin_morph` | 0.55 | Pores, subsurface scatter, sweat sheen |
+
+A shot opts out with `no_default_loras: true` in `beats.yaml`. `build_prompts`
+mirrors the same rule so the compiled prompt carries the trigger words for
+exactly the weights that will load.
+
+`handheld` and `lens_flare` are **not** defaults: handheld fights static cam
+lines, and lens flare only helps shots with a practical light in frame.
+
+---
+
+## 5i. Two-speaker lipsync
+
+11 beats have both characters speaking in one frame. Driving both mouths from
+one mixed track makes both faces follow both voices.
+
+`generate_narration.py` now writes a per-speaker stem for those beats
+(`audio/<id>_<speaker>.wav`) and the index stores
+`{"mix": ..., "stems": {...}}`. `lipsync.py` builds a soft mask per speaker
+from the start frame with InsightFace and runs InfiniteTalk in `two_speakers`
+mode. Masks are uploaded as PNGs and read through `LoadImage` slot 1 (MASK).
+
+When detection finds fewer faces than speakers it falls back to a left/right
+split, so the pass never fails on a wide shot.
+
+---
+
+## 5j. Realism grade
+
+`mux_audio.py --grade` adds, in order: 1px lateral chromatic aberration, a
+gentle S-curve with warm highlights, highlight-only halation, luma-weighted
+grain, and a light unsharp. Grain is applied **after** scaling so it stays a
+constant size instead of being resampled.
+
+The grade forces a re-encode, so it is off by default. Without `--grade` the
+mux keeps `-c:v copy`.
+
+---
 ## 6. VRAM behaviour
 
 ### `--highvram` OOMs on the fp16 pair
@@ -319,12 +558,16 @@ Requested           : 135.00 MiB
 The Q8 pair (14.35 GB each, 28.7 GB total) fits both resident in 44 GB, so
 `--highvram` is safe **only** with Q8.
 
-### Step timing reference (A6000, 832×480, 41 frames)
+### Step timing reference (A6000, 832×480, 81 frames)
 
 | Config | s/step | Per clip |
 |---|---|---|
 | fp16, 20 steps, dynamic VRAM | ~13.6 | 5.3 min |
 | fp16 + LightX2V, 4 steps | — | **40 s** |
+
+Those figures are for 41 frames. At 81 frames the sampling roughly doubles:
+budget **~80 s per clip** on the 4-step path, so 70 clips is ~95 min of pure
+render rather than ~47.
 
 ---
 
@@ -564,6 +807,14 @@ billing continues.
 - [ ] `inswapper_128.onnx` present
 - [ ] `validate.py --no-frames` exits 0
 - [ ] ComfyUI `/object_info` returns 200 and lists all required nodes
+- [ ] `workflows/base_i2v_gguf_q8.json` loads the `fast_move` Q8 pair with **no** LightX2V LoRA
+- [ ] `workflows/base_i2v_gguf_q8.json` schedules **2+3** (HIGH 0→2, LOW 2→5)
+- [ ] `workflows/base_i2v_gguf_q8.json` uses `umt5_xxl_fp8_e4m3fn_scaled.safetensors`
+- [ ] `WanImageToVideo.length` is 81 and `VHS_VideoCombine.frame_rate` is 16
+- [ ] Negative prompt decision made: `--nag` enabled, or `negatives/artifact_neg.txt` deleted
+- [ ] `python scripts/download_wan22_gguf.py --check` reports 4/4 checkpoints ready
+- [ ] LightX2V LoRAs staged in `models/loras/` (CF pair needs them)
+- [ ] `lipsync.py --dry-run` reports 25 lipsynced / 19 skipped
 - [ ] **Single-clip smoke test passes and measures healthy**
 - [ ] Only then start the batch with `--skip-download`
 
@@ -586,3 +837,12 @@ billing continues.
 | `$'\r': command not found` | CRLF from scp | `.gitattributes` + normalize |
 | ComfyUI page won't load | SSH tunnel died | re-run tunnel with keepalives |
 | `Chain broken by cNN` | one clip failed | fix the first failure, not the chain |
+| LightX2V LoRA on Lightning-baked Q8 | wrong version family | use 2540892/2540896 as-is, no LoRA |
+| Negative prompt has no effect | CFG 1.0 ignores the negative branch | add `--nag`, or delete the file |
+| `build: cf` renders on FM | field was parsed but never applied | fixed: `render.apply_build` |
+| Stale workflow file wins | `run_production.py` skipped regeneration | fixed: always regenerates |
+| First clip: model not found | GGUF pair is Civitai-only, HF has none | `download_wan22_gguf.py` |
+| CF shots render flat gray | CF pair has no Lightning baked in | `render.apply_build` adds LightX2V |
+| Final concat fails | 832x480 and 1280x720 mixed | `mux_audio` normalises to res_base |
+| Mouth moves on a buzzer box | lipsync ran on narration-only beats | skip when `say` is empty |
+| Hindi line read in English | voice picked from `language` field | pick from text script |

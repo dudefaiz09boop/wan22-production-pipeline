@@ -21,9 +21,31 @@ import yaml
 
 from comfy_api import upload
 from env_utils import resolve_server
+from generate_workflow import frames_for
 
 CHAIN_DIR = Path("chained")
 LORA_REGISTRY_PATH = Path("workflows") / "loras.json"
+
+# Civitai model 2053259 ships two GGUF Q8 pairs. "fm" (Fast Move) has the
+# Lightning distillation baked in; "cf" (Consistent Face) does not, so the CF
+# pair must be paired with the LightX2V 4-step LoRAs or it under-samples into
+# flat gray at 5 steps.
+BUILD_MODELS: dict[str, tuple[str, str]] = {
+    "fm": (
+        "Wan2_2-I2V-A14B-NSFW_fast_move-HIGH_Q8(lightning_edition)V2.gguf",
+        "Wan2_2-I2V-A14B-NSFW_fast_move-LOW_Q8lightning_edition)V2.gguf",
+    ),
+    "cf": (
+        "Wan2_2-I2V-A14B-HIGH_consistent_face_Q8.gguf",
+        "Wan2_2-I2V-A14B-LOW_consistent_face_Q8.gguf",
+    ),
+}
+
+# Builds whose checkpoint does not carry the Lightning distillation.
+NEEDS_LIGHTX2V: frozenset[str] = frozenset({"cf"})
+
+LIGHTX2V_HIGH = "wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors"
+LIGHTX2V_LOW = "wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors"
 
 
 def load_lora_registry(path: Path = LORA_REGISTRY_PATH) -> dict:
@@ -57,13 +79,76 @@ def _sampler_branches(wf: dict) -> dict[str, dict]:
     return branches
 
 
+def apply_build(wf: dict, cfg: dict) -> dict:
+    """Point the two UNET loaders at the model pair for this shot's build.
+
+    ``build: fm`` uses the Lightning-baked Fast Move pair as-is. ``build: cf``
+    uses the Consistent Face pair, which has no distillation baked in, so the
+    LightX2V 4-step LoRAs are chained in front of each sampler branch.
+    """
+    build = str(cfg.get("build") or "fm").lower()
+    pair = BUILD_MODELS.get(build)
+    if pair is None:
+        print(
+            f"WARNING: unknown build {build!r}; falling back to 'fm'",
+            file=sys.stderr,
+        )
+        build, pair = "fm", BUILD_MODELS["fm"]
+
+    high_model, low_model = pair
+    for node_id, model in (("1", high_model), ("2", low_model)):
+        node = wf.get(node_id)
+        if isinstance(node, dict) and "unet_name" in node.get("inputs", {}):
+            node["inputs"]["unet_name"] = model
+
+    if build not in NEEDS_LIGHTX2V:
+        return wf
+
+    branches = _sampler_branches(wf)
+    next_id = max((int(k) for k in wf if str(k).isdigit()), default=0) + 1
+    for stage, lora in (("high", LIGHTX2V_HIGH), ("low", LIGHTX2V_LOW)):
+        branch = branches.get(stage)
+        if branch is None:
+            continue
+        node_id = str(next_id)
+        next_id += 1
+        wf[node_id] = {
+            "class_type": "LoraLoaderModelOnly",
+            "_meta": {"title": f"LightX2V {stage} ({build})"},
+            "inputs": {
+                "model": branch["model_ref"],
+                "lora_name": lora,
+                "strength_model": 1.0,
+            },
+        }
+        branch["model_ref"] = [node_id, 0]
+    for branch in branches.values():
+        wf[branch["sampler_id"]].setdefault("inputs", {})["model"] = branch["model_ref"]
+    return wf
+
+
+def default_lora_keys(registry: dict) -> list[str]:
+    """Registry keys flagged `default: true`, applied to every shot."""
+    return [
+        key
+        for key, entry in registry.items()
+        if isinstance(entry, dict) and entry.get("default") is True
+    ]
+
+
 def inject_loras(wf: dict, cfg: dict, registry: dict) -> dict:
     """Chain LoraLoaderModelOnly nodes into the high/low sampler branches.
 
     Registry null slots are honoured (that pass is skipped for that LoRA).
     Missing local lora files warn loudly but are never silently dropped.
+
+    Registry entries flagged `default: true` are applied to every shot ahead of
+    the shot's own list, so realism weights land on all 70 beats without the
+    spec having to repeat them. A shot can opt out with `no_default_loras`.
     """
-    loras = cfg.get("loras") or []
+    loras = list(cfg.get("loras") or [])
+    if not cfg.get("no_default_loras"):
+        loras = default_lora_keys(registry) + loras
     if not loras:
         return wf
     branches = _sampler_branches(wf)
@@ -139,13 +224,13 @@ def inject(
         elif ct in ("Wan22ImageToVideo", "WanImageToVideo"):
             inputs["width"] = cfg["width"]
             inputs["height"] = cfg["height"]
-            # Project contract: 8 fps, 41 frames for a 5s clip and 33 for a
-            # 4s clip. WanImageToVideo requires (length - 1) % 4 == 0, which
-            # both values satisfy. Rendering at 16 fps doubled the frame count
-            # and therefore the sampling cost for no authored benefit.
-            inputs["length"] = 41 if cfg["duration"] >= 5 else 33
+            # Project contract: 16 fps, the rate Wan 2.2 is trained at. 8 fps
+            # read as stop-motion and mismatched the 16 fps lipsync pass.
+            # WanImageToVideo requires (length - 1) % 4 == 0.
+            inputs["length"] = frames_for(cfg["duration"])
     if registry is None:
         registry = load_lora_registry()
+    wf = apply_build(wf, cfg)
     return inject_loras(wf, cfg, registry)
 
 

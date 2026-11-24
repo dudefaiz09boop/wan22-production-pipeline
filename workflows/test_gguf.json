@@ -14,7 +14,7 @@
       "title": "LOW - GGUF_Q8"
     },
     "inputs": {
-      "unet_name": "Wan2_2-I2V-A14B-NSFW_fast_move-LOW_Q8(lightning_edition)V2.gguf"
+      "unet_name": "Wan2_2-I2V-A14B-NSFW_fast_move-LOW_Q8lightning_edition)V2.gguf"
     }
   },
   "3": {

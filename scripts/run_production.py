@@ -117,12 +117,18 @@ def download_all_models(state: ProductionState, token: Optional[str] = None) -> 
         # FP8
         "wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors": "1A2B3C4D5E6F...",
         "wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors": "F6E5D4C3B2A1...",
-        # GGUF Q8
+        # GGUF Q8 (Civitai 2053259 v2540892 / v2540896). The LOW filename really
+        # is missing its opening paren -- that is the author's typo and the hash
+        # lookup is keyed on the literal string.
         "Wan2_2-I2V-A14B-NSFW_fast_move-HIGH_Q8(lightning_edition)V2.gguf": "DEB6DCF39FEFEF7850D1DD49A52B70A64C65B8D8E7B5F03BC1B6A541CF58AAE9",
-        "Wan2_2-I2V-A14B-NSFW_fast_move-LOW_Q8(lightning_edition)V2.gguf": "B5722E8E01A21F89A1C0B5E9DE9A3B907CE92324D1951D5CE70307956790DAAE",
-            # Shared - use actual known hashes or skip verification
-            "umt5_xxl_fp8_e4m3fn.safetensors": None,  # Skip verification
-            "wan_2.1_vae.safetensors": None,  # Skip verification
+        "Wan2_2-I2V-A14B-NSFW_fast_move-LOW_Q8lightning_edition)V2.gguf": "B5722E8E01A21F89A1C0B5E9DE9A3B907CE92324D1951D5CE70307956790DAAE",
+        # GGUF Q8 Consistent Face (Civitai 2053259 v2668710 / v2668712).
+        # No Lightning baked in -- render.py chains the LightX2V LoRAs for these.
+        "Wan2_2-I2V-A14B-HIGH_consistent_face_Q8.gguf": None,
+        "Wan2_2-I2V-A14B-LOW_consistent_face_Q8.gguf": None,
+        # Shared - use actual known hashes or skip verification
+        "umt5_xxl_fp8_e4m3fn_scaled.safetensors": None,  # Skip verification
+        "wan_2.1_vae.safetensors": None,  # Skip verification
     }
 
     results = download_models(repo, files, dest_dir, token, sha256_map)
@@ -472,6 +478,14 @@ def main() -> int:
     ap.add_argument("--from-clip", default="c01", help="Start clip (inclusive)")
     ap.add_argument("--to-clip", default="c70", help="End clip (inclusive)")
     ap.add_argument("--dry-run", action="store_true", help="Validate without rendering")
+    ap.add_argument(
+        "--nag",
+        action="store_true",
+        help="Enable WanVideoNAG so the negative prompt is evaluated (doubles render time)",
+    )
+    ap.add_argument("--nag-scale", type=float, default=11.0, help="NAG guidance strength")
+    ap.add_argument("--nag-alpha", type=float, default=0.25, help="NAG mixing coefficient")
+    ap.add_argument("--nag-tau", type=float, default=2.5, help="NAG clipping threshold")
     ap.add_argument("--hf-token", help="Hugging Face token (or set HF_TOKEN env)")
     args = ap.parse_args()
 
@@ -511,12 +525,20 @@ def main() -> int:
     # Load LoRA registry
     lora_registry = load_lora_registry()
 
-    # Generate workflow
+    # Generate workflow. Always regenerate: a stale file on disk silently
+    # overrides the generator, which is how the wrong model pair and a 2+2
+    # schedule survived in base_i2v_gguf_q8.json.
     workflow_path = Path(f"workflows/base_i2v_{precision}.json")
-    if not workflow_path.exists():
-        print(f"Generating workflow: {workflow_path}")
-        workflow = generate_workflow(precision, str(model_dir))
-        save_workflow(workflow, workflow_path)
+    print(f"Generating workflow: {workflow_path}")
+    workflow = generate_workflow(
+        precision,
+        str(model_dir),
+        nag=args.nag,
+        nag_scale=args.nag_scale,
+        nag_alpha=args.nag_alpha,
+        nag_tau=args.nag_tau,
+    )
+    save_workflow(workflow, workflow_path)
 
     # Initialize state
     state = ProductionState(

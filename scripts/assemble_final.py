@@ -218,6 +218,11 @@ def main() -> int:
     ap.add_argument("--include-frames", action="store_true", help="Include start frames in zip")
     ap.add_argument("--from-clip", default="c01", help="Start clip")
     ap.add_argument("--to-clip", default="c70", help="End clip")
+    ap.add_argument(
+        "--keep-existing",
+        action="store_true",
+        help="Do not re-concat when final.mp4 already exists (keeps muxed audio)",
+    )
     args = ap.parse_args()
 
     # Load beats
@@ -260,10 +265,12 @@ def main() -> int:
 
     # Concatenate
     final_video = output_dir / "final.mp4"
-    success = concatenate_videos_simple(clip_files, final_video, args.crf, args.preset)
-
-    if not success:
-        return 1
+    if args.keep_existing and final_video.is_file():
+        print(f"  Keeping existing {final_video} (muxed audio preserved)")
+    else:
+        success = concatenate_videos_simple(clip_files, final_video, args.crf, args.preset)
+        if not success:
+            return 1
 
     # Create zip if requested
     if args.zip:

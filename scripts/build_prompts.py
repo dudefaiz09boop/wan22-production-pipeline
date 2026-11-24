@@ -71,6 +71,38 @@ def apply_lora_triggers(lines: list[str], loras: list, registry: dict) -> str:
     return body
 
 
+def effective_loras(loras: list, registry: dict, no_defaults: bool = False) -> list:
+    """Shot LoRAs plus the registry's `default: true` entries.
+
+    Mirrors render.inject_loras so the compiled prompt carries the trigger
+    words for exactly the weights that will actually be loaded.
+    """
+    defaults = [
+        key
+        for key, entry in registry.items()
+        if isinstance(entry, dict) and entry.get("default") is True
+    ]
+    return ([] if no_defaults else defaults) + list(loras)
+
+
+def look_prefix(shot: dict, meta: dict) -> str:
+    """Camera/lens vocabulary for the shot's light.
+
+    Wan 2.2 has no camera prior; without lens and film language the output
+    reads as CG. The look is chosen by `light` so a night shot gets high-ISO
+    noise and a daylight shot gets soft window light, rather than one generic
+    string on all 70 beats.
+    """
+    looks = meta.get("looks")
+    if not isinstance(looks, dict):
+        return ""
+    light = shot.get("light")
+    text = looks.get(light) if isinstance(light, str) else None
+    if not isinstance(text, str) or not text.strip():
+        text = meta.get("look_default")
+    return text.strip() if isinstance(text, str) else ""
+
+
 def build_plan(
     shot: dict,
     meta: dict,
@@ -124,7 +156,14 @@ def build_plan(
             errors.append(f"{sid}: lora {lora!r} is not in workflows/loras.json")
 
     registry = known_loras if isinstance(known_loras, dict) else {}
-    body = apply_lora_triggers(lines, loras, registry) + "\n"
+    no_defaults = bool(shot.get("no_default_loras"))
+    body = apply_lora_triggers(
+        lines, effective_loras(loras, registry, no_defaults), registry
+    )
+    look = look_prefix(shot, meta)
+    if look:
+        body = look + ", " + body
+    body += "\n"
     if len(body.strip()) > MAX_PROMPT_CHARS:
         errors.append(
             f"{sid}: compiled prompt is {len(body.strip())} chars (max {MAX_PROMPT_CHARS})"
@@ -168,6 +207,7 @@ def build_plan(
         "start_frame": start_frame,
         "chain": chain,
         "loras": loras,
+        "no_default_loras": no_defaults,
         "say": say,
         "sampler": meta.get("sampler"),
         "steps": meta.get("steps"),

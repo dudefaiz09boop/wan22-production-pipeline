@@ -41,6 +41,61 @@ def validator_shot(**updates):
     return shot
 
 
+class LookPrefixTests(unittest.TestCase):
+    """Camera/lens vocabulary is chosen by the shot's light."""
+
+    META = {
+        "looks": {
+            "night_tube": "shot on a phone, ISO 3200",
+            "daylight": "shot on a phone, overcast window light",
+        },
+        "look_default": "shot on a phone, available light",
+    }
+
+    def test_light_selects_its_look(self):
+        self.assertEqual(
+            build_prompts.look_prefix({"light": "night_tube"}, self.META),
+            "shot on a phone, ISO 3200",
+        )
+
+    def test_unknown_light_falls_back_to_default(self):
+        self.assertEqual(
+            build_prompts.look_prefix({"light": "candle"}, self.META),
+            "shot on a phone, available light",
+        )
+
+    def test_missing_light_falls_back_to_default(self):
+        self.assertEqual(
+            build_prompts.look_prefix({}, self.META),
+            "shot on a phone, available light",
+        )
+
+    def test_no_looks_configured_returns_empty(self):
+        self.assertEqual(build_prompts.look_prefix({"light": "daylight"}, {}), "")
+
+    def test_look_leads_the_compiled_prompt(self):
+        shot = validator_shot(light="night_tube")
+        errors = []
+        plan = build_prompts.build_plan(
+            shot,
+            {
+                "res_base": [832, 480],
+                "res_face": [1280, 720],
+                "sampler": "euler_simple",
+                "steps": [2, 3],
+                "cfg": 1,
+                "duration": 5,
+                **self.META,
+            },
+            "negative.txt",
+            set(),
+            errors,
+            check_frames=False,
+        )
+        self.assertIsNotNone(plan)
+        self.assertTrue(plan["body"].startswith("shot on a phone, ISO 3200, "))
+
+
 class LanguageScriptTests(unittest.TestCase):
     def run_validator(self, shot, *args, frame_exists=True):
         with tempfile.TemporaryDirectory() as directory:

@@ -381,16 +381,16 @@ bash scripts/setup_aic_fast.sh
 | 6 | Clone ComfyUI, link models, start server | ~3–5 min |
 | 7 | SDXL stills + InsightFace swap (70 frames, 2 candidates) | ~15–20 min |
 | 7b | Frame quality audit + repair of failing frames | ~5–10 min |
-| 8 | **WAN 2.2 I2V render, 70 clips** | **~35–50 min** |
+| 8 | **WAN 2.2 I2V render, 70 clips @ 81 frames** | **~90–120 min** |
 | 9 | Face swap every 3rd frame | ~5–8 min |
-| 9b | **Lipsync (InfiniteTalk, 44 narrated clips)** | **~20–30 min** |
+| 9b | **Lipsync (InfiniteTalk, 25 clips, 11 two-speaker)** | **~25–40 min** |
 | 10a | Narration (Edge TTS, 44 speaking clips) | ~3–5 min |
 | 10b | Audio mux + final cut with continuous audio | ~5–8 min |
 | 10c | Package deliverable | ~2 min |
 | 11 | Publish results for download | ~5 s |
-| **Total** | | **~100–140 min** |
+| **Total** | | **~160–220 min** |
 
-Cost at ₹72.40/hr: **₹120–170**.
+Cost at ₹72.40/hr: **₹190–265**.
 
 ### Hard gates
 
@@ -410,28 +410,41 @@ The deliverable is **not silent**. Phase 10 does three things:
 
 1. **Narration** — `generate_narration.py` reads the authored narration already
    compiled into `prompts/*.json` and synthesises it with Edge TTS. Voices are
-   speaker-aware: Faiz → `en-IN-PrabhatNeural`, Juveriya → `en-IN-NeerjaNeural`,
-   Ammi → `hi-IN-SwaraNeural`. Multi-turn dialogue is concatenated and each
-   track is padded or trimmed to exactly its clip duration.
-2. **Mux** — `mux_audio.py` attaches each clip's narration, gives silent clips a
-   silent track of the right length, then concatenates everything into one MP4
-   with a single continuous AAC stream.
-3. **Music (optional)** — set `MUSIC_BED=/path/track.mp3` and `MUSIC_DB=-22` in
+   speaker-aware and script-aware: Latin → `en-IN-PrabhatNeural` /
+   `en-IN-NeerjaNeural`, Devanagari → `hi-IN-MadhurNeural` / `hi-IN-SwaraNeural`,
+   Arabic/Urdu → `ur-PK-AsadNeural` / `ur-PK-UzmaNeural`. Multi-turn dialogue is
+   concatenated and each track is padded or trimmed to exactly its clip duration.
+2. **Room** — every track is then polished: a looped room-tone bed at -30 dB, a
+   60 ms echo tail, and a breath under the head of the clip. Dry TTS has a
+   digital-silence floor and the ear reads that as fake. Assets live at
+   `audio/room_tone.wav` and `audio/breath.wav`; `--reverb 0` disables the tail.
+3. **Stems** — beats where both characters speak also get one stem per speaker
+   (`audio/<id>_<speaker>.wav`). InfiniteTalk's two-speaker mode needs them.
+4. **Mux** — `mux_audio.py` attaches each clip's narration, gives silent clips a
+   silent track of the right length, normalises every clip to one resolution and
+   one frame rate, then concatenates everything into one MP4 with a single
+   continuous AAC stream. `--grade` adds grain, halation, chromatic aberration
+   and a colour pass.
+5. **Music (optional)** — set `MUSIC_BED=/path/track.mp3` and `MUSIC_DB=-22` in
    `.env` to mix a bed under the narration.
 
 Verified on a two-clip test: `final.mp4` 10.1 s, `mean_volume -22.0 dB`,
 `max_volume -5.1 dB` — real audio, not silence.
-
 **On lipsync:** implemented, defaulting to **InfiniteTalk** — the better engine
-for this project because every shot names both characters.
+for this project because 11 beats have both characters speaking in one frame.
 
 | Engine | Base model | Patch | Speakers |
 |--------|-----------|-------|----------|
 | **`infinitetalk`** (default) | `wan2.1_i2v_480p_14B_fp8_scaled` | `Wan2_1-InfiniteTalk-Multi_fp8_e4m3fn_scaled_KJ` | **2 streams + per-speaker masks** |
 | `s2v` | `wan2.2_s2v_14B_fp8_scaled` | — | 1 stream |
 
-Set `LIPSYNC_ENGINE=s2v` for the cheaper single-speaker path, or `off` to skip.
+Two-speaker beats run in `two_speakers` mode: each voice drives only the mouth
+inside its own mask, so both faces do not follow both voices. Masks are built
+from the start frame with InsightFace and uploaded as PNGs; when detection finds
+fewer faces than speakers it falls back to a left/right split rather than
+failing. Single-speaker beats stay on `single_speaker` with the mixed track.
 
+Set `LIPSYNC_ENGINE=s2v` for the cheaper single-speaker path, or `off` to skip.
 The node chain is verified against ComfyUI source, not guessed:
 
 ```

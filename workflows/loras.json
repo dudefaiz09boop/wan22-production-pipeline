@@ -1,4 +1,64 @@
 {
+  "realism": {
+    "high": "loras/realism_wan22_high.safetensors",
+    "low": "loras/realism_wan22_low.safetensors",
+    "w": 0.7,
+    "trigger": null,
+    "trigger_scope": null,
+    "default": true,
+    "source": {
+      "high": { "civitai_model": 2001317, "civitai_version": 2272139 },
+      "low": { "civitai_model": 2001317, "civitai_version": 2272164 },
+      "sha256": {
+        "high": "C62578B84F715941",
+        "low": "32FD4F8289B1F3FE"
+      },
+      "note": "WAN 25 Realistic. Photoreal skin and lens response. Applied to every shot."
+    }
+  },
+  "skin_morph": {
+    "high": "loras/skin_morph_wan22_high.safetensors",
+    "low": "loras/skin_morph_wan22_low.safetensors",
+    "w": 0.55,
+    "trigger": "Skin morph",
+    "trigger_scope": "prompt_suffix",
+    "default": true,
+    "source": {
+      "high": { "civitai_model": 2210162, "civitai_version": 2488349 },
+      "low": { "civitai_model": 2210162, "civitai_version": 2488341 },
+      "sha256": {
+        "high": "10659116AB688105",
+        "low": "5F4A808E68428FF4"
+      },
+      "note": "SkinMorph Redmond. Pores, subsurface scatter, sweat sheen. Applied to every shot."
+    }
+  },
+  "handheld": {
+    "high": "loras/handheld_wan22_high.safetensors",
+    "low": null,
+    "w": 0.6,
+    "trigger": "shaky, handheld",
+    "trigger_scope": "prompt_prefix",
+    "source": {
+      "civitai_model": 2592748,
+      "civitai_version": 2912574,
+      "sha256": "FB333B32158C4D40",
+      "note": "Shaky handheld camera. Opt-in per shot; fights static cam lines."
+    }
+  },
+  "lens_flare": {
+    "high": null,
+    "low": "loras/lens_flare_wan22_low.safetensors",
+    "w": 0.5,
+    "trigger": null,
+    "trigger_scope": null,
+    "source": {
+      "civitai_model": 1902817,
+      "civitai_version": 2153813,
+      "sha256": "2810197AC68C6409",
+      "note": "Cinematic lens flare. LOW-noise only; opt-in for practical-light shots."
+    }
+  },
   "nsfw_general": {
     "high": "loras/nsfw_general_wan22_high.safetensors",
     "low": null,

@@ -6,6 +6,26 @@ meta:
   res_base: [832, 480]
   res_face: [1280, 720]
   negative: negatives/artifact_neg.txt
+  # Camera/lens vocabulary prepended to every prompt, chosen by the shot's
+  # `light`. Wan 2.2 has no idea what a camera is unless it is told; without
+  # this the output reads as CG. Kept short -- long look strings dilute.
+  looks:
+    night_tube: >-
+      shot on a phone, 26mm, f/1.8, ISO 3200, sodium and tube light,
+      slight sensor noise, handheld
+    evening_tube: >-
+      shot on a phone, 26mm, f/2.0, warm tube light, soft falloff, handheld
+    tube_flicker: >-
+      shot on a phone, 26mm, f/1.8, flickering tube light, mixed white balance,
+      handheld
+    daylight: >-
+      shot on a phone, 26mm, f/2.2, overcast window light, soft shadows,
+      handheld
+    blackout_moonlight: >-
+      shot on a phone, 26mm, f/1.8, ISO 6400, moonlight through a window,
+      crushed blacks, handheld
+  look_default: >-
+    shot on a phone, 26mm, f/2.0, available light, handheld
 
 story:
   characters:

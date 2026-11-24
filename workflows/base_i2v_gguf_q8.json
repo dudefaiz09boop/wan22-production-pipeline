@@ -1,20 +1,20 @@
 {
   "1": {
-    "class_type": "UnetLoader",
+    "class_type": "UnetLoaderGGUF",
     "_meta": {
       "title": "HIGH - GGUF_Q8"
     },
     "inputs": {
-      "unet_name": "wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors"
+      "unet_name": "Wan2_2-I2V-A14B-NSFW_fast_move-HIGH_Q8(lightning_edition)V2.gguf"
     }
   },
   "2": {
-    "class_type": "UnetLoader",
+    "class_type": "UnetLoaderGGUF",
     "_meta": {
       "title": "LOW - GGUF_Q8"
     },
     "inputs": {
-      "unet_name": "wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors"
+      "unet_name": "Wan2_2-I2V-A14B-NSFW_fast_move-LOW_Q8lightning_edition)V2.gguf"
     }
   },
   "3": {
@@ -64,7 +64,7 @@
     "inputs": {
       "width": 832,
       "height": 480,
-      "length": 80,
+      "length": 81,
       "batch_size": 1,
       "positive": [
         "6",
@@ -84,6 +84,60 @@
       ]
     }
   },
+  "11": {
+    "class_type": "VAEDecode",
+    "inputs": {
+      "samples": [
+        "10",
+        0
+      ],
+      "vae": [
+        "4",
+        0
+      ]
+    }
+  },
+  "12": {
+    "class_type": "VHS_VideoCombine",
+    "inputs": {
+      "frame_rate": 16,
+      "loop_count": 0,
+      "filename_prefix": "wan22/",
+      "format": "video/h264-mp4",
+      "pingpong": false,
+      "save_output": true,
+      "images": [
+        "11",
+        0
+      ]
+    }
+  },
+  "13": {
+    "class_type": "ModelSamplingSD3",
+    "_meta": {
+      "title": "HIGH - GGUF_Q8"
+    },
+    "inputs": {
+      "model": [
+        "1",
+        0
+      ],
+      "shift": 5.0
+    }
+  },
+  "14": {
+    "class_type": "ModelSamplingSD3",
+    "_meta": {
+      "title": "LOW - GGUF_Q8"
+    },
+    "inputs": {
+      "model": [
+        "2",
+        0
+      ],
+      "shift": 5.0
+    }
+  },
   "9": {
     "class_type": "KSamplerAdvanced",
     "_meta": {
@@ -92,7 +146,7 @@
     "inputs": {
       "add_noise": "enable",
       "noise_seed": 0,
-      "steps": 2,
+      "steps": 5,
       "cfg": 1.0,
       "sampler_name": "euler",
       "scheduler": "simple",
@@ -100,7 +154,7 @@
       "end_at_step": 2,
       "return_with_leftover_noise": "enable",
       "model": [
-        "1",
+        "13",
         0
       ],
       "positive": [
@@ -133,7 +187,7 @@
       "end_at_step": 5,
       "return_with_leftover_noise": "disable",
       "model": [
-        "2",
+        "14",
         0
       ],
       "positive": [
@@ -146,34 +200,6 @@
       ],
       "latent_image": [
         "9",
-        0
-      ]
-    }
-  },
-  "11": {
-    "class_type": "VAEDecode",
-    "inputs": {
-      "samples": [
-        "10",
-        0
-      ],
-      "vae": [
-        "4",
-        0
-      ]
-    }
-  },
-  "12": {
-    "class_type": "VHS_VideoCombine",
-    "inputs": {
-      "frame_rate": 16,
-      "loop_count": 0,
-      "filename_prefix": "wan22/",
-      "format": "video/h264-mp4",
-      "pingpong": false,
-      "save_output": true,
-      "images": [
-        "11",
         0
       ]
     }
