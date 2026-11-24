@@ -358,7 +358,21 @@ def main() -> int:
         # Narration-only beats have no speaker on screen. Driving a mouth from
         # a voice-over animates whatever face happens to be in frame -- or a
         # buzzer box, for c48 -- so they are muxed but never lipsynced.
-        if not (shot.get("say") or "").strip():
+        # A beat counts as spoken if it has `say` OR dialogue turns.
+        has_dialogue = bool(shot.get("dialogue"))
+        if not (shot.get("say") or "").strip() and not has_dialogue:
+            skipped_narration_only.append(sid)
+            continue
+        # Ammi is never on screen: her lines come from a phone or through a
+        # door. A beat where she is the only speaker has no mouth to drive.
+        speakers = {
+            str(t.get("speaker")).lower()
+            for t in (shot.get("dialogue") or [])
+            if isinstance(t, dict)
+        }
+        if shot.get("speaker"):
+            speakers.add(str(shot["speaker"]).lower())
+        if speakers and speakers <= {"ammi"}:
             skipped_narration_only.append(sid)
             continue
         targets.append(shot)

@@ -58,21 +58,24 @@ story:
       c65: voice
       c66: voice
       c67: hands
-  title: "Midnight Heat"
+  title: "Bhai Ki Behen"
   synopsis: >-
-    Faiz and Juveriya, adult siblings alone in the family flat, spend one evening
-    from the hallway to the study desk. Ammi's phone call interrupts them mid-fuck;
-    they finish anyway, then wash, tidy and put themselves back together before
-    anyone comes home. Ammi arrives at dawn regardless, looks them over, and leaves
-    them a countdown: ten o'clock.
-  logline: "Two adult siblings wreck a study desk and have to look holy by nine — and again by ten."
-  theme: "Appetite versus the performance of respectability."
+    Faiz and Juveriya are brother and sister, both adult, alone in their mother's
+    flat. He corners her in the passage and takes her from the hallway to the study
+    desk, calling her behen while he does it. Ammi's phone call interrupts them
+    mid-fuck; Juveriya talks her mother through it with her brother still inside
+    her, then they wash, tidy and put themselves back together before anyone comes
+    home. Ammi arrives at dawn regardless, looks them over, and leaves them a
+    countdown: ten o'clock. The next evening Juveriya starts it.
+  logline: "A brother fucks his sister on their mother's study desk, and they have to look holy by nine."
+  theme: "Haram appetite versus the performance of respectability."
   boundaries:
     characters_are_adults: true
     intimacy: >-
-      Explicit penetrative sex, manual and oral contact, spanking, biting, marking.
-      Fluid shown. No toys, no restraints beyond hands, no third party in frame.
-      Ammi exists as a phone voice only and is never visible.
+      Explicit penetrative sex between adult siblings, manual and oral contact,
+      spanking, biting, marking, creampie. Fluid shown. No toys, no restraints
+      beyond hands, no third party in frame. Ammi exists as a phone voice and a
+      pair of hands only, and is never fully visible.
     consent: "Established mutual appetite. She initiates and directs from c55; c25 asks once and obeys; revocable throughout."
     consent_beats: [c25, c58, c61, c68, c70]
     revocable: true
@@ -129,7 +132,7 @@ shots:
     start_frame: startframes/c01.png
     loras: []
     speaker: Faiz
-    say: "You've been a bitch all day, haven't you."
+    say: "You know what you are? My sister. And you've been dripping down your own thigh since Maghrib."
     language: en
     chain: true
     noise: 2
@@ -148,12 +151,12 @@ shots:
       geography: "narrow hallway"
     continuity: "kurti and grey skirt intact, hem mid-thigh; henna both hands; taveez at throat, six bangles each wrist; kurti worn; dupatta on left shoulder"
     cam:
-      - "static wide: Juveriya in grey skirt and loose kurti, dupatta slipping, narrow hallway"
-      - "tilt up: her hem at mid-thigh to peeling wallpaper, damp patch spreading"
-      - "zoom in: past Juveriya's shoulder to the dark doorway where Faiz stands"
-      - "dolly in: tight on her face, jaw clenching, sweat at the temple"
-      - "handheld shake: she flinches, eyes snapping sideways, bangles ringing"
-      - "static hold: Faiz's outline in the doorway, her chest rising, fogging breath"
+      - "static ECU: Juveriya's throat, taveez swinging, pulse jumping under the skin"
+      - "dolly back: her face, eyes already dark, lips parted, breath shallow"
+      - "static medium: Faiz crowding her, forearm braced on the wall by her head"
+      - "tilt down: his hand flat on her waist, thumb pressing the kurti into her hip"
+      - "static close-up: her back meeting the plaster, dust puffing, bangles ringing"
+      - "zoom in: his mouth at her ear, her eyes fluttering shut"
 
   - id: c02
     scene: 1
@@ -161,7 +164,7 @@ shots:
     start_frame: startframes/c02.png
     loras: []
     speaker: Faiz
-    say: "Look at you. Rubbing your little pussy all over the place all day."
+    say: "Look at you. Rubbing that little pussy on every surface in this house. Say whose it is."
     language: en
     chain: true
     noise: 2
@@ -254,7 +257,7 @@ shots:
     start_frame: startframes/c05.png
     loras: [nsfw_general]
     speaker: Faiz
-    say: "You like that, you dirty slut?"
+    say: "You like that, you dirty slut? Say it."
     language: en
     chain: true
     noise: 2
@@ -286,7 +289,7 @@ shots:
     start_frame: startframes/c06.png
     loras: [vag_detail]
     speaker: Faiz
-    say: "Look at you. Dripping down your own fucking thigh."
+    say: "Look at it. Dripping down your own fucking thigh. My sister is a mess."
     language: en
     chain: true
     noise: 2
@@ -347,7 +350,7 @@ shots:
     start_frame: startframes/c08.png
     loras: [vag_detail]
     speaker: Faiz
-    say: "You're mine, you filthy whore."
+    say: "You're mine. My sister's cunt, and it's mine."
     language: en
     chain: false
     noise: 2
@@ -395,7 +398,7 @@ shots:
       geography: "study room and desk"
     continuity: "skirt at waist, kurti twisted; dupatta left behind in the hallway; bangles intact"
     cam:
-      - "static wide: Faiz hoisting Juveriya up, legs wrapping his waist, cock still inside"
+      - "static wide: Faiz hoisting Juveriya up, her face over his shoulder, legs wrapping his waist, cock still inside"
       - "track: carrying her across the room, her back dragging the wall"
       - "static: dropping her onto the desk, papers scattering"
       - "handheld low: landing hard, splayed legs, her vulva still slick and open"
@@ -408,7 +411,7 @@ shots:
     start_frame: startframes/c10.png
     loras: [vag_detail]
     speaker: Faiz
-    say: "One day. Not tonight. Tonight your pussy's a furnace and I wanna see it boil over."
+    say: "One day I put a baby in you. Not tonight. Tonight your pussy's a furnace and I wanna watch it boil over."
     language: en
     chain: true
     noise: 2
@@ -439,6 +442,8 @@ shots:
     build: fm
     start_frame: startframes/c11.png
     loras: [penis_insert, vag_detail]
+    speaker: Juveriya
+    say: "Ahh — haan — haan —"
     chain: true
     noise: 2
     duration: 5
@@ -469,7 +474,7 @@ shots:
     start_frame: startframes/c12.png
     loras: [penis_insert, vag_detail]
     speaker: Faiz
-    say: "Look at you. Fucking wrecked and it's not even close to over."
+    say: "Look at you. Fucking wrecked, and it's not even close to over. Bhai isn't done."
     language: en
     chain: true
     noise: 3
@@ -500,6 +505,8 @@ shots:
     build: fm
     start_frame: startframes/c13.png
     loras: [penis_insert, vag_detail]
+    speaker: Juveriya
+    say: "Oh fuck — oh fuck —"
     chain: true
     noise: 2
     duration: 5
@@ -530,7 +537,7 @@ shots:
     start_frame: startframes/c14.png
     loras: [penis_insert, vag_detail]
     speaker: Faiz
-    say: "You're a bitch who loves being broken."
+    say: "You're a bitch who loves being broken. My bitch."
     language: en
     chain: true
     noise: 2
@@ -562,7 +569,7 @@ shots:
     start_frame: startframes/c15.png
     loras: []
     speaker: Faiz
-    say: "That's it. Marked you. Now everyone knows whose bitch you are."
+    say: "That's it. Marked you. Now everyone knows whose sister you are."
     language: en
     chain: true
     noise: 2
@@ -594,7 +601,7 @@ shots:
     start_frame: startframes/c16.png
     loras: [penis_insert, vag_detail]
     speaker: Faiz
-    say: "Squeezing me like you're trying to keep me. Greedy little cunt."
+    say: "Squeezing me like you're trying to keep me. Greedy little cunt. Greedy little sister."
     language: en
     chain: true
     noise: 2
@@ -625,6 +632,8 @@ shots:
     build: fm
     start_frame: startframes/c17.png
     loras: [penis_insert, vag_detail]
+    speaker: Juveriya
+    say: "Ahh — mat ruk — mat ruk —"
     chain: true
     noise: 2
     duration: 5
@@ -688,7 +697,7 @@ shots:
     start_frame: startframes/c19.png
     loras: [penis_insert, vag_detail]
     speaker: Faiz
-    say: "Good girl."
+    say: "Good girl. That's my behen."
     language: en
     chain: true
     noise: 2
@@ -719,6 +728,8 @@ shots:
     build: fm
     start_frame: startframes/c20.png
     loras: [penis_insert, vag_detail]
+    speaker: Juveriya
+    say: "Haan — haan — aur —"
     chain: true
     noise: 2
     duration: 5
@@ -768,7 +779,7 @@ shots:
       geography: "study room in blackout"
     continuity: "skirt at waist; taveez catching moonlight; kurti open; dupatta on floor"
     cam:
-      - "static wide: tube light strobing, Faiz and Juveriya lit in pulses"
+      - "static wide: tube light strobing, Faiz and Juveriya lit in pulses, her face tipped back"
       - "static: light cuts out, only the red standby dot"
       - "tilt up: fan winding down, blades ticking"
       - "tilt down: shapes in the dark, moving, her hands braced"
@@ -797,7 +808,7 @@ shots:
       geography: "study room in blackout"
     continuity: "skirt at waist; bangles faint in the dark; kurti open; dupatta on floor"
     cam:
-      - "static near-black: Juveriya's hand sliding on the desk, knocking a steel glass"
+      - "static near-black: a moonlight stripe across Juveriya's hand sliding on the desk, knocking a steel glass"
       - "tilt down: the glass falling, bouncing, rolling"
       - "tilt up: Juveriya's hand gripping the desk edge again, wet knuckles"
       - "static: Faiz pushing deep, slow grind, her outline flattening"
@@ -810,7 +821,7 @@ shots:
     start_frame: startframes/c23.png
     loras: [penis_insert, vag_detail]
     speaker: Faiz
-    say: "Don't you dare hold it. Give it to me."
+    say: "Don't you dare hold it. Give it to me. Come on my cock, behen."
     language: en
     chain: true
     noise: 2
@@ -842,7 +853,7 @@ shots:
     start_frame: startframes/c24.png
     loras: [penis_insert, vag_detail]
     speaker: Faiz
-    say: "Fuck — there it is — that's my girl."
+    say: "Fuck — there it is — that's my girl — that's it —"
     language: en
     chain: true
     noise: 2
@@ -875,9 +886,9 @@ shots:
     loras: [penis_insert, vag_detail]
     dialogue:
       - speaker: Faiz
-        text: "Where do you want it?"
+        text: "Where do you want it, behen?"
       - speaker: Juveriya
-        text: "Inside. Inside, please, don't stop."
+        text: "Inside. Inside me, bhai, please, don't stop."
     language: en
     chain: true
     noise: 2
@@ -908,6 +919,8 @@ shots:
     build: fm
     start_frame: startframes/c26.png
     loras: [penis_insert, vag_detail]
+    speaker: Juveriya
+    say: "Bas — bas — oh fuck —"
     chain: true
     noise: 2
     duration: 5
@@ -989,7 +1002,7 @@ shots:
       geography: "study aftermath area"
     continuity: "skirt at waist, fluid on the thigh; taveez on the desk edge; kurti open; dupatta on floor"
     cam:
-      - "static medium: Faiz pulls out of Juveriya, her hips lifting after him, shaft wet"
+      - "static medium: Faiz pulls out of Juveriya, her face turned on the desk, hips lifting after him, shaft wet"
       - "tilt down: fluid sliding down her inner thigh, thick and slow"
       - "static: Juveriya sprawls flat, cheek on the desk, skirt at her waist"
       - "dolly in: Faiz stands over her, chest heaving, cock still shining"
@@ -1058,7 +1071,7 @@ shots:
       geography: "study aftermath area"
     continuity: "skirt at waist, one strap broken; his shirt on her shoulders, unbuttoned; dupatta on floor"
     cam:
-      - "static medium: Juveriya pushes up on shaking arms, skirt still at her waist"
+      - "static medium: Juveriya pushes up on shaking arms, face flushed, hair stuck to her cheek, skirt still at her waist"
       - "tilt down: her legs swing off the desk, one strap broken"
       - "handheld: she buckles, catches the desk edge"
       - "track: Faiz tosses his shirt, it lands on her shoulder"
@@ -1087,7 +1100,7 @@ shots:
       geography: "study aftermath area"
     continuity: "his shirt on, skirt at waist; shredded panties in hand, then thrown; dupatta on floor"
     cam:
-      - "static close-up: shredded cotton on the mosaic floor, elastic snapped"
+      - "static close-up: shredded cotton on the mosaic floor, elastic snapped, Juveriya's bare foot beside it"
       - "tilt up: Juveriya's bare foot nudges the fabric"
       - "static: she picks the panties up, holds them out at arm's length"
       - "tilt up: Juveriya's face, eyebrow raised, unimpressed"
@@ -1159,7 +1172,7 @@ shots:
     loras: []
     dialogue:
       - speaker: Faiz
-        text: "Answer it."
+        text: "Answer it. And don't you dare sound like you've been fucked."
         text_script: "इसका जवाब दो।"
       - speaker: Juveriya
         text: "Haan Ammi."
@@ -1267,7 +1280,7 @@ shots:
         text_script: "ٹھیک ہے، امی۔ بائے۔"
         language: ur
       - speaker: Faiz
-        text: "Another hour. Then we're doing that again."
+        text: "Another hour. Then we're doing that again. Say bye to Ammi."
         text_script: "एक और घंटा। फिर हम यह दोबारा करेंगे।"
     language: hi
     chain: true
@@ -1357,7 +1370,7 @@ shots:
       geography: "study and flat passage"
     continuity: "his shirt on; skirt smoothed down; welt at the neck; dupatta on floor; hair tied back"
     cam:
-      - "static close-up: the wet patch on the desk varnish"
+      - "static close-up: the wet patch on the desk varnish, Juveriya's fingers hovering over it"
       - "tilt down: Faiz wiping the cloth across it, leaving a wider smear"
       - "static: Faiz wipes again, uselessly, and shrugs"
       - "tilt up: Juveriya's arms crossed, hair tied back, unimpressed"
@@ -1539,7 +1552,7 @@ shots:
       geography: "study and flat passage"
     continuity: "shalwar and dupatta on; welt covered by the dupatta; bangles intact"
     cam:
-      - "static wide: front door, chain loose, the hallway dark beyond"
+      - "static wide: Juveriya's hand on the front door, chain loose, the hallway dark beyond"
       - "zoom in: Juveriya's fingers hooking the chain into the slide"
       - "dolly in: Juveriya presses her forehead to the door, eyes shut"
       - "static: the fridge starting, the fan ticking, the room settling"
@@ -1568,7 +1581,7 @@ shots:
       geography: "study and flat passage"
     continuity: "shalwar and dupatta on, welt half-covered; henna both hands; textbook and pen squared on the desk"
     cam:
-      - "static wide: the desk neat, Faiz's textbook open, pen laid straight"
+      - "static wide: the desk neat, Faiz's hand flattening the textbook open, pen laid straight"
       - "zoom in slow: the varnish, a faint smear under the shine"
       - "static: Juveriya's hand covering the smear"
       - "tilt down: Juveriya sits, pulling the book closer"
@@ -1632,7 +1645,7 @@ shots:
       geography: "hallway, kitchen and front door"
     continuity: "shalwar and dupatta on; welt under the dupatta; Faiz's shirt tucked, hair damp"
     cam:
-      - "static close-up: the buzzer box rattling on the wall"
+      - "static close-up: the buzzer box rattling on the wall, Juveriya's hand frozen mid-air beside it"
       - "handheld: Juveriya's hand freezing mid-air, Faiz's head snapping up"
       - "zoom in: her eyes in the mirror, wide, then steadying"
       - "track: she turns from the mirror, dupatta swinging"
@@ -1805,7 +1818,7 @@ shots:
       geography: "hallway, kitchen and front door"
     continuity: "shalwar and dupatta on; desk squared; welt hidden; bathroom door shut"
     cam:
-      - "static: bathroom door clicking shut, water starting"
+      - "static: Juveriya's back as the bathroom door clicks shut, water starting"
       - "handheld: Juveriya's shoulders dropping, a long breath out"
       - "zoom in: Faiz's mouth shaping sorry with no sound"
       - "static: Juveriya pointing at him, then at the desk, silent"
@@ -1840,7 +1853,7 @@ shots:
       geography: "hallway, kitchen and front door"
     continuity: "shalwar and dupatta on; welt hidden; bathroom door shut, water running"
     cam:
-      - "static: the bathroom door, Ammi's voice coming through it"
+      - "static: Juveriya's hand flat on the bathroom door, Ammi's voice coming through it"
       - "zoom in: Juveriya's face, eyes closing, a private curse"
       - "pan: Faiz grinning at the ceiling, hands on his hips"
       - "track: Juveriya turning for the kitchen, dupatta swinging"
@@ -1882,7 +1895,7 @@ shots:
     start_frame: startframes/c56.png
     loras: []
     speaker: Juveriya
-    say: "Ammi's asleep. Sit down."
+    say: "Ammi's asleep. Sit down. And take it out."
     language: en
     chain: true
     noise: 2
@@ -2003,6 +2016,8 @@ shots:
     build: fm
     start_frame: startframes/c60.png
     loras: [penis_insert, vag_detail]
+    speaker: Juveriya
+    say: "Ahh — dekho — dekho —"
     chain: true
     noise: 2
     duration: 5
@@ -2033,7 +2048,7 @@ shots:
     start_frame: startframes/c61.png
     loras: [penis_insert, vag_detail]
     speaker: Juveriya
-    say: "Don't move. Let me."
+    say: "Don't move. Let me. I want to watch my brother's face."
     language: en
     chain: true
     noise: 2
@@ -2096,6 +2111,8 @@ shots:
     build: fm
     start_frame: startframes/c63.png
     loras: [penis_insert, vag_detail]
+    speaker: Juveriya
+    say: "Oh — oh — oh —"
     chain: true
     noise: 2
     duration: 5
@@ -2282,7 +2299,7 @@ shots:
       geography: "hallway and front door"
     continuity: "daylight; shalwar and dupatta on; Faiz in pressed kurta; door shut"
     cam:
-      - "static: the door closing, the latch dropping"
+      - "static: Juveriya's hand on the door, closing it, the latch dropping"
       - "handheld: Juveriya's back against it, head tipping to the wood"
       - "zoom in: Faiz not moving from the far end of the passage"
       - "static: three seconds of nothing, Faiz still at the far end, Juveriya still against the door"
@@ -2352,7 +2369,7 @@ shots:
       geography: "hallway and front door"
     continuity: "daylight; shalwar and dupatta slipping off the shoulder; study door shut"
     cam:
-      - "static wide: the passage, Faiz and Juveriya, the study door behind"
+      - "static wide: the passage, Faiz and Juveriya facing each other, the study door behind"
       - "pan: the swept floor, the shoes kicked under the rack"
       - "tilt up: Juveriya's dupatta slipping off her shoulder, she lets it"
       - "static: Faiz pulling the study door open with one finger"
