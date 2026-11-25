@@ -406,6 +406,11 @@ def main() -> int:
         default="all",
         help="Train one LoRA in its own kernel (recommended) or all in one run",
     )
+    ap.add_argument(
+        "--output-dir",
+        default=None,
+        help="Where --output writes the kernel artifacts (default: lora_output/<target>)",
+    )
     args = ap.parse_args()
 
     notebook = build_notebook(args.only)
@@ -434,7 +439,14 @@ def main() -> int:
         subprocess.run(["kaggle", "kernels", "status", metadata["id"]])
 
     if args.output:
-        subprocess.run(["kaggle", "kernels", "output", metadata["id"], "-p", "/tmp/lora_output"])
+        # /tmp does not exist on Windows, and a shared directory would let the
+        # faiz and juv runs overwrite each other's artifacts.
+        out_dir = Path(args.output_dir) if args.output_dir else Path("lora_output") / args.only
+        out_dir.mkdir(parents=True, exist_ok=True)
+        subprocess.run(
+            ["kaggle", "kernels", "output", metadata["id"], "-p", str(out_dir)]
+        )
+        print(f"Artifacts written to {out_dir}")
 
     return 0
 

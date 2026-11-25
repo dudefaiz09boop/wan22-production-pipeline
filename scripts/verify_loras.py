@@ -101,7 +101,7 @@ def build_notebook() -> dict:
         "import os",
         "",
         "WORK = '/kaggle/working'",
-        "LORA_DIR = '/kaggle/input/lora-nuke-faiz-juv'",
+        "LORA_DIR = '/kaggle/input/lora-nuke-faiz-juveriya-sdxl'",
         "",
         "def find_lora(name):",
         "    for base in (LORA_DIR, WORK, '/kaggle/input'):",

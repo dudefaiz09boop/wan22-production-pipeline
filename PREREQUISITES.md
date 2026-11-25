@@ -39,43 +39,54 @@
 
 **Option A: Use Automated Pipeline (Recommended)**
 ```bash
-# 1. Prepare training data locally (uses startframes + existing datasets)
+# 1. Prepare training data locally (startframes + reference plates)
+#    Each detected face is assigned to exactly ONE character, so the two
+#    datasets never share an image. Verify with the check in
+#    scripts/README-training.md before uploading.
 cd wan22-production-pipeline
 python scripts/prepare_training_data.py \
-    --startframes-dir ../../startframes \
+    --images-ref-dir "C:/Users/FAIZ SAYYED/OneDrive/Desktop/Images REF" \
+    --startframes-dir ./startframes \
     --output-dir ./training_data \
-    --existing-datasets /path/to/lora-train-faiz /path/to/lora-train-juveriya
+    --min-face-size 64 \
+    --max-faces-ref 3 \
+    --max-faces-startframe 2 \
+    --assign-threshold 0.35 \
+    --upscale-to 512
 
-# 2. Upload datasets to Kaggle (one-time)
+# 2. Upload datasets to Kaggle (one-time; use `datasets version` to update)
 kaggle datasets create -p training_data/faiz -t "lora-train-faiz"
 kaggle datasets create -p training_data/juv -t "lora-train-juveriya"
-kaggle datasets create -p training_data/combined -t "lora-train-combined"
 kaggle datasets create -p ../../startframes -t "startframes-c01-c70"
 # Upload base model (Juggernaut XL v9)
 kaggle datasets create -p /path/to/Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors -t "wan22-nsfw-lightning-q8"
 
-# 3. Deploy & run training kernel (free T4, ~2-3 hrs)
-python scripts/train_loras_kaggle.py --push
-kaggle kernels output sofiya009/lora-nuke-faiz-juv -p /tmp/lora_output
+# 3. Deploy & run training kernel (free T4, ~45 min per LoRA)
+#    One character per run: the kernel asserts the two datasets share no images.
+python scripts/train_loras_kaggle.py --push --only faiz
+python scripts/train_loras_kaggle.py --push --only juv
+kaggle kernels status sofiya009/lora-nuke-faiz-juveriya-sdxl-faiz
 
 # 4. Publish LoRAs as dataset
-cd /tmp/lora_output
+#    Each --only target writes to its own directory (lora_output/faiz, ...).
+python scripts/train_loras_kaggle.py --output --only faiz
+cd lora_output/faiz
 cat > dataset-metadata.json << 'EOF'
 {
-  "id": "sofiya009/lora-nuke-faiz-juv",
+  "id": "sofiya009/lora-nuke-faiz-juveriya-sdxl",
   "title": "LoRA Nuke: Faiz + Juveriya (SDXL)",
   "subtitle": "Character LoRAs for Wan 2.2 pipeline",
-  "description": "3 LoRAs: faiz, juv, faiz_juv combined. Trained on SDXL with Kohya-ss.",
+  "description": "Per-character SDXL LoRAs trained with Kohya-ss. One character per LoRA.",
   "isPrivate": true,
   "keywords": ["lora", "sdxl", "character", "wan22"],
   "licenses": [{"name": "CC0-1.0"}]
 }
 EOF
-kaggle datasets version -p /tmp/lora_output -m "Updated LoRAs with startframes faces"
+kaggle datasets version -p . -m "Per-character LoRAs, 512px crops"
 ```
 
 **Option B: Manual Training (if you have existing LoRAs)**
-- [ ] **Training complete** on `sofiya009/lora-nuke-faiz-juv`
+- [ ] **Training complete** on `sofiya009/lora-nuke-faiz-juveriya-sdxl`
 - [ ] **Dataset published** with these files:
   - `faiz_lora.safetensors`
   - `juv_lora.safetensors` 
@@ -171,7 +182,7 @@ bash scripts/setup_aic_fast.sh
 - Token format: `hf_xxxxxxxxxxxxxxxxxxxxxxxx`
 
 ### "Kaggle dataset not found"
-- Verify dataset exists: `kaggle datasets list -s lora-nuke-faiz-juv`
+- Verify dataset exists: `kaggle datasets list -s lora-nuke-faiz-juveriya-sdxl`
 - Check username: `sofiya009` (case sensitive)
 - Ensure dataset is **published** (not private/draft)
 
@@ -233,7 +244,7 @@ curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $HF_TOKEN" \
 # 5. Network (Kaggle)
 echo -n "Kaggle: "
 curl -s -o /dev/null -w "%{http_code}" -u "$(echo $KAGGLE_KEY | jq -r .username):$(echo $KAGGLE_KEY | jq -r .key)" \
-  "https://www.kaggle.com/api/v1/datasets/list?search=lora-nuke-faiz-juv" && echo " ✓" || echo " ✗"
+  "https://www.kaggle.com/api/v1/datasets/list?search=lora-nuke-faiz-juveriya-sdxl" && echo " ✓" || echo " ✗"
 
 # 6. Refs
 echo -n "References: "

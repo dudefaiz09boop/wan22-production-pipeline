@@ -82,34 +82,38 @@ kaggle datasets create -p ../../startframes -t "startframes-c01-c70"
 ### 3. Deploy & Run Training Kernel
 
 ```bash
-# Build and push kernel
-python scripts/train_loras_kaggle.py --push
+# Build and push kernel (one LoRA per run is recommended)
+python scripts/train_loras_kaggle.py --push --only faiz
+python scripts/train_loras_kaggle.py --push --only juv
 
 # Monitor progress
-kaggle kernels output sofiya009/lora-nuke-faiz-juv -p /tmp/lora_output
+kaggle kernels status sofiya009/lora-nuke-faiz-juveriya-sdxl-faiz
 ```
 
 ### 4. Download & Publish LoRAs
 
 ```bash
-# After kernel completes, download output
-python scripts/train_loras_kaggle.py --output
+# After the kernel completes, download its artifacts.
+# Each --only target writes to its own directory so runs cannot overwrite
+# each other: lora_output/faiz, lora_output/juv, lora_output/combined.
+python scripts/train_loras_kaggle.py --output --only faiz
+python scripts/train_loras_kaggle.py --output --only juv
 
-# Create dataset metadata and upload as new version
-cd /tmp/lora_output
+# Publish as a new dataset version
+cd lora_output/faiz
 cat > dataset-metadata.json << 'EOF'
 {
-  "id": "sofiya009/lora-nuke-faiz-juv",
+  "id": "sofiya009/lora-nuke-faiz-juveriya-sdxl",
   "title": "LoRA Nuke: Faiz + Juveriya (SDXL)",
   "subtitle": "Character LoRAs for Wan 2.2 pipeline",
-  "description": "3 LoRAs: faiz, juv, faiz_juv combined. Trained on SDXL with Kohya-ss.",
+  "description": "Per-character SDXL LoRAs trained with Kohya-ss. One character per LoRA.",
   "isPrivate": true,
   "keywords": ["lora", "sdxl", "character", "wan22"],
   "licenses": [{"name": "CC0-1.0"}]
 }
 EOF
 
-kaggle datasets version -p /tmp/lora_output -m "Updated LoRAs with startframes faces"
+kaggle datasets version -p . -m "Per-character LoRAs, 512px crops"
 ```
 
 ## Training Configuration (Optimized for T4 16GB)
@@ -168,7 +172,7 @@ loras.zip
 
 ## Integration with Production Pipeline
 
-Once `loras.zip` is published as `sofiya009/lora-nuke-faiz-juv`:
+Once `loras.zip` is published as `sofiya009/lora-nuke-faiz-juveriya-sdxl`:
 
 1. The production pipeline (`setup_aic_fast.sh`) auto-downloads them
 2. Updates `workflows/loras.json` with trained LoRA entries

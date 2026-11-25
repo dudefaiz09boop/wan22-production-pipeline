@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Download trained character LoRAs from Kaggle (sofiya009/lora-nuke-faiz-juv)."""
+"""Download trained character LoRAs from Kaggle (sofiya009/lora-nuke-faiz-juveriya-sdxl)."""
 from __future__ import annotations
 
 import hashlib
@@ -157,7 +157,7 @@ def download_file(
         return False
 
 
-# Trained LoRA configurations from sofiya009/lora-nuke-faiz-juv
+# Trained LoRA configurations from sofiya009/lora-nuke-faiz-juveriya-sdxl
 TRAINED_LORAS = {
     "faiz": {
         "filename": "faiz_lora.safetensors",
@@ -186,7 +186,7 @@ TRAINED_LORAS = {
 def download_trained_loras(
     dest_dir: Path,
     kaggle_username: str = "sofiya009",
-    kaggle_dataset: str = "lora-nuke-faiz-juv",
+    kaggle_dataset: str = "lora-nuke-faiz-juveriya-sdxl",
     token: Optional[str] = None,
     force: bool = False,
 ) -> dict[str, bool]:
@@ -273,7 +273,7 @@ def update_lora_registry(lora_dir: Path, registry_path: Path) -> None:
             "trigger": "faiz",
             "trigger_scope": "prompt_prefix",
             "source": {
-                "kaggle_dataset": "sofiya009/lora-nuke-faiz-juv",
+                "kaggle_dataset": "sofiya009/lora-nuke-faiz-juveriya-sdxl",
                 "kaggle_file": "faiz_lora.safetensors",
             },
         },
@@ -284,7 +284,7 @@ def update_lora_registry(lora_dir: Path, registry_path: Path) -> None:
             "trigger": "juv",
             "trigger_scope": "prompt_prefix",
             "source": {
-                "kaggle_dataset": "sofiya009/lora-nuke-faiz-juv",
+                "kaggle_dataset": "sofiya009/lora-nuke-faiz-juveriya-sdxl",
                 "kaggle_file": "juv_lora.safetensors",
             },
         },
@@ -295,7 +295,7 @@ def update_lora_registry(lora_dir: Path, registry_path: Path) -> None:
             "trigger": "faiz juv",
             "trigger_scope": "prompt_prefix",
             "source": {
-                "kaggle_dataset": "sofiya009/lora-nuke-faiz-juv",
+                "kaggle_dataset": "sofiya009/lora-nuke-faiz-juveriya-sdxl",
                 "kaggle_file": "faiz_juv_lora.safetensors",
             },
         },
@@ -314,7 +314,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Download trained character LoRAs from Kaggle")
     ap.add_argument("--dest", default="models/loras/trained", help="Destination directory")
     ap.add_argument("--kaggle-username", default="sofiya009", help="Kaggle username")
-    ap.add_argument("--kaggle-dataset", default="lora-nuke-faiz-juv", help="Kaggle dataset name")
+    ap.add_argument("--kaggle-dataset", default="lora-nuke-faiz-juveriya-sdxl", help="Kaggle dataset name")
     ap.add_argument("--token", help="Kaggle/HF token (or set KAGGLE_KEY/HF_TOKEN env var)")
     ap.add_argument("--force", action="store_true", help="Force re-download")
     ap.add_argument("--update-registry", action="store_true", help="Update workflows/loras.json")
