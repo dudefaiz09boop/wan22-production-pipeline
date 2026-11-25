@@ -74,6 +74,10 @@ def validate(data_dir: Path) -> tuple[dict[str, list[Path]], list[str]]:
                     f"{character}: caption for {image.name} does not start with "
                     f"'{character}' (got {text[:40]!r})"
                 )
+            elif "_body" in image.name and "full body" not in text:
+                problems.append(
+                    f"{character}: body crop {image.name} lacks a 'full body' caption"
+                )
 
         for caption in directory.glob("*.txt"):
             if not any(
@@ -161,7 +165,9 @@ def main() -> int:
     per_character, problems = validate(data_dir)
 
     for character in CHARACTERS:
-        print(f"{character}: {len(per_character.get(character, []))} images")
+        images = per_character.get(character, [])
+        body = sum(1 for p in images if "_body" in p.name)
+        print(f"{character}: {len(images)} images ({body} body)")
 
     if problems:
         print(f"\n{len(problems)} problem(s):")

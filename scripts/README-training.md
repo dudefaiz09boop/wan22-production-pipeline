@@ -25,6 +25,8 @@ cd wan22-production-pipeline
 python scripts/prepare_training_data.py \
     --images-ref-dir "C:/Users/FAIZ SAYYED/OneDrive/Desktop/Images REF" \
     --startframes-dir ./startframes \
+    --faiz-dir ./refs/Faiz \
+    --juv-dir ./refs/Juvi \
     --output-dir ./training_data \
     --min-face-size 64 \
     --max-faces-ref 3 \
@@ -32,6 +34,16 @@ python scripts/prepare_training_data.py \
     --assign-threshold 0.35 \
     --upscale-to 512
 ```
+
+**Face and body.** Each detected face produces a face crop and a body crop, so
+the LoRA learns build and posture, not just a face. Body crops are skipped when
+the source is a close-up (face > 55% of frame width) because there is no body to
+show, and the full-frame fallback is emitted only for the primary face so the
+same bytes never land in both datasets. Pass `--no-body` for face-only.
+
+`--faiz-dir` / `--juv-dir` take folders that already belong to one character, so
+no identity scoring is needed. These are the highest-quality source and the only
+one good enough to teach body shape — use them.
 
 **One character per LoRA.** A startframe normally contains both people, so every
 detected face is scored against per-character embedding centroids built from the
@@ -48,8 +60,8 @@ small crops so training is not fed 100px faces.
 This creates:
 ```
 training_data/
-├── faiz/           # Faiz face crops + captions
-├── juv/            # Juveriya face crops + captions
+├── faiz/           # Faiz face + body crops, with captions
+├── juv/            # Juveriya face + body crops, with captions
 ├── combined/       # Both characters for combined LoRA
 └── metadata.json   # Counts and stats
 ```
@@ -237,6 +249,10 @@ Once `loras.zip` is published as `sofiya009/lora-nuke-faiz-juveriya-sdxl`:
   shared-image check in step 1; it must print `shared: 0`.
 - **Faces are soft or generic:** the crops are too small. Regenerate with
   `--upscale-to 512` and confirm the median shortest side is >= 512.
+- **Body shape is wrong or generic:** the body crops are missing or too few.
+  Check `metadata.json` for `faiz_body_count` / `juv_body_count`; if low, the
+  source photos are close-ups. Add full-body photos to `refs/Faiz` / `refs/Juvi`
+  and regenerate. Close-ups cannot teach a body.
 
 ### Replacing an existing LoRA
 `download_loras.py` now stages the **newest** local copy, so a fresh training

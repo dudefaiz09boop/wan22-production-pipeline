@@ -224,11 +224,109 @@ def extract_faces_from_image(
     return results
 
 
-def create_caption_file(image_path: Path, character: str, output_dir: Path) -> None:
-    """Create caption file for training image."""
-    caption = f"{character}, south asian, detailed face, photorealistic"
+def create_caption_file(
+    image_path: Path,
+    character: str,
+    output_dir: Path,
+    kind: str = "face",
+) -> None:
+    """Create a caption file for a training image.
+
+    Face and body samples get different captions on purpose. A body caption that
+    repeats "detailed face" teaches the LoRA to expect a face close-up, so the
+    body framing never gets its own signal.
+    """
+    if kind == "body":
+        caption = (
+            f"{character}, south asian, full body, photorealistic, "
+            "natural skin texture, film still"
+        )
+    else:
+        caption = f"{character}, south asian, detailed face, photorealistic"
     caption_path = output_dir / f"{image_path.stem}.txt"
     caption_path.write_text(caption, encoding="utf-8")
+
+
+def _body_crop(
+    img: np.ndarray,
+    face,
+    min_face_size: int,
+    reach: float = 5.2,
+) -> tuple[np.ndarray, list[int]] | None:
+    """Crop the subject's body around a detected face.
+
+    The face box is widened and extended downward so torso and legs are
+    included. When that already covers most of the frame the whole frame is
+    returned instead, because a near-identical crop just wastes a bucket.
+    """
+    height, width = img.shape[:2]
+    x1, y1, x2, y2 = map(int, face.bbox)
+    face_w = x2 - x1
+    face_h = y2 - y1
+    if face_w < min_face_size or face_h < min_face_size:
+        return None
+
+    cx = (x1 + x2) // 2
+    half_w = int(face_w * reach / 2)
+    bx1 = max(0, cx - half_w)
+    bx2 = min(width, cx + half_w)
+    by1 = max(0, y1 - int(face_h * 1.2))
+    by2 = min(height, y2 + int(face_h * reach * 2.2))
+
+    if (bx2 - bx1) < 32 or (by2 - by1) < 32:
+        return None
+
+    # Already most of the frame: keep the original framing.
+    if (bx2 - bx1) * (by2 - by1) > 0.82 * width * height:
+        return img.copy(), [0, 0, width, height]
+
+    return img[by1:by2, bx1:bx2], [bx1, by1, bx2, by2]
+
+
+def _emit_sample(
+    img: np.ndarray,
+    face,
+    output_dir: Path,
+    character: str,
+    stem: str,
+    index: int,
+    kind: str,
+    min_face_size: int,
+    upscale_to: int,
+    primary: bool = True,
+) -> dict | None:
+    """Write one face or body sample plus its caption."""
+    if kind == "body":
+        # A close-up source has no body to show; the body crop would be a
+        # near-duplicate of the face crop and just waste a bucket.
+        frame_w = img.shape[1]
+        if (face.bbox[2] - face.bbox[0]) / frame_w > 0.55:
+            return None
+        cropped = _body_crop(img, face, min_face_size)
+        # When the crop falls back to the whole frame it contains both people,
+        # so emitting it for each face would put identical bytes in both
+        # datasets. Only the primary (largest) face gets it.
+        if cropped is not None and not primary:
+            bbox = cropped[1]
+            if bbox[0] == 0 and bbox[1] == 0 and bbox[2] == img.shape[1]:
+                return None
+    else:
+        cropped = _crop_face(img, face, min_face_size)
+    if cropped is None:
+        return None
+
+    crop, bbox = cropped
+    output_name = f"{character}_{stem}_{kind}{index:02d}.jpg"
+    _save_crop(crop, output_dir / output_name, upscale_to)
+    create_caption_file(output_dir / output_name, character, output_dir, kind)
+
+    return {
+        "file": output_name,
+        "character": character,
+        "source": stem,
+        "kind": kind,
+        "bbox": bbox,
+    }
 
 
 def process_images_ref_folder(
@@ -239,33 +337,46 @@ def process_images_ref_folder(
     min_face_size: int = 128,
     max_faces: int = 3,
     upscale_to: int = 0,
+    body: bool = True,
 ) -> dict:
-    """Process Images REF folder with known character mapping."""
+    """Process Images REF folder with known character mapping.
+
+    Emits a face crop and, when body is on, a body crop per detected face.
+    """
     print(f"Processing Images REF from {images_ref_dir}...")
-    
-    results = {"faiz": [], "juv": []}
-    
+
+    results: dict[str, list[dict]] = {"faiz": [], "juv": []}
+
     for img_path in images_ref_dir.glob("*.png"):
         stem = img_path.stem.lower()
         character = IMAGES_REF_MAPPING.get(stem)
-        
+
         if not character:
             print(f"  Skipping {img_path.name} - no character mapping")
             continue
-            
-        print(f"  Processing {img_path.name} -> {character}")
-        faces = extract_faces_from_image(
-            app, img_path, 
-            faiz_dir if character == "faiz" else juv_dir,
-            character, min_face_size, max_faces, upscale_to
+
+        img = cv2.imread(str(img_path))
+        if img is None:
+            continue
+        faces = app.get(img)
+        if not faces:
+            continue
+        faces.sort(
+            key=lambda f: (f.bbox[2] - f.bbox[0]) * (f.bbox[3] - f.bbox[1]),
+            reverse=True,
         )
-        results[character].extend(faces)
-        
-        # Create caption files
-        for face in faces:
-            face_path = (faiz_dir if character == "faiz" else juv_dir) / face["file"]
-            create_caption_file(face_path, character, faiz_dir if character == "faiz" else juv_dir)
-    
+
+        target_dir = faiz_dir if character == "faiz" else juv_dir
+        print(f"  Processing {img_path.name} -> {character}")
+        for i, face in enumerate(faces[:max_faces]):
+            for kind in ("face", "body") if body else ("face",):
+                sample = _emit_sample(
+                    img, face, target_dir, character, img_path.stem,
+                    i, kind, min_face_size, upscale_to, primary=(i == 0),
+                )
+                if sample:
+                    results[character].append(sample)
+
     return results
 
 
@@ -279,6 +390,7 @@ def process_startframes(
     max_faces: int = 2,
     threshold: float = DEFAULT_ASSIGN_THRESHOLD,
     upscale_to: int = 0,
+    body: bool = True,
 ) -> dict:
     """Process startframes, assigning each detected face to exactly one character.
 
@@ -313,23 +425,15 @@ def process_startframes(
                 dropped += 1
                 continue
 
-            cropped = _crop_face(img, face, min_face_size)
-            if cropped is None:
-                continue
-            crop, bbox = cropped
-
             target_dir = faiz_dir if character == "faiz" else juv_dir
-            output_name = f"{character}_{sf_path.stem}_face{i:02d}.jpg"
-            _save_crop(crop, target_dir / output_name, upscale_to)
-            create_caption_file(target_dir / output_name, character, target_dir)
-
-            results[character].append({
-                "file": output_name,
-                "character": character,
-                "source": sf_path.name,
-                "bbox": bbox,
-                "score": round(score, 4),
-            })
+            for kind in ("face", "body") if body else ("face",):
+                sample = _emit_sample(
+                    img, face, target_dir, character, sf_path.stem,
+                    i, kind, min_face_size, upscale_to, primary=(i == 0),
+                )
+                if sample:
+                    sample["score"] = round(score, 4)
+                    results[character].append(sample)
 
     print(f"  dropped {dropped} face(s) below the {threshold} identity threshold")
     return results
@@ -347,6 +451,52 @@ def copy_existing_dataset(src_dir: Path, dst_dir: Path, character: str) -> int:
     return count
 
 
+def process_character_folder(
+    app: FaceAnalysis,
+    folder: Path,
+    character: str,
+    target_dir: Path,
+    min_face_size: int = 64,
+    max_faces: int = 1,
+    upscale_to: int = 0,
+    body: bool = True,
+) -> list[dict]:
+    """Process a folder that already belongs to one character.
+
+    No identity scoring is needed: the folder is the label. This is the path for
+    the high-resolution per-character photo sets, which are the only source good
+    enough to teach body shape.
+    """
+    print(f"Processing {folder} -> {character}...")
+    files = sorted(
+        p for p in folder.iterdir()
+        if p.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp")
+    )
+    print(f"  {len(files)} image(s)")
+
+    results: list[dict] = []
+    for path in tqdm(files, desc=f"Extracting {character}"):
+        img = cv2.imread(str(path))
+        if img is None:
+            continue
+        faces = app.get(img)
+        if not faces:
+            continue
+        faces.sort(
+            key=lambda f: (f.bbox[2] - f.bbox[0]) * (f.bbox[3] - f.bbox[1]),
+            reverse=True,
+        )
+        for i, face in enumerate(faces[:max_faces]):
+            for kind in ("face", "body") if body else ("face",):
+                sample = _emit_sample(
+                    img, face, target_dir, character, path.stem,
+                    i, kind, min_face_size, upscale_to, primary=(i == 0),
+                )
+                if sample:
+                    results.append(sample)
+    return results
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Prepare LoRA training data from startframes + Images REF")
     ap.add_argument("--images-ref-dir", required=True, help="Images REF folder (c01-c25 with known mapping)")
@@ -359,11 +509,15 @@ def main() -> int:
     ap.add_argument("--device", default="cuda", help="Device for InsightFace")
     ap.add_argument("--assign-threshold", type=float, default=DEFAULT_ASSIGN_THRESHOLD, help="Identity threshold for assigning a face to a character")
     ap.add_argument("--upscale-to", type=int, default=0, help="Upscale crops when the shortest side is below this px (0=off)")
+    ap.add_argument("--faiz-dir", default=None, help="Folder of Faiz-only photos (high resolution)")
+    ap.add_argument("--juv-dir", default=None, help="Folder of Juveriya-only photos (high resolution)")
+    ap.add_argument("--no-body", action="store_true", help="Emit face crops only, no body crops")
     args = ap.parse_args()
 
     images_ref_dir = Path(args.images_ref_dir)
     startframes_dir = Path(args.startframes_dir)
     output_dir = Path(args.output_dir)
+    body = not args.no_body
 
     # Create output structure
     faiz_dir = output_dir / "faiz"
@@ -386,10 +540,30 @@ def main() -> int:
     ref_results = process_images_ref_folder(
         app, images_ref_dir, faiz_dir, juv_dir,
         args.min_face_size, args.max_faces_ref,
-        upscale_to=args.upscale_to,
+        upscale_to=args.upscale_to, body=body,
     )
     all_faces["faiz"].extend(ref_results["faiz"])
     all_faces["juv"].extend(ref_results["juv"])
+
+    # 1b. Per-character photo folders (highest quality source; no scoring needed)
+    for folder_arg, character, target in (
+        (args.faiz_dir, "faiz", faiz_dir),
+        (args.juv_dir, "juv", juv_dir),
+    ):
+        if not folder_arg:
+            continue
+        folder = Path(folder_arg)
+        if not folder.is_dir():
+            print(f"  WARNING: {folder} missing, skipping")
+            continue
+        all_faces[character].extend(
+            process_character_folder(
+                app, folder, character, target,
+                min_face_size=args.min_face_size,
+                upscale_to=args.upscale_to,
+                body=body,
+            )
+        )
 
     # 2. Process startframes (mixed, assign each detected face to exactly one character)
     sf_results = process_startframes(
@@ -402,6 +576,7 @@ def main() -> int:
         args.max_faces_startframe,
         threshold=args.assign_threshold,
         upscale_to=args.upscale_to,
+        body=body,
     )
     all_faces["faiz"].extend(sf_results["faiz"])
     all_faces["juv"].extend(sf_results["juv"])
@@ -429,17 +604,20 @@ def main() -> int:
         "faiz_count": len(list(faiz_dir.glob("*.jpg"))),
         "juv_count": len(list(juv_dir.glob("*.jpg"))),
         "combined_count": len(list(combined_dir.glob("*.jpg"))),
+        "faiz_body_count": len(list(faiz_dir.glob("*_body*.jpg"))),
+        "juv_body_count": len(list(juv_dir.glob("*_body*.jpg"))),
         "images_ref_faces": {k: len(v) for k, v in ref_results.items()},
         "startframes_faces": {k: len(v) for k, v in sf_results.items()},
         "total_faces": {k: len(v) for k, v in all_faces.items()},
         "assign_threshold": args.assign_threshold,
         "upscale_to": args.upscale_to,
+        "body_crops": body,
     }
 
     (output_dir / "metadata.json").write_text(json.dumps(metadata, indent=2))
     print(f"\nTraining data prepared in {output_dir}:")
-    print(f"  Faiz: {metadata['faiz_count']} images")
-    print(f"  Juv:  {metadata['juv_count']} images")
+    print(f"  Faiz: {metadata['faiz_count']} images ({metadata['faiz_body_count']} body)")
+    print(f"  Juv:  {metadata['juv_count']} images ({metadata['juv_body_count']} body)")
     print(f"  Combined: {metadata['combined_count']} images")
     print(f"  Images REF faces: Faiz={metadata['images_ref_faces']['faiz']}, Juv={metadata['images_ref_faces']['juv']}")
     print(f"  Startframes faces: Faiz={metadata['startframes_faces']['faiz']}, Juv={metadata['startframes_faces']['juv']}")
