@@ -1,6 +1,6 @@
 {
-  "id": "sofiya009/lora-nuke-faiz-juveriya-sdxl-juv",
-  "title": "LoRA Nuke Faiz Juveriya SDXL juv",
+  "id": "sofiya009/lora-nuke-faiz-juveriya-sdxl",
+  "title": "LoRA Nuke Faiz Juveriya SDXL",
   "code_file": "train_loras_kaggle.ipynb",
   "language": "python",
   "kernel_type": "notebook",
