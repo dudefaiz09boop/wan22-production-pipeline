@@ -15,10 +15,10 @@ Notes on the generated notebook:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import subprocess
 import sys
-import uuid
 from pathlib import Path
 
 HERE = Path(__file__).parent
@@ -39,9 +39,12 @@ MODEL_DIR = "/kaggle/working/base"
 def _code_cell(text: str) -> dict:
     lines = text.split("\n")
     source = [line + "\n" for line in lines[:-1]] + [lines[-1]]
+    # Derive the id from the content so rebuilding an unchanged notebook is a
+    # no-op. A random id made every build dirty the working tree.
+    cell_id = hashlib.sha1(text.encode("utf-8")).hexdigest()[:8]
     return {
         "cell_type": "code",
-        "id": uuid.uuid4().hex[:8],
+        "id": cell_id,
         "metadata": {},
         "execution_count": None,
         "outputs": [],
