@@ -238,6 +238,7 @@ def process_images_ref_folder(
     juv_dir: Path,
     min_face_size: int = 128,
     max_faces: int = 3,
+    upscale_to: int = 0,
 ) -> dict:
     """Process Images REF folder with known character mapping."""
     print(f"Processing Images REF from {images_ref_dir}...")
@@ -256,7 +257,7 @@ def process_images_ref_folder(
         faces = extract_faces_from_image(
             app, img_path, 
             faiz_dir if character == "faiz" else juv_dir,
-            character, min_face_size, max_faces
+            character, min_face_size, max_faces, upscale_to
         )
         results[character].extend(faces)
         
@@ -384,7 +385,8 @@ def main() -> int:
     # 1. Process Images REF folder (known character mapping)
     ref_results = process_images_ref_folder(
         app, images_ref_dir, faiz_dir, juv_dir,
-        args.min_face_size, args.max_faces_ref
+        args.min_face_size, args.max_faces_ref,
+        upscale_to=args.upscale_to,
     )
     all_faces["faiz"].extend(ref_results["faiz"])
     all_faces["juv"].extend(ref_results["juv"])

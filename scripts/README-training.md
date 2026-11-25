@@ -20,12 +20,27 @@ cd wan22-production-pipeline
 
 # Extract faces from startframes + combine with existing datasets
 python scripts/prepare_training_data.py \
-    --startframes-dir ../../startframes \
+    --images-ref-dir "C:/Users/FAIZ SAYYED/OneDrive/Desktop/Images REF" \
+    --startframes-dir ./startframes \
     --output-dir ./training_data \
-    --existing-datasets /path/to/lora-train-faiz /path/to/lora-train-juveriya \
-    --min-face-size 128 \
-    --max-faces-per-frame 2
+    --min-face-size 64 \
+    --max-faces-ref 3 \
+    --max-faces-startframe 2 \
+    --assign-threshold 0.35 \
+    --upscale-to 512
 ```
+
+**One character per LoRA.** A startframe normally contains both people, so every
+detected face is scored against per-character embedding centroids built from the
+reference plates and written to the **single** winning dataset. Faces that match
+neither character confidently are dropped. Do not reintroduce a per-beat
+character list: it cannot say which detected face belongs to whom, and the old
+version wrote every face into both sets (58 of 65 "faiz" crops were byte-identical
+to "juv" crops, so each LoRA learned both faces).
+
+`--min-face-size 64` is deliberate. Startframe faces are often 70-110px; a 128px
+floor silently discarded most of them. `--upscale-to 512` Lanczos-upscales the
+small crops so training is not fed 100px faces.
 
 This creates:
 ```
@@ -34,6 +49,19 @@ training_data/
 ├── juv/            # Juveriya face crops + captions
 ├── combined/       # Both characters for combined LoRA
 └── metadata.json   # Counts and stats
+```
+
+Verify the split before uploading:
+
+```bash
+python - <<'PY'
+import glob, hashlib, os
+def h(p): return hashlib.md5(open(p, "rb").read()).hexdigest()
+faiz = {h(f) for f in glob.glob("training_data/faiz/*.jpg")}
+juv = {h(f) for f in glob.glob("training_data/juv/*.jpg")}
+print("faiz:", len(faiz), "juv:", len(juv), "shared:", len(faiz & juv))
+assert not (faiz & juv), "a crop is in both datasets - rerun prepare_training_data.py"
+PY
 ```
 
 ### 2. Upload Datasets to Kaggle (One-time)
@@ -90,19 +118,23 @@ kaggle datasets version -p /tmp/lora_output -m "Updated LoRAs with startframes f
 |-----------|-------|--------|
 | **Base Model** | Juggernaut XL v9 | Photorealistic, good for characters |
 | **LoRA Rank** | 32 | Fast training, sufficient quality |
-| **LoRA Alpha** | 32 | Standard scaling |
+| **LoRA Alpha** | 16 | Half of rank; stops a small dataset over-saturating |
 | **Precision** | fp16 | Half VRAM usage |
 | **Gradient Checkpointing** | Enabled | Saves VRAM |
 | **Optimizer** | AdamW8bit | 8-bit saves VRAM |
 | **Learning Rate** | 1e-4 | Standard for LoRA |
 | **Scheduler** | Cosine with restarts | Good convergence |
-| **Max Steps** | 1500 per LoRA | ~45 min each on T4 |
-| **Batch Size** | 1 (accum 4) | Effective batch 4 |
+| **Max Steps** | 1200 per LoRA | ~45 min each on T4 |
+| **Batch Size** | 1 (accum 2) | Effective batch 2 |
 | **Resolution** | 1024x1024 | SDXL native |
-| **Save Every** | 500 steps | 3 checkpoints |
+| **Save Every** | 400 steps | 3 checkpoints |
 | **Regularization** | Other character data | Prevents bleeding |
 
 **Total training time: ~2-3 hours** (fits in single Kaggle session)
+
+The kernel asserts that the two datasets share no images before training starts.
+If it fails, the face-extraction step wrote the same face into both sets — rerun
+`prepare_training_data.py` rather than training on mixed data.
 
 ## Data Sources
 
@@ -164,6 +196,15 @@ Once `loras.zip` is published as `sofiya009/lora-nuke-faiz-juv`:
 - Add more diverse training images
 - Check caption files match images
 - Verify face extraction worked (check `metadata.json`)
+- **Faces look like the other character:** the datasets are mixed. Run the
+  shared-image check in step 1; it must print `shared: 0`.
+- **Faces are soft or generic:** the crops are too small. Regenerate with
+  `--upscale-to 512` and confirm the median shortest side is >= 512.
+
+### Replacing an existing LoRA
+`download_loras.py` now stages the **newest** local copy, so a fresh training
+run wins over a stale file. If you want to force a re-download from Kaggle, pass
+`--force`.
 
 ## Files
 

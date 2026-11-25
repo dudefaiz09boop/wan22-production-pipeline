@@ -56,6 +56,7 @@ lora_out3/
 probe_out/
 recover/
 training_data/
+training_data_*/
 klog*.txt
 kernel_log*.txt
 *.log

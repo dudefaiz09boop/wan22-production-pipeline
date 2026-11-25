@@ -19,6 +19,7 @@ from insightface.app import FaceAnalysis
 from PIL import Image
 
 from face_swap_video import swap_faces_in_frame
+from lora_adapters import select_adapters
 
 
 # Character reference images for InsightFace
@@ -179,7 +180,12 @@ def load_sdxl_pipeline(
     device: str = "cuda",
     dtype: torch.dtype = torch.float16,
 ) -> StableDiffusionXLPipeline:
-    """Load SDXL pipeline with LoRAs."""
+    """Load SDXL and register every available LoRA adapter.
+
+    Adapters are registered but deliberately NOT activated here: which
+    character is in frame changes per beat, so activation happens in
+    activate_adapters() once the beat's cast is known.
+    """
     pipe = StableDiffusionXLPipeline.from_single_file(
         model_path,
         torch_dtype=dtype,
@@ -189,8 +195,8 @@ def load_sdxl_pipeline(
     pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config)
     pipe = pipe.to(device)
 
-    # Load LoRAs. Loading alone is not enough: without set_adapters the
-    # adapters stay inactive and the stills are generated from the base model.
+    # Loading alone is not enough: without set_adapters the adapters stay
+    # inactive and the stills are generated from the base model.
     loaded = []
     for name, path in lora_paths.items():
         if Path(path).exists():
@@ -200,17 +206,24 @@ def load_sdxl_pipeline(
         else:
             print(f"  [FAIL] LoRA not found: {path}")
 
-    if loaded:
-        # The combined adapter carries both faces; prefer it when present.
-        if "both" in loaded:
-            pipe.set_adapters(["both"], adapter_weights=[0.9])
-            print("  [OK] Active adapter: both @ 0.9")
-        else:
-            weights = [0.85] * len(loaded)
-            pipe.set_adapters(loaded, adapter_weights=weights)
-            print(f"  [OK] Active adapters: {', '.join(loaded)} @ 0.85")
-
+    pipe._loaded_lora_names = loaded  # type: ignore[attr-defined]
     return pipe
+
+
+def activate_adapters(
+    pipe: StableDiffusionXLPipeline,
+    characters: list[str],
+    weight: float = 0.85,
+) -> list[str]:
+    """Activate the adapters for the characters actually in this beat."""
+    loaded = getattr(pipe, "_loaded_lora_names", [])
+    wanted = select_adapters(loaded, characters)
+    if not wanted:
+        return []
+
+    pipe.set_adapters(wanted, adapter_weights=[weight] * len(wanted))
+    print(f"  [OK] Active adapters: {', '.join(wanted)} @ {weight}")
+    return wanted
 
 
 def generate_still(
@@ -275,6 +288,7 @@ def process_beat(
     print(f"\n[{beat_id}] Generating still at {width}x{height}...")
 
     characters = BEAT_CHARACTERS.get(beat_id, ["faiz", "juv"])
+    activate_adapters(pipe, characters)
     best = None
 
     for attempt in range(max(1, candidates)):

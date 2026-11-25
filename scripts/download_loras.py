@@ -205,13 +205,17 @@ def download_trained_loras(
     # cover the training output directories, which is where a locally trained
     # file actually lands; without them a 404 from Kaggle was fatal even though
     # the weights were sitting in the repo.
+    #
+    # Order matters: a freshly trained file must beat an older copy. Picking the
+    # first match meant a stale loras/faiz_lora.safetensors silently shadowed a
+    # new training run, so retraining appeared to change nothing.
     local_sources = [
-        Path("loras"),
         Path("models/loras/trained"),
-        Path("recover"),
-        Path("juv_out"),
         Path("lora_output"),
         Path("lora_out3"),
+        Path("juv_out"),
+        Path("recover"),
+        Path("loras"),
         Path("training_data"),
     ]
 
@@ -221,18 +225,19 @@ def download_trained_loras(
 
         print(f"[{lora_key}] {filename} - {lora_info['description']}")
 
-        if dest.exists() and not force:
-            print("  [OK] Already exists (use --force to re-download)")
-            results[lora_key] = True
-            continue
+        candidates = [
+            src / filename for src in local_sources if (src / filename).is_file()
+        ]
+        if dest.exists():
+            candidates.append(dest)
 
-        staged = next(
-            (src / filename for src in local_sources if (src / filename).is_file()),
-            None,
-        )
-        if staged is not None and not force:
-            shutil.copy2(staged, dest)
-            print(f"  [OK] Copied from local staging: {staged}")
+        if candidates and not force:
+            newest = max(candidates, key=lambda p: p.stat().st_mtime)
+            if newest != dest:
+                shutil.copy2(newest, dest)
+                print(f"  [OK] Copied newest local copy: {newest}")
+            else:
+                print("  [OK] Already exists (use --force to re-download)")
             results[lora_key] = True
             continue
 
