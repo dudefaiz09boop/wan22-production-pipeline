@@ -1,15 +1,18 @@
-# Free Kaggle LoRA Training Pipeline
+# Character LoRA Training
 
-**Train character LoRAs on Kaggle's free T4 GPU (30 hrs/week) using startframes + existing datasets.**
+**Train one SDXL LoRA per character.** Two paths are supported: Kaggle (free T4,
+fully scripted) and a hosted trainer such as ModelScope/Civision (upload the
+bundles from step 2).
 
 ## Overview
 
-This pipeline trains 3 SDXL LoRAs for the Wan 2.2 production pipeline:
 - `faiz_lora.safetensors` - Faiz character
 - `juv_lora.safetensors` - Juveriya character
-- `faiz_juv_lora.safetensors` - Combined both
+- `faiz_juv_lora.safetensors` - combined; a fallback only, not the default
 
-**Cost: $0** - Runs entirely on Kaggle free tier.
+**One character per LoRA.** A startframe normally contains both people, so the
+data prep assigns every detected face to exactly one character. Training both
+people into one LoRA is what made the trigger words meaningless.
 
 ## Quick Start
 
@@ -64,7 +67,37 @@ assert not (faiz & juv), "a crop is in both datasets - rerun prepare_training_da
 PY
 ```
 
-### 2. Upload Datasets to Kaggle (One-time)
+### 2. Package for a Hosted Trainer (ModelScope / Civision)
+
+`export_training_bundle.py` validates the split and writes one zip per character
+with images, captions and a `train_config.json`:
+
+```bash
+python scripts/export_training_bundle.py --data-dir training_data --out-dir bundles
+```
+
+It refuses to package when a crop is in both sets, a caption is missing, a
+caption does not start with its own trigger, or a set is under 15 images. Pass
+`--allow-problems` to override.
+
+Upload each zip as its **own** dataset/concept, then train one character per run
+using the values in `train_config.json`:
+
+| Setting | Value |
+|---|---|
+| Base model | SDXL 1.0 / Juggernaut XL v9 |
+| Network dim | 32 |
+| Network alpha | 16 |
+| Resolution | 1024 |
+| Steps | 1200 |
+| LR | 1e-4 |
+| Text encoder LR | 5e-5 |
+| Batch size | 1 (accum 2) |
+
+Alpha is half of dim because the dataset is small; alpha == dim over-saturates.
+Do not merge the two characters into one concept.
+
+### 3. Upload Datasets to Kaggle (One-time)
 
 ```bash
 # Create 4 private datasets on Kaggle
@@ -79,7 +112,7 @@ kaggle datasets create -p /path/to/Juggernaut-XL_v9_RunDiffusionPhoto_v2.safeten
 kaggle datasets create -p ../../startframes -t "startframes-c01-c70"
 ```
 
-### 3. Deploy & Run Training Kernel
+### 4. Deploy & Run Training Kernel
 
 ```bash
 # Build and push kernel (one LoRA per run is recommended)
@@ -90,7 +123,7 @@ python scripts/train_loras_kaggle.py --push --only juv
 kaggle kernels status sofiya009/lora-nuke-faiz-juveriya-sdxl-faiz
 ```
 
-### 4. Download & Publish LoRAs
+### 5. Download & Publish LoRAs
 
 ```bash
 # After the kernel completes, download its artifacts.
@@ -214,7 +247,8 @@ run wins over a stale file. If you want to force a re-download from Kaggle, pass
 
 | File | Purpose |
 |------|---------|
-| `scripts/prepare_training_data.py` | Local face extraction + data prep |
+| `scripts/prepare_training_data.py` | Local face extraction + per-character assignment |
+| `scripts/export_training_bundle.py` | Validate the split and package zips for a hosted trainer |
 | `scripts/train_loras_kaggle.py` | Build/deploy Kaggle kernel |
 | `scripts/requirements-training.txt` | Dependencies |
 | `deploy/training/train_loras_kaggle.ipynb` | Generated notebook |
