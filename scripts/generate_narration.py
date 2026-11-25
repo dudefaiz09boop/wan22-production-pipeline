@@ -222,6 +222,23 @@ class ChatterboxEngine:
         ta.save(str(dest), wav, model.sr)
 
 
+def normalise_take(src: Path, dest: Path) -> None:
+    """Loudness-normalise a generated take.
+
+    Chatterbox output peaks at 0 dBFS, which clips once it is mixed with room
+    tone and breath. Normalise to -20 LUFS with a -3 dB ceiling so the mix has
+    headroom.
+    """
+    subprocess.run(
+        [
+            "ffmpeg", "-y", "-v", "error", "-i", str(src),
+            "-af", "loudnorm=I=-20:TP=-3:LRA=11",
+            "-ar", "24000", "-ac", "1", str(dest),
+        ],
+        check=True, capture_output=True,
+    )
+
+
 def synth_turn(
     text: str,
     speaker: str,
@@ -236,7 +253,12 @@ def synth_turn(
     """
     script = detect_script(text)
     if engine == "chatterbox" and chatterbox is not None and script != "arabic":
-        chatterbox.synth(text, speaker, dest)
+        raw = dest.with_name(dest.stem + ".raw.wav")
+        try:
+            chatterbox.synth(text, speaker, raw)
+            normalise_take(raw, dest)
+        finally:
+            raw.unlink(missing_ok=True)
         return
     asyncio.run(synth(text, voice_for(speaker, text), dest))
 

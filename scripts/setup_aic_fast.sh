@@ -723,6 +723,16 @@ log "Generating narration audio..."
 # knob that makes moans land. It needs a GPU and a ~2 GB model download, so
 # fall back to Edge if it is unavailable rather than shipping silent clips.
 NARRATION_ENGINE="${NARRATION_ENGINE:-chatterbox}"
+
+# Chatterbox clones from a reference clip. Generate the three character
+# references if they are not already staged, so a fresh clone needs no
+# recording session.
+if [[ "$NARRATION_ENGINE" == "chatterbox" ]]; then
+    log "Preparing voice references..."
+    uv run python scripts/make_voice_refs.py --out refs/voices || \
+        warn "Voice reference generation failed - Chatterbox will use its default voice"
+fi
+
 if ! uv run python scripts/generate_narration.py \
         --prompts prompts --output audio \
         --engine "$NARRATION_ENGINE" \

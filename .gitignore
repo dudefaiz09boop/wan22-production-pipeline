@@ -111,3 +111,6 @@ models/
 audio/
 renders/lipsync/
 
+
+# Voice reference scratch
+refs/voices/.tmp/
