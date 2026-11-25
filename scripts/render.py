@@ -85,8 +85,23 @@ def apply_build(wf: dict, cfg: dict) -> dict:
     ``build: fm`` uses the Lightning-baked Fast Move pair as-is. ``build: cf``
     uses the Consistent Face pair, which has no distillation baked in, so the
     LightX2V 4-step LoRAs are chained in front of each sampler branch.
+
+    The GGUF pairs only exist for the ``gguf_q8`` tier. On fp16/fp8 the
+    workflow already names the right checkpoints, and overwriting them with
+    GGUF filenames makes ComfyUI reject the prompt with a 400 because the
+    loader class is UNETLoader, not UnetLoaderGGUF.
     """
     build = str(cfg.get("build") or "fm").lower()
+    loader = wf.get("1", {}).get("class_type", "")
+    if loader != "UnetLoaderGGUF":
+        # Non-GGUF tier: the generated workflow is already correct.
+        if build not in BUILD_MODELS:
+            print(
+                f"WARNING: unknown build {build!r}; falling back to 'fm'",
+                file=sys.stderr,
+            )
+        return wf
+
     pair = BUILD_MODELS.get(build)
     if pair is None:
         print(
