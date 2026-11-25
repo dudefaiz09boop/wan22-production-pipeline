@@ -201,10 +201,18 @@ def download_trained_loras(
     dest_dir.mkdir(parents=True, exist_ok=True)
 
     # A LoRA already staged locally (for example one recovered from a Kaggle
-    # run) is authoritative. Never re-download or retrain it.
+    # run) is authoritative. Never re-download or retrain it. The extra roots
+    # cover the training output directories, which is where a locally trained
+    # file actually lands; without them a 404 from Kaggle was fatal even though
+    # the weights were sitting in the repo.
     local_sources = [
         Path("loras"),
         Path("models/loras/trained"),
+        Path("recover"),
+        Path("juv_out"),
+        Path("lora_output"),
+        Path("lora_out3"),
+        Path("training_data"),
     ]
 
     for lora_key, lora_info in TRAINED_LORAS.items():

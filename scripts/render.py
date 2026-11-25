@@ -13,6 +13,7 @@ import shutil
 import subprocess
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
@@ -255,8 +256,18 @@ def post(server: str, wf: dict) -> str:
         data=json.dumps({"prompt": wf}).encode(),
         headers={"Content-Type": "application/json"},
     )
-    with urllib.request.urlopen(req) as r:
-        return json.loads(r.read())["prompt_id"]
+    try:
+        with urllib.request.urlopen(req) as r:
+            return json.loads(r.read())["prompt_id"]
+    except urllib.error.HTTPError as error:
+        # ComfyUI answers a rejected graph with 400 and a JSON body naming the
+        # offending node and input. Without it the caller only ever saw
+        # "HTTP Error 400: Bad Request", which is undiagnosable.
+        detail = error.read().decode("utf-8", errors="replace").strip()
+        raise RuntimeError(
+            f"ComfyUI rejected the workflow: HTTP {error.code}"
+            + (f"\n{detail}" if detail else "")
+        ) from error
 
 
 def wait_for(server: str, pid: str, timeout: int = 3600) -> dict:

@@ -4,6 +4,11 @@
 
 set -euo pipefail
 
+# Run from the repo root regardless of the caller's cwd. Without this, a
+# `bash /path/to/run_production.sh` invocation resolves scripts/run_production.py
+# against the caller's directory and dies with "can't open file '/root/scripts/...'".
+cd "$(dirname "$0")"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -265,6 +270,20 @@ fi
 echo -e "\n${YELLOW}Running:${NC}"
 echo "  ${PYTHON_CMD[*]}"
 echo ""
+
+# Validate the graph against the live server before spending GPU time. Without
+# this a rejected workflow is only discovered after the first clip fails, and
+# the failure surfaces as a bare "HTTP Error 400" with no node named.
+if [[ "$DRY_RUN" != true && "$SKIP_RENDER" != true ]]; then
+    echo -e "${YELLOW}Preflight: validating workflow against ComfyUI...${NC}"
+    if ! uv run python scripts/preflight.py \
+        --server "$COMFY_URL" \
+        --precision "${FORCE_PRECISION:-auto}" \
+        --check-only; then
+        echo -e "${RED}Preflight failed - fix the workflow before rendering.${NC}"
+        exit 1
+    fi
+fi
 
 # Run production
 START_TIME=$(date +%s)

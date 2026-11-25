@@ -29,6 +29,14 @@ def check_only(server: str, precision: str) -> int:
     sys.path.insert(0, str(ROOT / "scripts"))
     import render
 
+    if precision == "auto":
+        # Mirror the renderer's own selection so preflight validates the graph
+        # that will actually be submitted, not a different precision's graph.
+        from auto_model_selector import get_gpu_vram_gb, select_precision
+
+        precision = select_precision(get_gpu_vram_gb())
+        print(f"Preflight precision (auto): {precision}")
+
     workflow_path = ROOT / "workflows" / f"base_i2v_{precision}.json"
     if not workflow_path.is_file():
         print(f"missing workflow: {workflow_path}", file=sys.stderr)
@@ -91,7 +99,12 @@ def main() -> int:
         default=None,
         help="ComfyUI base URL (defaults to COMFY_URL or localhost)",
     )
-    ap.add_argument("--precision", choices=["fp16", "fp8", "gguf_q8"], default="fp16")
+    ap.add_argument(
+        "--precision",
+        choices=["fp16", "fp8", "gguf_q8", "auto"],
+        default="auto",
+        help="Model precision; 'auto' detects it from VRAM like the renderer does",
+    )
     ap.add_argument("--check-only", action="store_true", help="Validate without rendering")
     ap.add_argument("clips", nargs="*", metavar="CLIP_ID")
     args = ap.parse_args()

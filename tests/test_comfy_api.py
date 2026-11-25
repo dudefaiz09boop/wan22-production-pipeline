@@ -61,6 +61,25 @@ class ComfyApiTests(unittest.TestCase):
             self.assertIn(b'name="overwrite"\r\n\r\ntrue', request.data)
             self.assertIn(b"png data", request.data)
 
+    def test_post_surfaces_the_comfyui_rejection_body(self):
+        # A bare "HTTP Error 400" is undiagnosable; ComfyUI names the offending
+        # node in the response body, so it must reach the caller.
+        error = render.urllib.error.HTTPError(
+            "https://tunnel.example/prompt",
+            400,
+            "Bad Request",
+            {},
+            io.BytesIO(b'{"error": {"type": "prompt_outputs_failed_validation"}}'),
+        )
+        with mock.patch.object(
+            render.urllib.request, "urlopen", side_effect=error
+        ):
+            with self.assertRaises(RuntimeError) as caught:
+                render.post("https://tunnel.example", {"1": {}})
+        message = str(caught.exception)
+        self.assertIn("HTTP 400", message)
+        self.assertIn("prompt_outputs_failed_validation", message)
+
     def test_render_and_seed_poll_at_five_second_intervals(self):
         for wait in (render.wait_for, make_seeds.wait):
             with self.subTest(wait=wait.__module__), mock.patch(

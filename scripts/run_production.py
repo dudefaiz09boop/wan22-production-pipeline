@@ -262,16 +262,21 @@ def download_trained_loras_stage(state: ProductionState, token: Optional[str] = 
 
         lora_dir = Path("models/loras/trained")
         results = download_trained_loras(lora_dir, token=token)
-
         success_count = sum(1 for v in results.values() if v)
-        if success_count == len(results):
+        # Register whatever resolved. Requiring *all* of them meant a single
+        # optional file (the combined faiz_juv LoRA is not always published)
+        # left the registry untouched, so the two LoRAs that did download were
+        # never referenced by any shot.
+        if success_count:
             update_lora_registry(lora_dir, Path("workflows/loras.json"))
             state.trained_loras_downloaded = True
-            print("✓ Trained LoRAs downloaded and registry updated")
+            print(f"✓ Trained LoRAs staged ({success_count}/{len(results)}) and registry updated")
+            missing = [k for k, v in results.items() if not v]
+            if missing:
+                print(f"  ! Unavailable: {', '.join(missing)} (optional)")
             return True
-        else:
-            print(f"✗ Some LoRAs failed: {[k for k, v in results.items() if not v]}")
-            return False
+        print(f"✗ No trained LoRAs available: {[k for k, v in results.items() if not v]}")
+        return False
     except Exception as e:
         print(f"✗ Trained LoRA download failed: {e}")
         return False
@@ -309,8 +314,30 @@ def render_clips_stage(state: ProductionState, args) -> bool:
     prev_frame: Optional[Path] = None
     failed_shot: Optional[str] = None
 
+    # Resume: a clip whose mp4 is already on disk is done. Without this a run
+    # that dies at c47 re-renders c01-c46 on the next attempt, which is hours
+    # of GPU time for output that already exists.
+    renders_dir = Path(args.renders)
+    chained_dir = Path("chained")
+    skipped = 0
+    for clip in state.clips:
+        clip_id = clip["id"]
+        if (renders_dir / f"{clip_id}.mp4").is_file():
+            skipped += 1
+            state.results.append(ClipResult(clip_id, True, 0, renders_dir / f"{clip_id}.mp4"))
+    if skipped:
+        print(f"  Resuming: {skipped} clip(s) already rendered, skipping")
+
     for i, clip in enumerate(state.clips, 1):
         clip_id = clip["id"]
+
+        if (renders_dir / f"{clip_id}.mp4").is_file():
+            # Seed the chain from this clip's own handoff so the next unrendered
+            # shot continues from the right frame instead of a stale one.
+            handoff = chained_dir / f"{clip_id}.png"
+            prev_frame = handoff if handoff.is_file() else None
+            failed_shot = None
+            continue
 
         # Load prompt
         prompt_file = Path(args.prompts) / f"{clip_id}.txt"
@@ -324,11 +351,16 @@ def render_clips_stage(state: ProductionState, args) -> bool:
         clip_cfg_path = Path(args.prompts) / f"{clip_id}.json"
         clip_cfg = json.loads(clip_cfg_path.read_text(encoding="utf-8"))
 
-        # Handle chaining
+        # Handle chaining. A failed predecessor must not cascade: every shot
+        # has its own authored start frame, so fall back to it and keep going.
+        # Previously one bad clip marked the next 40 as "Chain broken by cXX".
         if clip_cfg.get("chain") and failed_shot:
-            print(f"  ✗ {clip_id}: Cannot chain, previous shot {failed_shot} failed")
-            state.results.append(ClipResult(clip_id, False, 0, error=f"Chain broken by {failed_shot}"))
-            continue
+            print(
+                f"  ! {clip_id}: previous shot {failed_shot} failed; "
+                "reseeded from its own start frame"
+            )
+            prev_frame = None
+            failed_shot = None
 
         # Select start image
         try:
