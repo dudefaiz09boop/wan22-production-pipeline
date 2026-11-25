@@ -7,17 +7,19 @@
   "scripts": {
     "start": "node gateway/server.js",
     "model-store": "node gateway/model-store-server.js",
-    "check": "node --check gateway/server.js && node --check gateway/film-continuity.js && node --check gateway/scene-keyframe.js && node --check gateway/kaggle.js && node --check gateway/kaggle-video.js && node --check gateway/qwen-image.js && node --check gateway/qwen-workflow.js && node --check gateway/generic-workflow.js && node --check gateway/civitai.js && node --check gateway/model-hub.js && node --check gateway/model-library.js && node --check gateway/model-store.js && node --check gateway/model-store-server.js && node --check gateway/comfy-bridge.js && node --check gateway/comfyui-runtime.js && node --check gateway/huggingface-llm.js && node --check gateway/numes-llm.js && node --check gateway/ai-horde.js && node --check gateway/prompt-ai.js && node --check gateway/worker-queue.js && node --check gateway/worker-bridge.js && node --check gateway/video-workflow.js && node --check gateway/video-worker-notebook.js && node --check gateway/video-playback.js && node --check gateway/compute-manager.js && node --check gateway/characters.js && node --check gateway/project-vault.js && node --check gateway/story-context.js && node --check gateway/story-studio.js && node --check gateway/narration.js && node --check gateway/narration-mix.js && node --check gateway/film-export.js && node --check gateway/musetalk.js && node --check gateway/shot-video-sync.js && node --check gateway/public/studio.js && node --check gateway/public/film-studio-utils.js && node --check gateway/public/film-studio.js && node --check scripts/test-film-studio-playwright.js && node --check scripts/cache-krea2-image-model.js && node --check scripts/cache-wan22-video-models.js && node --check scripts/kaggle-dataset-list.js && node --check scripts/fetch-wan22-q8.js",
-    "test": "node --test tests/*.test.js",
-    "test:python": "uv run python -m unittest discover -s tests -p \"test_*.py\"",
-    "test:video-quality": "uv run python -m unittest tests/test_evaluate_video.py",
+    "sync": "uv sync --extra test",
+    "check": "node scripts/require-node-half.js && node --check gateway/server.js && node --check gateway/film-continuity.js && node --check gateway/scene-keyframe.js && node --check gateway/kaggle.js && node --check gateway/kaggle-video.js && node --check gateway/qwen-image.js && node --check gateway/qwen-workflow.js && node --check gateway/generic-workflow.js && node --check gateway/civitai.js && node --check gateway/model-hub.js && node --check gateway/model-library.js && node --check gateway/model-store.js && node --check gateway/model-store-server.js && node --check gateway/comfy-bridge.js && node --check gateway/comfyui-runtime.js && node --check gateway/huggingface-llm.js && node --check gateway/numes-llm.js && node --check gateway/ai-horde.js && node --check gateway/prompt-ai.js && node --check gateway/worker-queue.js && node --check gateway/worker-bridge.js && node --check gateway/video-workflow.js && node --check gateway/video-worker-notebook.js && node --check gateway/video-playback.js && node --check gateway/compute-manager.js && node --check gateway/characters.js && node --check gateway/project-vault.js && node --check gateway/story-context.js && node --check gateway/story-studio.js && node --check gateway/narration.js && node --check gateway/narration-mix.js && node --check gateway/film-export.js && node --check gateway/musetalk.js && node --check gateway/shot-video-sync.js && node --check gateway/public/studio.js && node --check gateway/public/film-studio-utils.js && node --check gateway/public/film-studio.js && node --check scripts/test-film-studio-playwright.js && node --check scripts/cache-krea2-image-model.js && node --check scripts/cache-wan22-video-models.js && node --check scripts/kaggle-dataset-list.js && node --check scripts/fetch-wan22-q8.js",
+    "test": "node scripts/require-node-half.js && node --test tests/*.test.js",
+    "test:python": "uv run --locked --inexact python -m unittest discover -s tests -p \"test_*.py\"",
+    "test:video-quality": "uv run --locked --inexact python -m unittest tests/test_evaluate_video.py",
     "test:all": "npm run check && npm test && npm run test:python && npm run validate",
-    "test:film-studio": "node scripts/test-film-studio-playwright.js",
-    "validate": "uv run python scripts/validate.py",
-    "video:quality": "uv run python scripts/evaluate_video.py",
-    "kaggle:cache-image-model": "node scripts/cache-krea2-image-model.js",
-    "kaggle:cache-video-models": "node scripts/cache-wan22-video-models.js",
-    "civitai:fetch-wan22-q8": "node scripts/fetch-wan22-q8.js"
+    "test:film-studio": "node scripts/require-node-half.js && node scripts/test-film-studio-playwright.js",
+    "validate": "uv run --locked --inexact python scripts/validate.py",
+    "check:credentials": "uv run --locked --inexact python scripts/check_credentials.py",
+    "video:quality": "uv run --locked --inexact python scripts/evaluate_video.py",
+    "kaggle:cache-image-model": "node scripts/require-node-half.js && node scripts/cache-krea2-image-model.js",
+    "kaggle:cache-video-models": "node scripts/require-node-half.js && node scripts/cache-wan22-video-models.js",
+    "civitai:fetch-wan22-q8": "node scripts/require-node-half.js && node scripts/fetch-wan22-q8.js"
   },
   "engines": {
     "node": ">=22.13"

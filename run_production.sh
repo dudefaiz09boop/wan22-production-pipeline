@@ -219,7 +219,7 @@ if [[ -z "$HF_TOKEN" && -n "${HF_TOKEN:-}" ]]; then
 fi
 
 # Build Python command
-PYTHON_CMD=("uv" "run" "python" "scripts/run_production.py")
+PYTHON_CMD=("uv" "run" "--locked" "--inexact" "python" "scripts/run_production.py")
 PYTHON_CMD+=("--spec" "$SPEC")
 PYTHON_CMD+=("--prompts" "$PROMPTS")
 PYTHON_CMD+=("--startframes" "$STARTFRAMES")
@@ -276,7 +276,10 @@ echo ""
 # the failure surfaces as a bare "HTTP Error 400" with no node named.
 if [[ "$DRY_RUN" != true && "$SKIP_RENDER" != true ]]; then
     echo -e "${YELLOW}Preflight: validating workflow against ComfyUI...${NC}"
-    if ! uv run python scripts/preflight.py \
+    # --locked --inexact: fail if uv.lock is stale instead of silently
+    # re-resolving, and never prune the out-of-lock packages (Chatterbox) that
+    # setup_aic_fast.sh installs with `uv pip install --no-deps`.
+    if ! uv run --locked --inexact python scripts/preflight.py \
         --server "$COMFY_URL" \
         --precision "${FORCE_PRECISION:-auto}" \
         --check-only; then

@@ -1,25 +1,32 @@
 #!/usr/bin/env python3
-"""Prepare training data for LoRA training on Kaggle.
+"""Prepare per-character LoRA training data.
 
-Extracts faces from startframes using InsightFace, combines with existing
-training datasets, creates caption files and metadata for Kohya-ss/sd-scripts.
+Extracts faces from startframes using InsightFace and assigns every detected
+face to exactly ONE character by comparing its embedding against per-character
+centroids built from the reference plates. A face that matches neither
+character confidently is dropped rather than duplicated.
+
+This matters because a startframe usually contains both people. The previous
+version extracted every face and wrote it into *both* the faiz and the juv
+dataset, so 58 of 65 "faiz" crops were byte-identical to "juv" crops and each
+LoRA learned both faces. One character per LoRA is the only way the trigger
+words can mean anything.
 
 Image REF folder structure (C:/Users/FAIZ SAYYED/OneDrive/Desktop/Images REF):
 - c01.png to c08.png -> Faiz
-- c09.png to c23.png -> Juveriya  
+- c09.png to c23.png -> Juveriya
 - c24.png, c25.png (Faiz (1).png, Faiz (2).png) -> Faiz
 
-Startframes (D:/AI Pipeline/startframes/c01-c70.png): Mixed, extract faces for both characters
+Startframes (startframes/c01-c70.png): mixed, assigned by face identity.
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
-import os
 import shutil
 import sys
 from pathlib import Path
-from typing import Optional
 
 import cv2
 import numpy as np
@@ -44,33 +51,16 @@ IMAGES_REF_MAPPING = {
     "faiz (1)": "faiz", "faiz (2)": "faiz",
 }
 
-# Beat to character mapping for startframes (which character appears in each beat)
-BEAT_CHARACTERS = {
-    "c01": ["faiz", "juv"], "c02": ["faiz", "juv"], "c03": ["faiz", "juv"],
-    "c04": ["faiz", "juv"], "c05": ["faiz", "juv"], "c06": ["faiz", "juv"],
-    "c07": ["faiz", "juv"], "c08": ["faiz", "juv"], "c09": ["faiz", "juv"],
-    "c10": ["faiz", "juv"], "c11": ["faiz", "juv"], "c12": ["faiz", "juv"],
-    "c13": ["faiz", "juv"], "c14": ["faiz", "juv"], "c15": ["faiz", "juv"],
-    "c16": ["faiz", "juv"], "c17": ["faiz", "juv"], "c18": ["faiz", "juv"],
-    "c19": ["faiz", "juv"], "c20": ["faiz", "juv"], "c21": ["faiz", "juv"],
-    "c22": ["faiz", "juv"], "c23": ["faiz", "juv"], "c24": ["faiz", "juv"],
-    "c25": ["faiz", "juv"], "c26": ["faiz", "juv"], "c27": ["faiz", "juv"],
-    "c28": ["faiz", "juv"], "c29": ["faiz", "juv"], "c30": ["faiz", "juv"],
-    "c31": ["faiz", "juv"], "c32": ["faiz", "juv"], "c33": ["faiz", "juv"],
-    "c34": ["faiz", "juv"], "c35": ["faiz", "juv"], "c36": ["faiz", "juv"],
-    "c37": ["faiz", "juv"], "c38": ["faiz", "juv"], "c39": ["faiz", "juv"],
-    "c40": ["faiz", "juv"], "c41": ["faiz", "juv"], "c42": ["faiz", "juv"],
-    "c43": ["faiz", "juv"], "c44": ["faiz", "juv"], "c45": ["faiz", "juv"],
-    "c46": ["faiz", "juv"], "c47": ["faiz", "juv"], "c48": ["faiz", "juv"],
-    "c49": ["faiz", "juv"], "c50": ["faiz", "juv"], "c51": ["faiz", "juv"],
-    "c52": ["faiz", "juv"], "c53": ["faiz", "juv"], "c54": ["faiz", "juv"],
-    "c55": ["faiz", "juv"], "c56": ["faiz", "juv"], "c57": ["faiz", "juv"],
-    "c58": ["faiz", "juv"], "c59": ["faiz", "juv"], "c60": ["faiz", "juv"],
-    "c61": ["faiz", "juv"], "c62": ["faiz", "juv"], "c63": ["faiz", "juv"],
-    "c64": ["faiz", "juv"], "c65": ["faiz", "juv"], "c66": ["faiz", "juv"],
-    "c67": ["faiz", "juv"], "c68": ["faiz", "juv"], "c69": ["faiz", "juv"],
-    "c70": ["faiz", "juv"],
-}
+# Beat to character mapping is deliberately absent. A startframe usually
+# contains both people, so a static per-beat list cannot say which detected
+# face belongs to whom. Faces are assigned by embedding similarity against
+# per-character centroids built from the reference plates (see
+# build_centroids / assign_character).
+
+# Cosine similarity below which a face is treated as "neither character" and
+# dropped. ArcFace embeddings put the same person above ~0.4 and different
+# people below ~0.3, so 0.35 separates them without inventing matches.
+DEFAULT_ASSIGN_THRESHOLD = 0.35
 
 
 def load_insightface() -> FaceAnalysis:
@@ -83,6 +73,115 @@ def load_insightface() -> FaceAnalysis:
     return app
 
 
+def _normalize(vector: np.ndarray) -> np.ndarray:
+    norm = np.linalg.norm(vector)
+    return vector / norm if norm else vector
+
+
+def build_centroids(
+    app: FaceAnalysis,
+    images_ref_dir: Path,
+    min_face_size: int = 128,
+) -> dict[str, np.ndarray]:
+    """Build one embedding centroid per character from the reference plates.
+
+    The reference folder has a known character per file, so it is the only
+    trustworthy source of identity. Averaging several plates cancels per-image
+    noise and gives a stable target for the mixed startframes.
+    """
+    buckets: dict[str, list[np.ndarray]] = {"faiz": [], "juv": []}
+
+    for img_path in sorted(images_ref_dir.glob("*.png")):
+        character = IMAGES_REF_MAPPING.get(img_path.stem.lower())
+        if not character:
+            continue
+        img = cv2.imread(str(img_path))
+        if img is None:
+            continue
+        faces = app.get(img)
+        if not faces:
+            print(f"  WARNING: no face in reference plate {img_path.name}")
+            continue
+        # The reference plates are single-subject; take the largest face.
+        face = max(
+            faces,
+            key=lambda f: (f.bbox[2] - f.bbox[0]) * (f.bbox[3] - f.bbox[1]),
+        )
+        width = face.bbox[2] - face.bbox[0]
+        if width < min_face_size:
+            print(f"  WARNING: face too small in {img_path.name} ({width:.0f}px)")
+            continue
+        buckets[character].append(_normalize(np.asarray(face.embedding, dtype=np.float32)))
+
+    centroids: dict[str, np.ndarray] = {}
+    for character, vectors in buckets.items():
+        if not vectors:
+            raise SystemExit(
+                f"no usable reference faces for {character}; "
+                f"check --images-ref-dir ({images_ref_dir})"
+            )
+        centroids[character] = _normalize(np.mean(vectors, axis=0))
+        print(f"  {character} centroid from {len(vectors)} reference face(s)")
+
+    return centroids
+
+
+def assign_character(
+    embedding: np.ndarray,
+    centroids: dict[str, np.ndarray],
+    threshold: float = DEFAULT_ASSIGN_THRESHOLD,
+) -> tuple[str | None, float]:
+    """Return the single best-matching character, or None when unsure.
+
+    Returning None is the point: a face that matches neither centroid
+    confidently is dropped instead of being written into both datasets.
+    """
+    vector = _normalize(np.asarray(embedding, dtype=np.float32))
+    scores = {name: float(np.dot(vector, centroid)) for name, centroid in centroids.items()}
+    best = max(scores, key=scores.get)
+    return (best, scores[best]) if scores[best] >= threshold else (None, scores[best])
+
+
+def _crop_face(
+    img: np.ndarray,
+    face,
+    min_face_size: int,
+    pad_ratio: float = 0.2,
+) -> tuple[np.ndarray, list[int]] | None:
+    """Crop one face with padding, or None when it is too small."""
+    x1, y1, x2, y2 = map(int, face.bbox)
+    w, h = x2 - x1, y2 - y1
+    if w < min_face_size or h < min_face_size:
+        return None
+
+    pad_w, pad_h = int(w * pad_ratio), int(h * pad_ratio)
+    x1 = max(0, x1 - pad_w)
+    y1 = max(0, y1 - pad_h)
+    x2 = min(img.shape[1], x2 + pad_w)
+    y2 = min(img.shape[0], y2 + pad_h)
+
+    crop = img[y1:y2, x1:x2]
+    if crop.size == 0:
+        return None
+    return crop, [x1, y1, x2, y2]
+
+
+def _save_crop(crop: np.ndarray, output_path: Path, upscale_to: int) -> None:
+    """Write a crop, upscaling small ones so training is not fed 100px faces.
+
+    Startframe faces are often ~110px. SDXL buckets them up to 768 anyway, but
+    doing it here with Lanczos keeps the detail that a nearest-neighbour bucket
+    resize throws away.
+    """
+    shortest = min(crop.shape[:2])
+    if upscale_to and shortest < upscale_to:
+        scale = upscale_to / shortest
+        crop = cv2.resize(
+            crop, None, fx=scale, fy=scale, interpolation=cv2.INTER_LANCZOS4
+        )
+    cv2.imwrite(str(output_path), crop, [cv2.IMWRITE_JPEG_QUALITY, 95])
+
+
 def extract_faces_from_image(
     app: FaceAnalysis,
     image_path: Path,
@@ -90,8 +189,9 @@ def extract_faces_from_image(
     character: str,
     min_face_size: int = 128,
     max_faces: int = 3,
+    upscale_to: int = 0,
 ) -> list[dict]:
-    """Extract and save face crops from an image."""
+    """Extract and save face crops from a single-subject image."""
     img = cv2.imread(str(image_path))
     if img is None:
         return []
@@ -105,33 +205,19 @@ def extract_faces_from_image(
 
     results = []
     for i, face in enumerate(faces[:max_faces]):
-        x1, y1, x2, y2 = map(int, face.bbox)
-        w, h = x2 - x1, y2 - y1
-
-        if w < min_face_size or h < min_face_size:
+        cropped = _crop_face(img, face, min_face_size)
+        if cropped is None:
             continue
+        crop, bbox = cropped
 
-        # Add padding (20%)
-        pad_w, pad_h = int(w * 0.2), int(h * 0.2)
-        x1 = max(0, x1 - pad_w)
-        y1 = max(0, y1 - pad_h)
-        x2 = min(img.shape[1], x2 + pad_w)
-        y2 = min(img.shape[0], y2 + pad_h)
-
-        face_crop = img[y1:y2, x1:x2]
-        if face_crop.size == 0:
-            continue
-
-        # Save face crop
         output_name = f"{character}_{image_path.stem}_face{i:02d}.jpg"
-        output_path = output_dir / output_name
-        cv2.imwrite(str(output_path), face_crop, [cv2.IMWRITE_JPEG_QUALITY, 95])
+        _save_crop(crop, output_dir / output_name, upscale_to)
 
         results.append({
             "file": output_name,
             "character": character,
             "source": image_path.name,
-            "bbox": [x1, y1, x2, y2],
+            "bbox": bbox,
             "embedding": face.embedding.tolist(),
         })
 
@@ -187,33 +273,64 @@ def process_startframes(
     startframes_dir: Path,
     faiz_dir: Path,
     juv_dir: Path,
+    centroids: dict[str, np.ndarray],
     min_face_size: int = 128,
     max_faces: int = 2,
+    threshold: float = DEFAULT_ASSIGN_THRESHOLD,
+    upscale_to: int = 0,
 ) -> dict:
-    """Process startframes - extract faces for both characters."""
+    """Process startframes, assigning each detected face to exactly one character.
+
+    A startframe normally holds both people. Every face is scored against both
+    centroids and written to the single winning dataset only, so the two LoRAs
+    stop sharing identical crops.
+    """
     print(f"Processing startframes from {startframes_dir}...")
     startframe_files = sorted(startframes_dir.glob("c*.png"))
     print(f"Found {len(startframe_files)} startframes")
 
-    results = {"faiz": [], "juv": []}
+    results: dict[str, list[dict]] = {"faiz": [], "juv": []}
+    dropped = 0
 
-    for sf_path in tqdm(startframe_files, desc="Extracting faces from startframes"):
-        beat_id = sf_path.stem
-        characters = BEAT_CHARACTERS.get(beat_id, ["faiz", "juv"])
+    for sf_path in tqdm(startframe_files, desc="Assigning faces from startframes"):
+        img = cv2.imread(str(sf_path))
+        if img is None:
+            continue
 
-        for character in characters:
-            faces = extract_faces_from_image(
-                app, sf_path, 
-                faiz_dir if character == "faiz" else juv_dir,
-                character, min_face_size, max_faces
-            )
-            results[character].extend(faces)
+        faces = app.get(img)
+        if not faces:
+            continue
 
-            # Create caption files
-            for face in faces:
-                face_path = (faiz_dir if character == "faiz" else juv_dir) / face["file"]
-                create_caption_file(face_path, character, faiz_dir if character == "faiz" else juv_dir)
+        faces.sort(
+            key=lambda f: (f.bbox[2] - f.bbox[0]) * (f.bbox[3] - f.bbox[1]),
+            reverse=True,
+        )
 
+        for i, face in enumerate(faces[:max_faces]):
+            character, score = assign_character(face.embedding, centroids, threshold)
+            if character is None:
+                dropped += 1
+                continue
+
+            cropped = _crop_face(img, face, min_face_size)
+            if cropped is None:
+                continue
+            crop, bbox = cropped
+
+            target_dir = faiz_dir if character == "faiz" else juv_dir
+            output_name = f"{character}_{sf_path.stem}_face{i:02d}.jpg"
+            _save_crop(crop, target_dir / output_name, upscale_to)
+            create_caption_file(target_dir / output_name, character, target_dir)
+
+            results[character].append({
+                "file": output_name,
+                "character": character,
+                "source": sf_path.name,
+                "bbox": bbox,
+                "score": round(score, 4),
+            })
+
+    print(f"  dropped {dropped} face(s) below the {threshold} identity threshold")
     return results
 
 
@@ -239,6 +356,8 @@ def main() -> int:
     ap.add_argument("--max-faces-ref", type=int, default=3, help="Max faces per Images REF image")
     ap.add_argument("--max-faces-startframe", type=int, default=2, help="Max faces per startframe")
     ap.add_argument("--device", default="cuda", help="Device for InsightFace")
+    ap.add_argument("--assign-threshold", type=float, default=DEFAULT_ASSIGN_THRESHOLD, help="Identity threshold for assigning a face to a character")
+    ap.add_argument("--upscale-to", type=int, default=0, help="Upscale crops when the shortest side is below this px (0=off)")
     args = ap.parse_args()
 
     images_ref_dir = Path(args.images_ref_dir)
@@ -256,7 +375,11 @@ def main() -> int:
     print("Loading InsightFace...")
     app = load_insightface()
 
-    all_faces = {"faiz": [], "juv": []}
+    # 0. Build identity centroids from the reference plates
+    print("Building identity centroids from Images REF...")
+    centroids = build_centroids(app, images_ref_dir, min_face_size=args.min_face_size)
+
+    all_faces: dict[str, list[dict]] = {"faiz": [], "juv": []}
 
     # 1. Process Images REF folder (known character mapping)
     ref_results = process_images_ref_folder(
@@ -266,10 +389,17 @@ def main() -> int:
     all_faces["faiz"].extend(ref_results["faiz"])
     all_faces["juv"].extend(ref_results["juv"])
 
-    # 2. Process startframes (mixed, extract both)
+    # 2. Process startframes (mixed, assign each detected face to exactly one character)
     sf_results = process_startframes(
-        app, startframes_dir, faiz_dir, juv_dir,
-        args.min_face_size, args.max_faces_startframe
+        app,
+        startframes_dir,
+        faiz_dir,
+        juv_dir,
+        centroids,
+        args.min_face_size,
+        args.max_faces_startframe,
+        threshold=args.assign_threshold,
+        upscale_to=args.upscale_to,
     )
     all_faces["faiz"].extend(sf_results["faiz"])
     all_faces["juv"].extend(sf_results["juv"])
@@ -300,6 +430,8 @@ def main() -> int:
         "images_ref_faces": {k: len(v) for k, v in ref_results.items()},
         "startframes_faces": {k: len(v) for k, v in sf_results.items()},
         "total_faces": {k: len(v) for k, v in all_faces.items()},
+        "assign_threshold": args.assign_threshold,
+        "upscale_to": args.upscale_to,
     }
 
     (output_dir / "metadata.json").write_text(json.dumps(metadata, indent=2))

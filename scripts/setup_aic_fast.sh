@@ -218,7 +218,16 @@ cd "$REPO_DIR"
 
 # Install Python dependencies with uv (parallel, cached)
 log "Installing Python dependencies..."
-uv sync --extra test 2>&1 | tail -5
+# --inexact: do not prune packages that are not in the lockfile. Chatterbox is
+# installed below with `uv pip install --no-deps` because its pins conflict
+# with the rest of the stack, so it is deliberately absent from uv.lock. An
+# exact sync would delete it on every re-run and force a reinstall.
+uv sync --extra test --inexact 2>&1 | tail -5
+
+# The venv is now correct, so stop `uv run` from re-syncing on every call.
+# Without this, each `uv run` re-resolves the environment and can re-download
+# multi-GB wheels (torch is 2.4 GiB) before the command even starts.
+export UV_NO_SYNC=1
 
 success "Python environment ready"
 
@@ -815,6 +824,8 @@ if [[ "$NARRATION_ENGINE" == "chatterbox" ]]; then
     # chatterbox-tts pins numpy<1.26 and diffusers==0.29.0, which cannot
     # coexist with opencv on Python 3.14. Install it without its pins; the
     # versions it actually needs at runtime are already present.
+    # This is intentionally outside uv.lock, which is why the sync above uses
+    # --inexact: an exact sync would prune these packages on the next run.
     log "Installing Chatterbox (no-deps)..."
     uv pip install --python .venv/bin/python --no-deps chatterbox-tts==0.1.4 \
         resemble-perth conformer==0.3.2 s3tokenizer pykakasi==2.3.0 \

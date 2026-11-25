@@ -6,6 +6,7 @@ PASS/FAIL. Never prints secret values.
 """
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import sys
@@ -55,7 +56,14 @@ def check(name: str, fn) -> bool:
 
 
 def main() -> int:
-    load_env(ENV_PATH)
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument(
+        "--env-file",
+        default=str(ENV_PATH),
+        help="env file to read (default: .env; use instance.env for the GPU box)",
+    )
+    args = ap.parse_args()
+    load_env(Path(args.env_file))
     results: list[bool] = []
 
     def hf():

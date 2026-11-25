@@ -7,7 +7,7 @@ cost real GPU time. Read this before deploying.
 
 ---
 
-## 0. TL;DR — the six things that broke everything
+## 0. TL;DR — the seven things that broke everything
 
 | # | Problem | Fix |
 |---|---|---|
@@ -17,6 +17,7 @@ cost real GPU time. Read this before deploying.
 | 4 | `uv sync` pruned ComfyUI's packages from the shared venv | Separate venvs (see #3) |
 | 5 | Workflow used a Lightning recipe on non-Lightning weights → flat gray video | Use LightX2V 4-step LoRAs, or the Lightning-baked Q8 checkpoint |
 | 6 | Render stage re-downloaded 57 GB into a nested path | Pass `--skip-download` to `run_production.py` |
+| 7 | `uv run` re-synced on every call and re-downloaded 2.4 GiB of torch | `uv sync --inexact` once, then `UV_NO_SYNC=1` (see 2.6) |
 
 ---
 
@@ -58,6 +59,27 @@ apt-get update -qq && apt-get install -y -qq jq bc curl ca-certificates git aria
 ```
 
 **Do not try to edit `.env` with `nano`.** Copy it up with `scp` instead.
+
+### Credentials: `instance.env` is a plaintext secret file
+
+`instance.env` holds live tokens (HF, Civitai, Kaggle, AIC, Gemini, Numes,
+Horde). It is gitignored and has never been committed, so nothing has leaked
+to git — but it is plaintext on disk and must stay that way:
+
+- Never `git add -f` it, and never paste its contents into a log, issue or
+  chat. `scripts/check_credentials.py` prints PASS/FAIL only, never values.
+- Keep it out of the repo directory when you can. `scp` it to the instance,
+  use it, then delete it from the box.
+- Rotate any key that has been shared in plaintext. A key pasted into a
+  terminal, a screenshot or a support thread is compromised.
+
+Verify every key against its live service before a run:
+
+```bash
+uv run --locked --inexact python scripts/check_credentials.py --env-file instance.env
+```
+
+Expect `8/8 checks passed`. A `FAIL` names the service, not the secret.
 
 ---
 
@@ -174,6 +196,47 @@ Without it `VHS_VideoCombine` does not exist and every render fails with
 ```bash
 uv pip install --python /workspace/ComfyUI/.venv/bin/python \
     opencv-python-headless imageio-ffmpeg
+```
+
+### 2.6 `uv run` re-syncs the venv on every call — and can re-download torch
+
+`uv run` performs an implicit `uv sync` before executing the command. Because
+Chatterbox is installed with `uv pip install --no-deps` (see 2.3 and the
+narration phase), it is **not** in `uv.lock`. An exact sync therefore treats
+every Chatterbox dependency as extraneous:
+
+```
+$ uv sync --extra test --dry-run
+Would uninstall 78 packages
+```
+
+On a cold cache that sync also re-downloads `torch` (2.4 GiB), `torchvision`
+and `diffusers`. The command looks hung — CPU is idle and no Python child is
+spawned — because it is network-bound, not computing.
+
+**Fix** — sync once, inexactly, then stop re-syncing:
+
+```bash
+uv sync --extra test --inexact   # keep out-of-lock packages
+export UV_NO_SYNC=1              # or pass --no-sync to each `uv run`
+```
+
+`setup_aic_fast.sh` does both. Scripts that must not silently re-resolve use
+`uv run --locked --inexact`, which fails loudly if `uv.lock` is stale instead
+of quietly rewriting the environment.
+
+Verify the environment is settled:
+
+```bash
+uv sync --extra test --inexact --dry-run   # expect: "Would make no changes"
+```
+
+**Do not run two `uv` commands against the same venv concurrently.** Both try
+to rewrite it and one dies with:
+
+```
+failed to remove directory .venv/Lib/site-packages/diffusers/utils/__pycache__:
+Access is denied. (os error 5)
 ```
 
 ---
