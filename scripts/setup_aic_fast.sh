@@ -130,16 +130,21 @@ else
 fi
 success "Selected precision: $PRECISION (est. ${MODEL_SIZE_GB} GB models)"
 
-# Check disk space. 16 fps doubles the frame count, so the render tree is
-# roughly twice what an 8 fps run produced; the allowance covers models,
-# renders, lipsync output, muxed clips and the final cut.
+# Check disk space. The gate must compare *remaining* work against free
+# space, not total need against free space: on a resumed run the models are
+# already staged, so charging for them again aborts a run that would fit.
 AVAIL_GB=$(df -BG "$WORKSPACE" | tail -1 | awk '{print $4}' | sed 's/G//')
-REQUIRED_GB=$((MODEL_SIZE_GB + 40))
-if [[ $AVAIL_GB -lt $REQUIRED_GB ]]; then
-    error "Low disk: ${AVAIL_GB}GB available, need ~${REQUIRED_GB}GB"
-    error "Add disk in the AIC Cloud dashboard before continuing."
+STAGED_GB=$(du -sBG "$MODEL_CACHE" 2>/dev/null | awk '{print $1}' | sed 's/G//')
+STAGED_GB=${STAGED_GB:-0}
+# Models still to fetch, plus renders, lipsync, mux and the final cut.
+REMAINING_GB=$(( MODEL_SIZE_GB - STAGED_GB + 25 ))
+if [[ $REMAINING_GB -lt 8 ]]; then REMAINING_GB=8; fi
+if [[ $AVAIL_GB -lt $REMAINING_GB ]]; then
+    error "Low disk: ${AVAIL_GB}GB available, need ~${REMAINING_GB}GB more"
+    error "Staged models: ${STAGED_GB}GB. Free space or add disk, then re-run."
     exit 1
 fi
+log "Disk: ${AVAIL_GB}GB free, ${STAGED_GB}GB models staged, ~${REMAINING_GB}GB still needed"
 
 # ──────────────────────────────────────────────
 # PHASE 1: SYSTEM SETUP (PARALLEL)
