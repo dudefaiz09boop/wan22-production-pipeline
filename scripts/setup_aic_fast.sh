@@ -429,6 +429,15 @@ if [[ ! -d "$WORKSPACE/ComfyUI/custom_nodes/ComfyUI-VideoHelperSuite" ]]; then
 fi
 wait
 
+# Custom-node dependencies are separate from ComfyUI's requirements. Without
+# these, VHS_VideoCombine is absent and every render is rejected with HTTP 400.
+for node_dir in "$WORKSPACE/ComfyUI/custom_nodes"/*; do
+    if [[ -f "$node_dir/requirements.txt" ]]; then
+        log "Installing dependencies for $(basename "$node_dir")..."
+        uv pip install --python "$COMFY_VENV/bin/python" -r "$node_dir/requirements.txt"
+    fi
+done
+
 # Point ComfyUI at the staged model cache. Without this, ComfyUI looks in its
 # own models/ tree and every LoRA and checkpoint resolves as missing.
 COMFY_DIR="$WORKSPACE/ComfyUI"
@@ -467,17 +476,19 @@ for f in "$MODEL_CACHE"/*.safetensors "$MODEL_CACHE"/*.gguf; do
     esac
 done
 
-# Lipsync assets live in subdirectories of the cache.
-for f in "$MODEL_CACHE"/audio_encoders/*.safetensors; do
+# Lipsync assets live in subdirectories of the cache. hf_hub_download keeps
+# the repository's split_files/... layout, so link recursively rather than
+# only the top-level directory.
+for f in "$MODEL_CACHE"/audio_encoders/*.safetensors "$MODEL_CACHE"/audio_encoders/*/*.safetensors "$MODEL_CACHE"/audio_encoders/*/*/*.safetensors "$MODEL_CACHE"/audio_encoders/*/*/*/*.safetensors; do
     [[ -e "$f" ]] || continue
     link_into "$f" "$COMFY_DIR/models/audio_encoders/$(basename "$f")"
 done
-for f in "$MODEL_CACHE"/diffusion_models/*.safetensors; do
+for f in "$MODEL_CACHE"/diffusion_models/*.safetensors "$MODEL_CACHE"/diffusion_models/*/*.safetensors "$MODEL_CACHE"/diffusion_models/*/*/*.safetensors "$MODEL_CACHE"/diffusion_models/*/*/*/*.safetensors; do
     [[ -e "$f" ]] || continue
     link_into "$f" "$COMFY_DIR/models/diffusion_models/$(basename "$f")"
 done
 mkdir -p "$COMFY_DIR/models/model_patches"
-for f in "$MODEL_CACHE"/model_patches/*.safetensors; do
+for f in "$MODEL_CACHE"/model_patches/*.safetensors "$MODEL_CACHE"/model_patches/*/*.safetensors "$MODEL_CACHE"/model_patches/*/*/*.safetensors; do
     [[ -e "$f" ]] || continue
     link_into "$f" "$COMFY_DIR/models/model_patches/$(basename "$f")"
 done
@@ -535,12 +546,61 @@ for i in {1..60}; do
     fi
 done
 
+# A 200 response only proves the HTTP server is up. Verify the nodes and
+# model files the workflow actually needs before spending GPU time.
+log "Verifying ComfyUI nodes and staged models..."
+curl -s "http://127.0.0.1:$COMFYUI_PORT/object_info" > /tmp/comfy_object_info.json
+uv run python - /tmp/comfy_object_info.json "$PRECISION" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+info = json.loads(Path(sys.argv[1]).read_text())
+precision = sys.argv[2]
+required = {
+    "VHS_VideoCombine",
+    "WanImageToVideo",
+    "KSamplerAdvanced",
+    "CLIPLoader",
+    "VAELoader",
+    "LoraLoaderModelOnly",
+}
+if precision == "gguf_q8":
+    required.add("UnetLoaderGGUF")
+else:
+    required.add("UNETLoader")
+missing = sorted(required - set(info))
+if missing:
+    raise SystemExit(f"ComfyUI is missing required nodes: {', '.join(missing)}")
+print(f"ComfyUI nodes verified ({len(required)} required)")
+PY
+
+uv run python scripts/preflight.py --server "http://127.0.0.1:$COMFYUI_PORT" --precision "$PRECISION" --check-only
+
 # ──────────────────────────────────────────────
 # PHASE 7: GENERATE STILLS (SDXL + InsightFace)
 # ──────────────────────────────────────────────
 phase "PHASE 7: GENERATE STILLS (SDXL + InsightFace)"
 
 cd "$REPO_DIR"
+
+# Reuse frames that are already staged. Regenerating 70 SDXL stills costs
+# 15-20 minutes and, when the trained LoRAs are unavailable, produces worse
+# frames than the ones already on disk.
+EXISTING_FRAMES=$(find startframes -name "c*.png" 2>/dev/null | wc -l)
+EXPECTED_FRAMES=$(uv run python -c "
+import yaml
+print(len(yaml.safe_load(open('docs/beats.yaml'))['shots']))
+" 2>/dev/null || echo 70)
+if [[ "${SKIP_STILLS:-auto}" == "true" ]] || \
+   { [[ "${SKIP_STILLS:-auto}" == "auto" ]] && [[ "$EXISTING_FRAMES" -ge "$EXPECTED_FRAMES" ]]; }; then
+    success "Reusing $EXISTING_FRAMES staged start frames (skipping SDXL)"
+    SKIP_STILLS_RUN=true
+else
+    SKIP_STILLS_RUN=false
+fi
+
+if [[ "$SKIP_STILLS_RUN" == "false" ]]; then
 
 # The SDXL base model is only needed for stills, so fetch it here rather
 # than in the Wan model phase.
@@ -614,6 +674,16 @@ if ! uv run python scripts/audit_startframes.py --dir startframes --spec docs/be
     fi
 fi
 
+fi  # SKIP_STILLS_RUN
+
+# The render needs every frame regardless of how it was produced.
+FRAME_COUNT=$(find startframes -name "c*.png" 2>/dev/null | wc -l)
+if [[ "$FRAME_COUNT" -eq 0 ]]; then
+    error "No start frames available - the render cannot proceed."
+    exit 1
+fi
+success "Start frames ready ($FRAME_COUNT)"
+
 # ──────────────────────────────────────────────
 # PHASE 8: RENDER CLIPS (MAIN PRODUCTION)
 # ──────────────────────────────────────────────
@@ -651,12 +721,17 @@ RENDER_EXIT=${PIPESTATUS[0]}
 END_RENDER=$(date +%s)
 RENDER_DURATION=$((END_RENDER - START_RENDER))
 
-if [[ $RENDER_EXIT -eq 0 ]]; then
-    success "Render complete in ${RENDER_DURATION}s ($((RENDER_DURATION/60)) min)"
-else
-    error "Render failed. Check /tmp/render.log"
+RENDERED=$(find renders -maxdepth 1 -name "c*.mp4" 2>/dev/null | wc -l)
+if [[ "$RENDERED" -eq 0 ]]; then
+    error "Render produced no clips. Check /tmp/render.log"
     tail -100 /tmp/render.log
     exit 1
+fi
+if [[ $RENDER_EXIT -ne 0 ]]; then
+    warn "Render finished with failures: $RENDERED/$EXPECTED_FRAMES clip(s) on disk"
+    warn "Continuing with the clips that rendered. See /tmp/render.log"
+else
+    success "Render complete in ${RENDER_DURATION}s ($((RENDER_DURATION/60)) min)"
 fi
 
 # ──────────────────────────────────────────────
