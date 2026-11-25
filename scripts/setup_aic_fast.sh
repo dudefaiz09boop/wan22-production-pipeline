@@ -728,6 +728,14 @@ NARRATION_ENGINE="${NARRATION_ENGINE:-chatterbox}"
 # references if they are not already staged, so a fresh clone needs no
 # recording session.
 if [[ "$NARRATION_ENGINE" == "chatterbox" ]]; then
+    # chatterbox-tts pins numpy<1.26 and diffusers==0.29.0, which cannot
+    # coexist with opencv on Python 3.14. Install it without its pins; the
+    # versions it actually needs at runtime are already present.
+    log "Installing Chatterbox (no-deps)..."
+    uv pip install --python .venv/bin/python --no-deps chatterbox-tts==0.1.4 \
+        resemble-perth conformer==0.3.2 s3tokenizer pykakasi==2.3.0 \
+        pyloudnorm omegaconf spacy-pkuseg librosa==0.11.0 2>&1 | tail -3 || \
+        warn "Chatterbox install failed - narration will fall back to Edge"
     log "Preparing voice references..."
     uv run python scripts/make_voice_refs.py --out refs/voices || \
         warn "Voice reference generation failed - Chatterbox will use its default voice"
