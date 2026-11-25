@@ -1,0 +1,19 @@
+{
+  "faiz_count": 8,
+  "juv_count": 20,
+  "combined_count": 28,
+  "images_ref_faces": {
+    "faiz": 6,
+    "juv": 16
+  },
+  "startframes_faces": {
+    "faiz": 2,
+    "juv": 4
+  },
+  "total_faces": {
+    "faiz": 8,
+    "juv": 20
+  },
+  "assign_threshold": 0.35,
+  "upscale_to": 0
+}
