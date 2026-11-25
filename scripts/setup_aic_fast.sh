@@ -277,7 +277,7 @@ aria2c \
     2>&1 | tail -10
 
 # Verify downloads
-DOWNLOADED=$(find "$MODEL_CACHE" -name "*.safetensors" -o -name "*.gguf" | wc -l)
+DOWNLOADED=$(find "$MODEL_CACHE" \( -name "*.safetensors" -o -name "*.gguf" \) 2>/dev/null | wc -l || true)
 EXPECTED=$(echo $HF_FILES | wc -w)
 success "Downloaded $DOWNLOADED/$EXPECTED model files"
 
@@ -493,7 +493,7 @@ for f in "$MODEL_CACHE"/model_patches/*.safetensors "$MODEL_CACHE"/model_patches
     link_into "$f" "$COMFY_DIR/models/model_patches/$(basename "$f")"
 done
 
-LORA_COUNT=$(find "$COMFY_DIR/models/loras" -name "*.safetensors" | wc -l)
+LORA_COUNT=$(find "$COMFY_DIR/models/loras" -name "*.safetensors" 2>/dev/null | wc -l || true)
 success "ComfyUI model paths linked ($LORA_COUNT LoRAs visible)"
 if [[ "$LORA_COUNT" -eq 0 ]]; then
     error "No LoRAs visible to ComfyUI - the render would fail on the first LoRA shot."
@@ -587,7 +587,9 @@ cd "$REPO_DIR"
 # Reuse frames that are already staged. Regenerating 70 SDXL stills costs
 # 15-20 minutes and, when the trained LoRAs are unavailable, produces worse
 # frames than the ones already on disk.
-EXISTING_FRAMES=$(find startframes -name "c*.png" 2>/dev/null | wc -l)
+# `|| true` on every count: under `set -euo pipefail` a find on a missing
+# directory returns 1 and would abort the whole script.
+EXISTING_FRAMES=$(find startframes -name "c*.png" 2>/dev/null | wc -l || true)
 EXPECTED_FRAMES=$(uv run python -c "
 import yaml
 print(len(yaml.safe_load(open('docs/beats.yaml'))['shots']))
@@ -655,34 +657,36 @@ uv run python scripts/generate_stills.py \
     --device cuda --dtype fp16 \
     2>&1 | tail -20
 
-FRAME_COUNT=$(find startframes -name "c*.png" 2>/dev/null | wc -l)
+FRAME_COUNT=$(find startframes -name "c*.png" 2>/dev/null | wc -l || true)
 if [[ "$FRAME_COUNT" -eq 0 ]]; then
     error "No start frames were generated - the render cannot proceed."
     exit 1
 fi
 success "Start frames generated ($FRAME_COUNT)"
 
-# Audit the frames before spending GPU time on the render. Problems here
-# become disfigured video, so surface them now.
-log "Auditing start frame quality..."
-if ! uv run python scripts/audit_startframes.py --dir startframes --spec docs/beats.yaml; then
-    warn "Some start frames have quality problems (see startframes/quality_report.json)."
-    if [[ "${REPAIR_FRAMES:-true}" == "true" ]]; then
-        log "Regenerating failing frames with more candidates..."
-        uv run python scripts/repair_startframes.py --candidates 4 --gate 0.45 \
-            2>&1 | tail -12 || warn "Frame repair incomplete; continuing with current frames"
-    fi
-fi
-
 fi  # SKIP_STILLS_RUN
 
 # The render needs every frame regardless of how it was produced.
-FRAME_COUNT=$(find startframes -name "c*.png" 2>/dev/null | wc -l)
+FRAME_COUNT=$(find startframes -name "c*.png" 2>/dev/null | wc -l || true)
 if [[ "$FRAME_COUNT" -eq 0 ]]; then
     error "No start frames available - the render cannot proceed."
     exit 1
 fi
 success "Start frames ready ($FRAME_COUNT)"
+
+# Audit whatever is on disk, including reused frames. A blurry or faceless
+# start frame becomes a disfigured clip, so surface it before the render.
+log "Auditing start frame quality..."
+if ! uv run python scripts/audit_startframes.py --dir startframes --spec docs/beats.yaml; then
+    warn "Some start frames have quality problems (see startframes/quality_report.json)."
+    if [[ "${REPAIR_FRAMES:-true}" == "true" && "$SKIP_STILLS_RUN" == "false" ]]; then
+        log "Regenerating failing frames with more candidates..."
+        uv run python scripts/repair_startframes.py --candidates 4 --gate 0.45 \
+            2>&1 | tail -12 || warn "Frame repair incomplete; continuing with current frames"
+    elif [[ "$SKIP_STILLS_RUN" == "true" ]]; then
+        warn "Reused frames are kept as-is; set SKIP_STILLS=false to regenerate them."
+    fi
+fi
 
 # ──────────────────────────────────────────────
 # PHASE 8: RENDER CLIPS (MAIN PRODUCTION)
@@ -721,7 +725,7 @@ RENDER_EXIT=${PIPESTATUS[0]}
 END_RENDER=$(date +%s)
 RENDER_DURATION=$((END_RENDER - START_RENDER))
 
-RENDERED=$(find renders -maxdepth 1 -name "c*.mp4" 2>/dev/null | wc -l)
+RENDERED=$(find renders -maxdepth 1 -name "c*.mp4" 2>/dev/null | wc -l || true)
 if [[ "$RENDERED" -eq 0 ]]; then
     error "Render produced no clips. Check /tmp/render.log"
     tail -100 /tmp/render.log
@@ -831,7 +835,7 @@ if ! uv run python scripts/generate_narration.py \
         --prompts prompts --output audio --engine edge || \
         warn "Narration generation failed - lipsync will be skipped and clips get silent audio"
 fi
-NARRATION_COUNT=$(find audio -name "c*.wav" 2>/dev/null | wc -l)
+NARRATION_COUNT=$(find audio -name "c*.wav" 2>/dev/null | wc -l || true)
 if [[ "$NARRATION_COUNT" -gt 0 ]]; then
     success "Narration generated ($NARRATION_COUNT track(s))"
 fi
@@ -853,7 +857,7 @@ if [[ "${LIPSYNC_ENGINE:-s2v}" != "off" ]]; then
         --engine "${LIPSYNC_ENGINE:-s2v}" \
         --steps "${LIPSYNC_STEPS:-6}" \
         2>&1 | tail -15; then
-        LIPSYNC_COUNT=$(find renders/lipsync -name "c*.mp4" 2>/dev/null | wc -l)
+        LIPSYNC_COUNT=$(find renders/lipsync -name "c*.mp4" 2>/dev/null | wc -l || true)
         if [[ "$LIPSYNC_COUNT" -gt 0 ]]; then
             success "Lipsync complete ($LIPSYNC_COUNT clip(s))"
             RENDER_SOURCE="renders/lipsync"
