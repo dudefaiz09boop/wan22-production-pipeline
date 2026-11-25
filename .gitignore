@@ -114,3 +114,6 @@ renders/lipsync/
 
 # Voice reference scratch
 refs/voices/.tmp/
+
+# Local env with real keys; never commit
+instance.env
