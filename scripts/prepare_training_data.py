@@ -294,6 +294,8 @@ def _emit_sample(
     min_face_size: int,
     upscale_to: int,
     primary: bool = True,
+    all_faces: list | None = None,
+    centroids: dict[str, np.ndarray] | None = None,
 ) -> dict | None:
     """Write one face or body sample plus its caption."""
     if kind == "body":
@@ -302,6 +304,19 @@ def _emit_sample(
         frame_w = img.shape[1]
         if (face.bbox[2] - face.bbox[0]) / frame_w > 0.55:
             return None
+
+        # In a two-person frame the other person's face is often the larger
+        # one, so centring on it would teach this character the wrong face.
+        # Re-pick the face that actually matches the character.
+        if all_faces and centroids and character in centroids:
+            face = max(
+                all_faces,
+                key=lambda f: float(
+                    _normalize(np.asarray(f.embedding, dtype=np.float32))
+                    @ centroids[character]
+                ),
+            )
+
         cropped = _body_crop(img, face, min_face_size)
         # When the crop falls back to the whole frame it contains both people,
         # so emitting it for each face would put identical bytes in both
@@ -430,6 +445,7 @@ def process_startframes(
                 sample = _emit_sample(
                     img, face, target_dir, character, sf_path.stem,
                     i, kind, min_face_size, upscale_to, primary=(i == 0),
+                    all_faces=faces, centroids=centroids,
                 )
                 if sample:
                     sample["score"] = round(score, 4)
