@@ -16,13 +16,21 @@ dependencies = [
     "insightface>=0.7",
     "onnxruntime-gpu>=1.18",
     "diffusers>=0.30",
-    "transformers>=4.41",
     "accelerate>=0.30",
     # diffusers' load_lora_weights() requires the PEFT backend.
     "peft>=0.11",
     "safetensors>=0.4",
     "torch>=2.3",
     "torchvision>=0.18",
+    # Chatterbox Multilingual: Hindi TTS with voice cloning and emotion
+    # control. Pins transformers below 5 -- chatterbox imports LlamaModel
+    # from the 4.x layout and breaks on 5.x.
+    "chatterbox-tts>=0.1.4",
+    "torchaudio>=2.3",
+    # perth (chatterbox watermarker) imports pkg_resources, which setuptools
+    # 81+ removed.
+    "setuptools<81",
+    "transformers>=4.46,<5",
 ]
 
 # The AIC Cloud PyTorch image ships an NVIDIA driver that supports CUDA 12.6.

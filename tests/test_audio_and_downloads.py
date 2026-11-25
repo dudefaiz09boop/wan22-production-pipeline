@@ -196,6 +196,45 @@ class MuxSourcePreferenceTests(unittest.TestCase):
             self.assertEqual(candidates[0].read_text(), "raw")
 
 
+class ChatterboxStyleTests(unittest.TestCase):
+    """Moans must get the top of the exaggeration range, in either script."""
+
+    def test_latin_moan(self):
+        self.assertTrue(generate_narration.is_moan("Ahh \u2014 haan \u2014 haan \u2014"))
+
+    def test_devanagari_moan(self):
+        self.assertTrue(
+            generate_narration.is_moan("\u0906\u0939 \u2014 \u0939\u093e\u0901 \u2014")
+        )
+
+    def test_devanagari_moan_with_ruk(self):
+        self.assertTrue(
+            generate_narration.is_moan(
+                "\u0906\u0939 \u2014 \u092e\u0924 \u0930\u0941\u0915 \u2014"
+            )
+        )
+
+    def test_spoken_line_is_not_a_moan(self):
+        self.assertFalse(
+            generate_narration.is_moan("\u0924\u0941\u092e \u092e\u0947\u0930\u0940 \u092c\u0939\u0928 \u0939\u094b\u0964")
+        )
+
+    def test_long_line_is_not_a_moan(self):
+        self.assertFalse(
+            generate_narration.is_moan("one two three four five six seven")
+        )
+
+    def test_moan_gets_higher_exaggeration_than_speech(self):
+        moan = generate_narration.style_for("juv", "\u0906\u0939 \u2014 \u0939\u093e\u0901")
+        speech = generate_narration.style_for("juv", "\u0924\u0941\u092e \u092e\u0947\u0930\u0940 \u092c\u0939\u0928")
+        self.assertGreater(moan["exaggeration"], speech["exaggeration"])
+
+    def test_speakers_have_distinct_styles(self):
+        faiz = generate_narration.style_for("faiz", "hello there friend")
+        juv = generate_narration.style_for("juv", "hello there friend")
+        self.assertNotEqual(faiz["exaggeration"], juv["exaggeration"])
+
+
 class GgufManifestTests(unittest.TestCase):
     def setUp(self):
         import download_wan22_gguf

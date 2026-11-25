@@ -719,11 +719,23 @@ phase "PHASE 9a: NARRATION (Edge TTS)"
 # The compiled prompts already carry the authored narration text, so this
 # only synthesises and fits each track to its clip duration.
 log "Generating narration audio..."
-if uv run python scripts/generate_narration.py --prompts prompts --output audio; then
-    NARRATION_COUNT=$(find audio -name "c*.wav" 2>/dev/null | wc -l)
+# Chatterbox is the default: Hindi native, voice cloning, and an exaggeration
+# knob that makes moans land. It needs a GPU and a ~2 GB model download, so
+# fall back to Edge if it is unavailable rather than shipping silent clips.
+NARRATION_ENGINE="${NARRATION_ENGINE:-chatterbox}"
+if ! uv run python scripts/generate_narration.py \
+        --prompts prompts --output audio \
+        --engine "$NARRATION_ENGINE" \
+        --refs refs/voices \
+        --device cuda; then
+    warn "Narration failed with $NARRATION_ENGINE - retrying with Edge TTS"
+    uv run python scripts/generate_narration.py \
+        --prompts prompts --output audio --engine edge || \
+        warn "Narration generation failed - lipsync will be skipped and clips get silent audio"
+fi
+NARRATION_COUNT=$(find audio -name "c*.wav" 2>/dev/null | wc -l)
+if [[ "$NARRATION_COUNT" -gt 0 ]]; then
     success "Narration generated ($NARRATION_COUNT track(s))"
-else
-    warn "Narration generation failed - lipsync will be skipped and clips get silent audio"
 fi
 
 # ──────────────────────────────────────────────

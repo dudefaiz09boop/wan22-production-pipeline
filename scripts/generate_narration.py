@@ -1,18 +1,23 @@
 #!/usr/bin/env python3
-"""Generate per-clip narration audio with Edge TTS.
+"""Generate per-clip narration audio.
+
+Two engines, chosen by `--engine`:
+
+  chatterbox  Resemble AI Chatterbox Multilingual (MIT, 0.5B). Hindi native,
+              zero-shot voice cloning from a reference clip, and an
+              `exaggeration` knob that is what makes moans and dirty talk
+              land instead of reading flat. Default.
+  edge        Edge TTS. No GPU, no download, but a fixed catalogue of
+              announcer voices with no emotion control.
 
 Reads the compiled prompts/<id>.json configs, which already carry the
 authored `narration` text (speaker-prefixed dialogue turns joined by
 newlines). Each clip gets one WAV whose duration is padded or trimmed to the
 clip duration so the final mux stays in sync.
 
-Voices are chosen per turn from the speaker and the script of the text:
-  Latin script      -> en-IN-PrabhatNeural / en-IN-NeerjaNeural
-  Devanagari        -> hi-IN-MadhurNeural / hi-IN-SwaraNeural
-  Arabic (Urdu)     -> ur-PK-AsadNeural / ur-PK-UzmaNeural
-
-The spec's `language` field is not used for voice selection: it is unreliable
-(c18 is tagged `hi` but its `say` is English). The script of the text decides.
+Chatterbox has no Urdu, so Urdu turns fall back to Edge's ur-PK voices. The
+script of the text decides the engine and the voice, not the spec's
+`language` field, which is unreliable.
 
 Output: audio/<id>.wav, plus audio/index.json mapping clip -> file.
 """
@@ -32,11 +37,9 @@ DEFAULT_VOICES = {
     "ammi": "hi-IN-SwaraNeural",
 }
 
-# Voice per (speaker, script). The spec's `language` field is not reliable --
-# c18 is tagged `hi` but its `say` is English -- so the script of the text
-# itself decides the voice. Romanized Hindi/Urdu stays on the Indian-English
-# voices, which pronounce it correctly; only real Devanagari/Arabic script
-# switches to a native voice.
+# Voice per (speaker, script) for the Edge fallback. Romanized Hindi/Urdu
+# stays on the Indian-English voices, which pronounce it correctly; only real
+# Devanagari/Arabic script switches to a native voice.
 SCRIPT_VOICES = {
     "devanagari": {
         "faiz": "hi-IN-MadhurNeural",
@@ -51,6 +54,30 @@ SCRIPT_VOICES = {
         "ammi": "ur-PK-UzmaNeural",
     },
 }
+
+# Chatterbox language ids. Only `hi` is used; Urdu has no Chatterbox support
+# and falls through to Edge.
+CHATTERBOX_LANG = {"devanagari": "hi", "latin": "hi"}
+
+# Per-speaker delivery. Faiz is low and flat until he is close to coming;
+# Juveriya is breathier and pushed harder. `exaggeration` is the emotion
+# dial -- 0.5 is neutral, 0.7+ is dramatic. Moans get the top of the range.
+SPEAKER_STYLE = {
+    "faiz": {"exaggeration": 0.62, "cfg_weight": 0.35},
+    "juv": {"exaggeration": 0.72, "cfg_weight": 0.30},
+    "ammi": {"exaggeration": 0.55, "cfg_weight": 0.40},
+}
+MOAN_STYLE = {"exaggeration": 0.88, "cfg_weight": 0.25}
+
+# A turn is treated as a moan when it is short and made of these. Both the
+# Latin and Devanagari spellings are listed: the dialogue is Devanagari now,
+# and a Latin-only list silently misses every moan.
+MOAN_TOKENS = frozenset(
+    "ahh ah aah oh ooh haan haanh mat ruk aur bas dekho fuck uff hai "
+    "please jaldi zor".split()
+) | frozenset(
+    "आह आ आह्ह हाँ हां मत रुक और बस देखो ओह उफ़ है प्लीज़ जल्दी ज़ोर".split()
+)
 
 SPEAKER_ALIASES = {
     "faiz": "faiz",
@@ -81,6 +108,25 @@ def voice_for(speaker: str, text: str) -> str:
     if script in SCRIPT_VOICES:
         return SCRIPT_VOICES[script].get(key, SCRIPT_VOICES[script]["juv"])
     return DEFAULT_VOICES.get(key, DEFAULT_VOICES["juv"])
+
+
+def is_moan(text: str) -> bool:
+    """True when a turn is a moan rather than a spoken line.
+
+    Moans are short and made only of interjections. They get the top of the
+    exaggeration range so they do not read as flat speech.
+    """
+    tokens = [t for t in text.lower().replace("\u2014", " ").split() if t]
+    if not tokens or len(tokens) > 6:
+        return False
+    return all(t.strip(",.") in MOAN_TOKENS for t in tokens)
+
+
+def style_for(speaker: str, text: str) -> dict:
+    """Delivery settings for one turn."""
+    if is_moan(text):
+        return dict(MOAN_STYLE)
+    return dict(SPEAKER_STYLE.get(SPEAKER_ALIASES.get(speaker, "juv"), SPEAKER_STYLE["juv"]))
 
 
 def load_configs(prompts_dir: Path) -> list[dict]:
@@ -115,6 +161,84 @@ async def synth(text: str, voice: str, dest: Path) -> None:
     import edge_tts
     communicate = edge_tts.Communicate(text, voice)
     await communicate.save(str(dest))
+
+
+class ChatterboxEngine:
+    """Lazy singleton around Chatterbox Multilingual.
+
+    Loading is deferred until the first Hindi turn so an all-Urdu run never
+    pays the model download. The model is 0.5B and runs on GPU; on CPU it is
+    slow but works.
+    """
+
+    def __init__(self, refs: dict[str, Path], device: str = "cuda"):
+        self.refs = refs
+        self.device = device
+        self._model = None
+
+    def _load(self):
+        if self._model is not None:
+            return self._model
+        import torch
+
+        # Chatterbox builds a Chinese word segmenter at load time. It is only
+        # used for Chinese text, but pkuseg loads a ~35 MB msgpack model into
+        # RAM and raises MemoryError on a small box. We generate Hindi, so
+        # skip it.
+        try:
+            import chatterbox.models.tokenizers.tokenizer as _tok
+
+            _tok.ChineseCangjieConverter._init_segmenter = (
+                lambda self: setattr(self, "segmenter", None)
+            )
+        except (ImportError, AttributeError):
+            pass
+
+        from chatterbox.mtl_tts import ChatterboxMultilingualTTS
+
+        device = self.device
+        if device == "cuda" and not torch.cuda.is_available():
+            print("  chatterbox: no CUDA, falling back to CPU (slow)", file=sys.stderr)
+            device = "cpu"
+        # Pass a plain string, not torch.device: from_local compares
+        # `device in ["cpu", "mps"]` and a torch.device never matches, so the
+        # CPU map_location is skipped and a CUDA-saved checkpoint fails to
+        # deserialize on a CPU-only box.
+        self._model = ChatterboxMultilingualTTS.from_pretrained(device=device)
+        return self._model
+
+    def synth(self, text: str, speaker: str, dest: Path) -> None:
+        import torchaudio as ta
+
+        model = self._load()
+        style = style_for(speaker, text)
+        ref = self.refs.get(SPEAKER_ALIASES.get(speaker, "juv"))
+        wav = model.generate(
+            text,
+            language_id="hi",
+            audio_prompt_path=str(ref) if ref and ref.is_file() else None,
+            **style,
+        )
+        ta.save(str(dest), wav, model.sr)
+
+
+def synth_turn(
+    text: str,
+    speaker: str,
+    dest: Path,
+    engine: str,
+    chatterbox: ChatterboxEngine | None,
+) -> None:
+    """Synthesise one turn with the chosen engine.
+
+    Chatterbox handles Hindi and Latin. Urdu has no Chatterbox support, so
+    Arabic-script turns always go to Edge regardless of `--engine`.
+    """
+    script = detect_script(text)
+    if engine == "chatterbox" and chatterbox is not None and script != "arabic":
+        chatterbox.synth(text, speaker, dest)
+        return
+    asyncio.run(synth(text, voice_for(speaker, text), dest))
 
 
 def probe_duration(path: Path) -> float:
@@ -290,7 +414,7 @@ def speaker_stems(
         if len(files) == 1:
             joined = files[0]
         else:
-            joined = tmp_dir / f"{clip_id}_{speaker}_join.mp3"
+            joined = tmp_dir / f"{clip_id}_{speaker}_join.wav"
             listing = tmp_dir / f"{clip_id}_{speaker}_list.txt"
             listing.write_text(
                 "\n".join(f"file '{p.resolve().as_posix()}'" for p in files),
@@ -336,6 +460,22 @@ def main() -> int:
     ap.add_argument("--rate", default="+0%", help="Edge TTS rate, e.g. -10%%")
     ap.add_argument("--pitch", default="+0Hz")
     ap.add_argument(
+        "--engine",
+        choices=["chatterbox", "edge"],
+        default="chatterbox",
+        help="chatterbox: Hindi voice cloning with emotion control. edge: fallback",
+    )
+    ap.add_argument(
+        "--refs",
+        default="refs/voices",
+        help="Directory of <speaker>.wav reference clips for Chatterbox cloning",
+    )
+    ap.add_argument(
+        "--device",
+        default="cuda",
+        help="Torch device for Chatterbox (cuda or cpu)",
+    )
+    ap.add_argument(
         "--room-tone",
         default="audio/room_tone.wav",
         help="Loopable room tone bed; skipped when absent",
@@ -352,6 +492,22 @@ def main() -> int:
         help="Breath sample laid under the clip head; skipped when absent",
     )
     args = ap.parse_args()
+
+    chatterbox = None
+    if args.engine == "chatterbox":
+        refs_dir = Path(args.refs)
+        refs = {
+            key: refs_dir / f"{key}.wav"
+            for key in ("faiz", "juv", "ammi")
+        }
+        missing = [k for k, v in refs.items() if not v.is_file()]
+        if missing:
+            print(
+                f"  chatterbox: no reference clip for {', '.join(missing)}; "
+                f"those speakers use the default voice",
+                file=sys.stderr,
+            )
+        chatterbox = ChatterboxEngine(refs, args.device)
 
     configs = load_configs(Path(args.prompts))
     if args.beats:
@@ -389,10 +545,9 @@ def main() -> int:
 
         parts = []
         for i, (speaker, text) in enumerate(turns):
-            voice = voice_for(speaker, text)
-            part = tmp_dir / f"{clip_id}_{i:02d}.mp3"
+            part = tmp_dir / f"{clip_id}_{i:02d}.wav"
             try:
-                asyncio.run(synth(text, voice, part))
+                synth_turn(text, speaker, part, args.engine, chatterbox)
             except Exception as error:  # noqa: BLE001
                 print(f"  {clip_id}: TTS failed for turn {i}: {error}", file=sys.stderr)
                 continue
@@ -402,7 +557,7 @@ def main() -> int:
             continue
 
         # Concatenate turns, then fit to the clip duration.
-        joined = tmp_dir / f"{clip_id}_joined.mp3"
+        joined = tmp_dir / f"{clip_id}_joined.wav"
         if len(parts) == 1:
             parts[0].replace(joined)
         else:
