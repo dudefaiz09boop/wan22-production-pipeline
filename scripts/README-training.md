@@ -98,16 +98,22 @@ using the values in `train_config.json`:
 | Setting | Value |
 |---|---|
 | Base model | SDXL 1.0 / Juggernaut XL v9 |
-| Network dim | 32 |
-| Network alpha | 16 |
+| Network dim | 64 |
+| Network alpha | 32 |
 | Resolution | 1024 |
-| Steps | 1200 |
+| Steps | 2000 |
 | LR | 1e-4 |
 | Text encoder LR | 5e-5 |
 | Batch size | 1 (accum 2) |
+| keep_tokens | 2 |
+| min_snr_gamma | 5 |
 
 Alpha is half of dim because the dataset is small; alpha == dim over-saturates.
 Do not merge the two characters into one concept.
+
+`keep_tokens: 2` pins `<trigger>, indian muslim` so `shuffle_caption` cannot
+separate the trigger from the identity token. Without it the LoRA learns "a
+south asian person" and drifts to a generic face.
 
 ### 3. Upload Datasets to Kaggle (One-time)
 
@@ -166,20 +172,29 @@ kaggle datasets version -p . -m "Per-character LoRAs, 512px crops"
 | Parameter | Value | Reason |
 |-----------|-------|--------|
 | **Base Model** | Juggernaut XL v9 | Photorealistic, good for characters |
-| **LoRA Rank** | 32 | Fast training, sufficient quality |
-| **LoRA Alpha** | 16 | Half of rank; stops a small dataset over-saturating |
+| **LoRA Rank** | 64 | Enough capacity to bind a specific face |
+| **LoRA Alpha** | 32 | Half of rank; stops a small dataset over-saturating |
 | **Precision** | fp16 | Half VRAM usage |
 | **Gradient Checkpointing** | Enabled | Saves VRAM |
 | **Optimizer** | AdamW8bit | 8-bit saves VRAM |
 | **Learning Rate** | 1e-4 | Standard for LoRA |
-| **Scheduler** | Cosine with restarts | Good convergence |
-| **Max Steps** | 1200 per LoRA | ~45 min each on T4 |
+| **Scheduler** | Cosine | Good convergence |
+| **Max Steps** | 2000 per LoRA | ~3 h each on T4 |
 | **Batch Size** | 1 (accum 2) | Effective batch 2 |
 | **Resolution** | 1024x1024 | SDXL native |
-| **Save Every** | 400 steps | 3 checkpoints |
+| **Save Every** | 500 steps | 4 checkpoints |
+| **keep_tokens** | 2 | Pins `<trigger>, indian muslim` against shuffle |
+| **min_snr_gamma** | 5 | Stabilises the loss on a small set |
 | **Regularization** | Other character data | Prevents bleeding |
 
-**Total training time: ~2-3 hours** (fits in single Kaggle session)
+**Total training time: ~3 hours per LoRA** (one LoRA per Kaggle session)
+
+Measured on the current datasets (faiz 149 crops, juv 184 crops):
+
+| LoRA | Steps | Loss start → end | Size | Tensors |
+|---|---|---|---|---|
+| faiz | 2000 | 0.0985 → 0.0877 | 435 MB | 2958 |
+| juv | 2000 | 0.1420 → 0.0880 | 435 MB | 2958 |
 
 The kernel asserts that the two datasets share no images before training starts.
 If it fails, the face-extraction step wrote the same face into both sets — rerun
