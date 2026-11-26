@@ -235,9 +235,40 @@ def fit_to_clip(
 # weighted the concrete nouns (hand, wrist, kurti) and produced no face at all.
 FACE_ANCHOR_TEXT = "medium shot, faces in frame"
 
+# Framing words that contradict the anchor. A cam line saying "static ECU" or
+# "static close-up" outranks a prefix saying "medium shot", and SDXL resolves
+# the conflict by obeying the cam line -- which is why 5 beats failed 3/3 with
+# "no face in frame" while their prompt said "faces in frame".
+#
+# The still is a seed frame, not the shot itself: the video model does the ECU.
+# So the still gets a wider framing and the cam line keeps its intent.
+FRAMING_REWRITES = (
+    (r"\bstatic ECU\b", "static medium"),
+    (r"\bzoom in ECU\b", "zoom in"),
+    (r"\bECU\b", "medium"),
+    (r"\bstatic close-up\b", "static medium"),
+    (r"\bclose-up\b", "medium"),
+    # "zoom in medium" is not a phrase; the verb already implies the move.
+    (r"\bzoom in medium\b", "zoom in"),
+)
+
+
+def widen_framing(line: str) -> str:
+    """Replace close framing with a medium shot.
+
+    Only the framing word changes; the action and the anatomy stay. The video
+    model still gets the original ECU line from prompts/<id>.txt.
+    """
+    for pattern, replacement in FRAMING_REWRITES:
+        line = re.sub(pattern, replacement, line, flags=re.IGNORECASE)
+    return line
+
 
 def build_still_prompt(shot: dict, meta: dict, registry: dict) -> str:
     cam = [line for line in (shot.get("cam") or []) if isinstance(line, str)]
+    # Widen close framing before anything else: an ECU line outranks the face
+    # anchor and produces a faceless still.
+    cam = [widen_framing(line) for line in cam]
     look = look_prefix(shot, meta)
     effective = effective_loras(
         shot.get("loras") or [], registry, bool(shot.get("no_default_loras"))
