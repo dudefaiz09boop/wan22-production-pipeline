@@ -315,7 +315,13 @@ def process_beat(
             ),
             default=0.0,
         )
-        print(f"  candidate {attempt + 1}: identity score {score:.3f}")
+        # A faceless ECU (a throat, a hand, a wet join) has no identity to
+        # score. Reporting 0.000 there is misleading: it reads as a failed
+        # swap when the shot simply has no face in it.
+        if not app.get(frame):
+            print(f"  candidate {attempt + 1}: no face in frame (ECU shot)")
+        else:
+            print(f"  candidate {attempt + 1}: identity score {score:.3f}")
 
         if best is None or score > best[0]:
             best = (score, frame)

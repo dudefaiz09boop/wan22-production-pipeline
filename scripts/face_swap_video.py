@@ -105,8 +105,18 @@ def swap_faces_in_frame(
     """Swap every detected face toward the best-matching character reference.
 
     Faces are assigned to characters by embedding similarity, so a frame with
-    both characters gets both swapped. A face is only replaced when it is
-    closer to a reference than the threshold, which keeps bystanders intact.
+    both characters gets both swapped.
+
+    The threshold is a *confidence* floor for deciding which character a face
+    belongs to, not a gate on whether to swap at all. Gating the swap on the
+    face already resembling the reference is circular: a fresh SDXL generation
+    scores ~0.0-0.2 against the reference, so the swap never fired and every
+    still kept the base model's generic face. That is why the identity scores
+    in the Kaggle run were 0.000.
+
+    When there are exactly as many faces as characters, assignment is by rank
+    (largest face to the first character) rather than by similarity, because
+    similarity is meaningless before the swap.
     """
     faces = app.get(frame)
     if not faces:
@@ -115,26 +125,43 @@ def swap_faces_in_frame(
     result = frame
     scores: dict[str, float] = {}
 
-    for face in faces:
-        best_char = None
-        best_score = 0.0
-        for char in characters:
-            ref = ref_faces.get(char)
-            if ref is None:
-                continue
-            score = _cosine(face.normed_embedding, ref.normed_embedding)
-            if score > best_score:
-                best_score = score
-                best_char = char
+    # Rank-based assignment when the counts line up: the pre-swap embedding
+    # cannot tell us who is who, but the shot's cast can.
+    ranked = sorted(
+        faces,
+        key=lambda f: (f.bbox[2] - f.bbox[0]) * (f.bbox[3] - f.bbox[1]),
+        reverse=True,
+    )
+    if len(ranked) == len(characters):
+        assignment = list(zip(characters, ranked))
+    else:
+        assignment = []
+        for face in ranked:
+            best_char = None
+            best_score = 0.0
+            for char in characters:
+                ref = ref_faces.get(char)
+                if ref is None:
+                    continue
+                score = _cosine(face.normed_embedding, ref.normed_embedding)
+                if score > best_score:
+                    best_score = score
+                    best_char = char
+            if best_char is not None:
+                assignment.append((best_char, face))
 
-        if best_char is None or best_score < similarity_threshold:
+    for char, face in assignment:
+        ref = ref_faces.get(char)
+        if ref is None:
             continue
-
         try:
-            result = swapper.get(result, face, ref_faces[best_char], paste_back=True)
-            scores[best_char] = max(scores.get(best_char, 0.0), best_score)
+            result = swapper.get(result, face, ref, paste_back=True)
+            scores[char] = max(
+                scores.get(char, 0.0),
+                _cosine(face.normed_embedding, ref.normed_embedding),
+            )
         except Exception as error:  # noqa: BLE001 - keep the frame on failure
-            print(f"    swap failed for {best_char}: {error}")
+            print(f"    swap failed for {char}: {error}")
 
     return result, scores
 
