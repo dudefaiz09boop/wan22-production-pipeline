@@ -196,6 +196,24 @@ Measured on the current datasets (faiz 149 crops, juv 184 crops):
 | faiz | 2000 | 0.0985 → 0.0877 | 435 MB | 2958 |
 | juv | 2000 | 0.1420 → 0.0880 | 435 MB | 2958 |
 
+### Identity verification
+
+`scripts/verify_loras.py` generates 4 SDXL portraits per character from prompts
+carrying the trained identity tokens, then scores each face against that
+character's own training crops with InsightFace. The baseline is the same
+prompts with no LoRA loaded, so the delta is what the LoRA actually contributes.
+
+Gate: mean cosine >= 0.40 **and** delta > 0.02.
+
+| LoRA | Mean | Min | Baseline | Delta | Verdict |
+|---|---|---|---|---|---|
+| faiz | 0.5505 | 0.5104 | 0.1877 | +0.3628 | pass |
+| juv | 0.4002 | 0.3337 | 0.1618 | +0.2384 | pass |
+
+faiz binds strongly. juv clears the gate but with little headroom, and its
+minimum (0.3337) is below it — one of the four prompts lands weak. If juv drifts
+in production, raise its repeats or steps before touching faiz.
+
 The kernel asserts that the two datasets share no images before training starts.
 If it fails, the face-extraction step wrote the same face into both sets — rerun
 `prepare_training_data.py` rather than training on mixed data.

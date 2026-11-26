@@ -31,7 +31,8 @@ env.bak/
 venv.bak/
 
 # IDE
-.vscode/
+.vscode/*
+!.vscode/mcp.json
 .idea/
 *.swp
 *.swo
@@ -54,6 +55,7 @@ models/
 lora_output/
 lora_out3/
 probe_out/
+lora_publish/
 recover/
 training_data/
 training_data_*/
