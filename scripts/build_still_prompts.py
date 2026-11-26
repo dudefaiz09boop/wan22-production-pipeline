@@ -139,6 +139,27 @@ FRAMING_REWRITES = (
 )
 
 
+# POV means the camera is one of the characters, so only the other one is in
+# frame. That is correct for the video, but the startframe must show both --
+# it seeds the clip and the cast check requires both faces. The still gets a
+# third-person framing; prompts/<id>.txt keeps the POV line for Wan.
+POV_REWRITES = (
+    (r"\bPOV,?\s*", ""),
+    (r"\bPOV\b", "over the shoulder"),
+)
+
+
+def drop_pov(line: str) -> str:
+    """Remove POV from a still cam line.
+
+    "static medium: POV, Faiz in the doorway" becomes "static medium: Faiz in
+    the doorway" -- the same shot from a camera that can see both people.
+    """
+    for pattern, replacement in POV_REWRITES:
+        line = re.sub(pattern, replacement, line, flags=re.IGNORECASE)
+    return re.sub(r"\s{2,}", " ", line).strip()
+
+
 def widen_framing(line: str) -> str:
     """Replace close framing with a medium shot.
 
@@ -232,7 +253,7 @@ def build_still_prompt(shot: dict, meta: dict, registry: dict) -> str:
     cam = [line for line in (shot.get("cam") or []) if isinstance(line, str)]
     # Widen close framing before anything else: an ECU line outranks the face
     # anchor and produces a faceless still.
-    cam = [widen_framing(line) for line in cam]
+    cam = [drop_pov(widen_framing(line)) for line in cam]
     look = look_prefix(shot, meta)
     effective = effective_loras(
         shot.get("loras") or [], registry, bool(shot.get("no_default_loras"))
