@@ -133,5 +133,56 @@ class VerifyNotebookStandaloneTests(unittest.TestCase):
         self.assertIn("dark kajal", joined)
 
 
+class StillsAudioNotebookStandaloneTests(unittest.TestCase):
+    """Same guard for the stills + audio kernel."""
+
+    def setUp(self) -> None:
+        from scripts.kaggle_stills_audio import build_notebook
+
+        self.cells = [
+            _cell_source(c)
+            for c in build_notebook()["cells"]
+            if c["cell_type"] == "code"
+        ]
+
+    def test_every_global_read_is_defined_by_an_earlier_cell(self) -> None:
+        available: set[str] = set(dir(builtins))
+        missing: list[str] = []
+
+        for index, source in enumerate(self.cells):
+            python_lines: list[str] = []
+            in_shell = False
+            for line in source.splitlines():
+                stripped = line.lstrip()
+                if in_shell:
+                    in_shell = stripped.endswith("\\")
+                    python_lines.append("")
+                    continue
+                if stripped.startswith(("!", "%")):
+                    in_shell = stripped.endswith("\\")
+                    python_lines.append("")
+                    continue
+                python_lines.append(line)
+            tree = ast.parse("\n".join(python_lines))
+
+            cell_defs = _defined_names(tree)
+            for name in _module_scope_loads(tree):
+                if name not in available and name not in cell_defs:
+                    missing.append(f"cell {index}: {name}")
+            available |= cell_defs
+
+        self.assertEqual(missing, [], "undefined names: " + ", ".join(sorted(set(missing))))
+
+    def test_narration_uses_chatterbox_hindi(self) -> None:
+        joined = "\n".join(self.cells)
+        self.assertIn("chatterbox", joined)
+        self.assertIn("generate_narration.py", joined)
+
+    def test_stills_use_the_trained_loras(self) -> None:
+        joined = "\n".join(self.cells)
+        self.assertIn("models/loras/trained", joined)
+        self.assertIn("generate_stills.py", joined)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,17 @@
+{
+  "id": "sofiya009/wan22-stills-audio",
+  "title": "Wan22 Stills Audio",
+  "code_file": "stills_audio.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": [
+    "sofiya009/lora-train-faiz",
+    "sofiya009/lora-train-juveriya",
+    "sofiya009/lora-weights-faiz-juv-v2"
+  ],
+  "competition_sources": [],
+  "kernel_sources": []
+}

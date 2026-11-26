@@ -28,7 +28,14 @@ MAX_PROMPT_CHARS = 2000
 MAX_LORAS = 3
 # Registry entries flagged `default: true` are injected into every shot by
 # render.inject_loras, so they count against the per-shot budget too.
-MAX_TOTAL_LORAS = 5
+#
+# The budget is 6 because the four defaults are not interchangeable: realism and
+# skin_morph are style, faiz_trained and juv_trained are identity. A shot that
+# also declares penis_insert and vag_detail genuinely needs all six, and they
+# act on different things so they do not fight. The cap exists to catch a shot
+# that has quietly accumulated LoRAs, not to force a choice between identity and
+# anatomy.
+MAX_TOTAL_LORAS = 6
 LANGS = {"en", "hi", "ur"}
 RESET_BEATS = {"c08", "c18", "c21", "c30", "c46", "c47"}
 STABLE_ANCHOR_KEYS = ("face", "body", "wardrobe")
@@ -307,7 +314,12 @@ def main() -> int:
                         )
                 references_ammi = any(
                     isinstance(text, str)
-                    and re.search(r"(?<!\w)Ammi(?!\w)", text, re.IGNORECASE)
+                    and (
+                        re.search(r"(?<!\w)Ammi(?!\w)", text, re.IGNORECASE)
+                        # The dialogue is Devanagari now, so the name appears as
+                        # अम्मी rather than "Ammi".
+                        or "अम्मी" in text
+                    )
                     for text in beat_text
                 )
                 if beat_id not in phone_call_beats and not references_ammi:

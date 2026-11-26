@@ -109,7 +109,7 @@ def build_plan(
     negative: str,
     known_loras: set[str],
     errors: list[str],
-    lang: str = "en",
+    lang: str = "hi",
     check_frames: bool = True,
 ) -> dict | None:
     sid = shot.get("id") if isinstance(shot.get("id"), str) else "<unknown>"
@@ -277,7 +277,16 @@ def main() -> int:
         action="store_true",
         help="skip checking whether start_frame files exist on disk",
     )
-    ap.add_argument("--lang", choices=("en", "hi", "ur", "mixed"), default="en")
+    ap.add_argument(
+        "--lang",
+        choices=("en", "hi", "ur", "mixed"),
+        default="hi",
+        help=(
+            "Which spoken-text representation to emit. Defaults to hi: the "
+            "dialogue is authored in Devanagari, and 'en' silently selected the "
+            "romanized fallback, so the narration came out English."
+        ),
+    )
     args = ap.parse_args()
 
     root = Path(".")

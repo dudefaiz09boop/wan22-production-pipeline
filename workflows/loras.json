@@ -7,8 +7,14 @@
     "trigger_scope": null,
     "default": true,
     "source": {
-      "high": { "civitai_model": 2001317, "civitai_version": 2272139 },
-      "low": { "civitai_model": 2001317, "civitai_version": 2272164 },
+      "high": {
+        "civitai_model": 2001317,
+        "civitai_version": 2272139
+      },
+      "low": {
+        "civitai_model": 2001317,
+        "civitai_version": 2272164
+      },
       "sha256": {
         "high": "C62578B84F715941",
         "low": "32FD4F8289B1F3FE"
@@ -24,8 +30,14 @@
     "trigger_scope": "prompt_suffix",
     "default": true,
     "source": {
-      "high": { "civitai_model": 2210162, "civitai_version": 2488349 },
-      "low": { "civitai_model": 2210162, "civitai_version": 2488341 },
+      "high": {
+        "civitai_model": 2210162,
+        "civitai_version": 2488349
+      },
+      "low": {
+        "civitai_model": 2210162,
+        "civitai_version": 2488341
+      },
       "sha256": {
         "high": "10659116AB688105",
         "low": "5F4A808E68428FF4"
@@ -65,7 +77,9 @@
     "w": 0.55,
     "trigger": null,
     "trigger_scope": null,
-    "conflicts": ["vag_detail"],
+    "conflicts": [
+      "vag_detail"
+    ],
     "source": {
       "civitai_model": 2073605,
       "civitai_version": 2073605,
@@ -78,7 +92,10 @@
     "w": 0.6,
     "trigger": null,
     "trigger_scope": null,
-    "conflicts": ["vag_detail", "penis_insert"],
+    "conflicts": [
+      "vag_detail",
+      "penis_insert"
+    ],
     "source": {
       "civitai_model": 2012120,
       "civitai_version": 2012120,
@@ -92,8 +109,14 @@
     "trigger": null,
     "trigger_scope": null,
     "source": {
-      "high": { "civitai_model": 2100959, "civitai_version": 2377035 },
-      "low": { "civitai_model": 2100959, "civitai_version": 2377244 }
+      "high": {
+        "civitai_model": 2100959,
+        "civitai_version": 2377035
+      },
+      "low": {
+        "civitai_model": 2100959,
+        "civitai_version": 2377244
+      }
     }
   },
   "vag_detail": {
@@ -103,8 +126,14 @@
     "trigger": "Vagina",
     "trigger_scope": "prompt_suffix",
     "source": {
-      "high": { "civitai_model": 2109996, "civitai_version": 3034683 },
-      "low": { "civitai_model": 2109996, "civitai_version": 3034713 }
+      "high": {
+        "civitai_model": 2109996,
+        "civitai_version": 3034683
+      },
+      "low": {
+        "civitai_model": 2109996,
+        "civitai_version": 3034713
+      }
     }
   },
   "oral_insert": {
@@ -135,7 +164,9 @@
     "w": 0.45,
     "trigger": "nsfwsks",
     "trigger_scope": "prompt_prefix",
-    "conflicts": ["vag_detail"],
+    "conflicts": [
+      "vag_detail"
+    ],
     "source": {
       "civitai_model": 1307155,
       "civitai_version": null
@@ -160,7 +191,9 @@
     "source": {
       "kaggle_dataset": "sofiya009/lora-nuke-faiz-juv",
       "kaggle_file": "faiz_lora.safetensors"
-    }
+    },
+    "default": true,
+    "note": "Every shot names both characters, so both trained LoRAs apply to all 70 beats."
   },
   "juv_trained": {
     "high": "models/loras/trained/juv_lora.safetensors",
@@ -171,7 +204,9 @@
     "source": {
       "kaggle_dataset": "sofiya009/lora-nuke-faiz-juv",
       "kaggle_file": "juv_lora.safetensors"
-    }
+    },
+    "default": true,
+    "note": "Every shot names both characters, so both trained LoRAs apply to all 70 beats."
   },
   "both_trained": {
     "high": "models/loras/trained/faiz_juv_lora.safetensors",
