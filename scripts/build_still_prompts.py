@@ -51,6 +51,21 @@ EXPLICIT_TERMS = (
     "penetrat", "suck", "tongue", "wet", "naked", "bare",
 )
 
+# A clause naming a face is protected the same way an explicit clause is. The
+# startframe seeds the video, so losing the only face reference in a beat costs
+# the clip its identity anchor.
+FACE_TERMS = (
+    "face", "faces", "eyes", "eye", "mouth", "lips", "jaw", "chin",
+    "cheek", "brow", "expression", "gaze",
+)
+
+
+def is_protected(text: str) -> bool:
+    lowered = text.lower()
+    return any(term in lowered for term in EXPLICIT_TERMS) or any(
+        re.search(rf"(?<!\w){re.escape(term)}(?!\w)", lowered) for term in FACE_TERMS
+    )
+
 _TOKENIZER = None
 
 
@@ -152,7 +167,7 @@ def fit_to_clip(
             (-line_index, clause_index)
             for line_index, (_, clauses) in enumerate(parsed)
             for clause_index, clause in enumerate(clauses)
-            if len(clauses) > 1 and not is_explicit(clause)
+            if len(clauses) > 1 and not is_protected(clause)
         ]
         if not candidates:
             break
@@ -169,7 +184,7 @@ def fit_to_clip(
         droppable = [
             (-index,)
             for index, (_, clauses) in enumerate(parsed)
-            if 0 < index < len(parsed) - 1 and not is_explicit(" ".join(clauses))
+            if 0 < index < len(parsed) - 1 and not is_protected(" ".join(clauses))
         ]
         if not droppable:
             break
@@ -197,7 +212,7 @@ def fit_to_clip(
         # Every line is down to one clause and it still does not fit. Drop the
         # least explicit whole line, keeping the first and the last.
         droppable = [
-            (0 if is_explicit(" ".join(clauses)) else 1, -index)
+            (0 if is_protected(" ".join(clauses)) else 1, -index)
             for index, (_, clauses) in enumerate(parsed)
             if 0 < index < len(parsed) - 1
         ]
