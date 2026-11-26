@@ -123,132 +123,18 @@ def render(parsed: list[tuple[str, list[str]]]) -> str:
     return "\n".join(prefix + ", ".join(clauses) for prefix, clauses in parsed)
 
 
-def fit_to_clip(
-    cam_lines: list[str],
-    look: str,
-    prefixes: list[str],
-    suffixes: list[str],
-) -> str:
-    """Compress the cam lines until the assembled prompt fits CLIP.
-
-    Order of sacrifice, least damaging first:
-
-    1. shorten the time markers;
-    2. drop clauses that name nothing explicit, latest first;
-    3. drop whole non-explicit lines, keeping the opener and the payoff;
-    4. only then drop explicit clauses.
-
-    The look prefix and the LoRA triggers are never touched: without them the
-    still is not the right character in the right light.
-    """
-
-    def assemble(cam: list[str]) -> str:
-        text = apply_lora_triggers(cam, [], {})
-        if prefixes:
-            text = ", ".join(prefixes) + ", " + text
-        if suffixes:
-            text = text + ", " + ", ".join(suffixes)
-        if look:
-            text = look + ", " + text
-        return text.strip()
-
-    def fits(cam: list[str]) -> bool:
-        tokens = token_count(assemble(cam))
-        return tokens is not None and tokens <= CLIP_BUDGET
-
-    parsed = [parse_line(line) for line in cam_lines if line.strip()]
-
-    if fits([render(parsed)]):
-        return assemble([render(parsed)])
-
-    # 2. Drop non-explicit clauses, latest first.
-    while not fits([render(parsed)]):
-        candidates = [
-            (-line_index, clause_index)
-            for line_index, (_, clauses) in enumerate(parsed)
-            for clause_index, clause in enumerate(clauses)
-            if len(clauses) > 1 and not is_protected(clause)
-        ]
-        if not candidates:
-            break
-        neg_line, clause_index = max(candidates)
-        line_index = -neg_line
-        prefix, clauses = parsed[line_index]
-        parsed[line_index] = (
-            prefix,
-            clauses[:clause_index] + clauses[clause_index + 1:],
-        )
-
-    # 3. Drop whole non-explicit lines, keeping the first and the last.
-    while not fits([render(parsed)]) and len(parsed) > 2:
-        droppable = [
-            (-index,)
-            for index, (_, clauses) in enumerate(parsed)
-            if 0 < index < len(parsed) - 1 and not is_protected(" ".join(clauses))
-        ]
-        if not droppable:
-            break
-        (neg_index,) = max(droppable)
-        parsed.pop(-neg_index)
-
-    # 4. Last resort: drop explicit clauses too, latest first.
-    while not fits([render(parsed)]):
-        candidates = [
-            (-line_index, clause_index)
-            for line_index, (_, clauses) in enumerate(parsed)
-            for clause_index in range(len(clauses))
-            if len(clauses) > 1
-        ]
-        if candidates:
-            neg_line, clause_index = max(candidates)
-            line_index = -neg_line
-            prefix, clauses = parsed[line_index]
-            parsed[line_index] = (
-                prefix,
-                clauses[:clause_index] + clauses[clause_index + 1:],
-            )
-            continue
-
-        # Every line is down to one clause and it still does not fit. Drop the
-        # least explicit whole line, keeping the first and the last.
-        droppable = [
-            (0 if is_protected(" ".join(clauses)) else 1, -index)
-            for index, (_, clauses) in enumerate(parsed)
-            if 0 < index < len(parsed) - 1
-        ]
-        if not droppable:
-            break
-        _, neg_index = max(droppable)
-        parsed.pop(-neg_index)
-
-    return assemble([render(parsed)])
-
-
 # Every startframe gets this. The startframe seeds the video, so it must
 # establish who is in the shot even when the beat itself is a hand or a wet
-# join. Keyword detection was tried and abandoned: "her hair swinging" and
-# "his forearm braced by her head" both read as face references but put no face
-# in frame, so the anchor was skipped exactly where it was needed.
-#
-# It has to be a framing instruction, not a bare phrase. "both faces visible"
-# alone did not survive a prompt whose cam lines are all hands and wrists: SDXL
-# weighted the concrete nouns (hand, wrist, kurti) and produced no face at all.
+# join. It has to be a framing instruction, not a bare phrase: "both faces
+# visible" lost to the concrete nouns in the cam lines.
 FACE_ANCHOR_TEXT = "medium shot, faces in frame"
 
-# Framing words that contradict the anchor. A cam line saying "static ECU" or
-# "static close-up" outranks a prefix saying "medium shot", and SDXL resolves
-# the conflict by obeying the cam line -- which is why 5 beats failed 3/3 with
-# "no face in frame" while their prompt said "faces in frame".
-#
-# The still is a seed frame, not the shot itself: the video model does the ECU.
-# So the still gets a wider framing and the cam line keeps its intent.
 FRAMING_REWRITES = (
     (r"\bstatic ECU\b", "static medium"),
     (r"\bzoom in ECU\b", "zoom in"),
     (r"\bECU\b", "medium"),
     (r"\bstatic close-up\b", "static medium"),
     (r"\bclose-up\b", "medium"),
-    # "zoom in medium" is not a phrase; the verb already implies the move.
     (r"\bzoom in medium\b", "zoom in"),
 )
 
@@ -256,12 +142,90 @@ FRAMING_REWRITES = (
 def widen_framing(line: str) -> str:
     """Replace close framing with a medium shot.
 
-    Only the framing word changes; the action and the anatomy stay. The video
-    model still gets the original ECU line from prompts/<id>.txt.
+    A cam line saying "static ECU" outranks a prefix saying "medium shot", and
+    SDXL resolves the conflict by obeying the cam line -- which is why beats
+    failed with "no face in frame" while their prompt said "faces in frame".
+    The still is a seed frame; the video model does the ECU.
     """
     for pattern, replacement in FRAMING_REWRITES:
         line = re.sub(pattern, replacement, line, flags=re.IGNORECASE)
     return line
+
+
+def fit_to_clip(
+    cam_lines: list[str],
+    look: str,
+    prefixes: list[str],
+    suffixes: list[str],
+) -> str:
+    """Build a CLIP-sized still prompt that reads as a photograph.
+
+    The previous version compressed cam lines by dropping clauses until the
+    token budget fit, which produced fragments like "static medium: POV" with
+    no content. SDXL renders a fragment as a generic image, which is why 31 of
+    70 stills came back blurry and off-story.
+
+    A still is one frame, not six. So instead of compressing six cam lines, this
+    picks the single most explicit line, keeps it whole, and spends the rest of
+    the budget on the quality and identity tokens that make the frame read as a
+    photograph rather than a render.
+    """
+    quality = "photorealistic, raw photo, natural skin texture, sharp focus"
+
+    def assemble(cam: str) -> str:
+        # The cam line goes first. SDXL weights early tokens more heavily, and
+        # the explicit content is the part that must not be lost -- putting the
+        # quality block first pushed the anatomy out of the budget entirely.
+        parts = [cam]
+        if prefixes:
+            parts.append(", ".join(prefixes))
+        parts.append(quality)
+        if look:
+            parts.append(look)
+        if suffixes:
+            parts.append(", ".join(suffixes))
+        return ", ".join(p for p in parts if p).strip()
+
+    def fits(text: str) -> bool:
+        tokens = token_count(text)
+        return tokens is not None and tokens <= CLIP_BUDGET
+
+    # Rank the cam lines by how much explicit content they carry, then by
+    # length. Picking the longest line alone lost the anatomy: the explicit
+    # clause is often in a short line, so a length-first sort dropped it.
+    def explicit_count(line: str) -> int:
+        lowered = line.lower()
+        return sum(1 for term in EXPLICIT_TERMS if term in lowered)
+
+    def score(line: str) -> tuple[int, int, int]:
+        return (explicit_count(line), 1 if is_protected(line) else 0, len(line.split()))
+
+    ranked = sorted(cam_lines, key=score, reverse=True)
+
+    # One whole line, best first.
+    for line in ranked:
+        candidate = assemble(line)
+        if fits(candidate):
+            return candidate
+
+    # The best line is over budget. Trim its trailing clauses rather than
+    # falling through to a weaker line: the top-ranked line is the one with the
+    # anatomy, and dropping to a lower line loses exactly what matters.
+    best = ranked[0] if ranked else ""
+    clauses = [c.strip() for c in best.split(",") if c.strip()]
+    while len(clauses) > 2:
+        clauses.pop()
+        candidate = assemble(", ".join(clauses))
+        if fits(candidate):
+            return candidate
+
+    # Two lines, if a single trimmed line cannot fill the budget.
+    if len(ranked) >= 2:
+        candidate = assemble(" ".join(ranked[:2]))
+        if fits(candidate):
+            return candidate
+
+    return assemble(", ".join(clauses))
 
 
 def build_still_prompt(shot: dict, meta: dict, registry: dict) -> str:

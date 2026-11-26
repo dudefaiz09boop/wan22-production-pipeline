@@ -125,30 +125,37 @@ def swap_faces_in_frame(
     result = frame
     scores: dict[str, float] = {}
 
-    # Rank-based assignment when the counts line up: the pre-swap embedding
-    # cannot tell us who is who, but the shot's cast can.
-    ranked = sorted(
-        faces,
-        key=lambda f: (f.bbox[2] - f.bbox[0]) * (f.bbox[3] - f.bbox[1]),
-        reverse=True,
-    )
-    if len(ranked) == len(characters):
-        assignment = list(zip(characters, ranked))
-    else:
-        assignment = []
-        for face in ranked:
-            best_char = None
-            best_score = 0.0
-            for char in characters:
-                ref = ref_faces.get(char)
-                if ref is None:
-                    continue
-                score = _cosine(face.normed_embedding, ref.normed_embedding)
-                if score > best_score:
-                    best_score = score
-                    best_char = char
-            if best_char is not None:
-                assignment.append((best_char, face))
+    # Assign each face to its best-matching character by embedding similarity.
+    #
+    # This used to be rank-based (largest face -> first character), which is
+    # what swapped the characters: in most beats Juveriya is nearer the camera,
+    # so her larger face was assigned to Faiz and got his face pasted on. The
+    # LoRAs are trained per character, so the generated face already leans
+    # toward the right identity -- similarity is the correct signal, and the
+    # 0.40 gate was the thing that broke it, not the similarity itself.
+    #
+    # Greedy best-pair matching: take the highest-scoring (face, character)
+    # pair, remove both, repeat. That prevents two faces claiming one character.
+    pairs = []
+    for face_index, face in enumerate(faces):
+        for char in characters:
+            ref = ref_faces.get(char)
+            if ref is None:
+                continue
+            pairs.append(
+                (_cosine(face.normed_embedding, ref.normed_embedding), face_index, char)
+            )
+    pairs.sort(reverse=True)
+
+    used_faces: set[int] = set()
+    used_chars: set[str] = set()
+    assignment: list[tuple[str, object]] = []
+    for score, face_index, char in pairs:
+        if face_index in used_faces or char in used_chars:
+            continue
+        used_faces.add(face_index)
+        used_chars.add(char)
+        assignment.append((char, faces[face_index]))
 
     for char, face in assignment:
         ref = ref_faces.get(char)

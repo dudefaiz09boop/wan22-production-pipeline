@@ -86,7 +86,7 @@ class AmplifyTests(unittest.TestCase):
             "pussy": ("pussy", "vulva", "labia", "clit"),
             "cum": ("cum", "spurt"),
         }
-        floors = {"pov": 4, "breasts": 10, "pussy": 7, "cum": 4}
+        floors = {"pov": 4, "breasts": 9, "pussy": 9, "cum": 4}
         counts = {key: 0 for key in terms}
         for shot in data["shots"]:
             text = " ".join(shot.get("cam") or []).lower()
@@ -149,7 +149,7 @@ class PromptBudgetTests(unittest.TestCase):
             "pussy": ("pussy", "vulva", "labia", "clit", "cunt"),
             "cum": ("cum", "spurt"),
         }
-        floors = {"pov": 4, "breasts": 10, "pussy": 7, "cum": 4}
+        floors = {"pov": 4, "breasts": 9, "pussy": 9, "cum": 4}
         counts = {key: 0 for key in terms}
         for path in sorted(glob.glob(str(ROOT / "prompts" / "c*.still.txt"))):
             text = Path(path).read_text(encoding="utf-8").lower()

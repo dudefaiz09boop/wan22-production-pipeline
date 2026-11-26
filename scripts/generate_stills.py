@@ -232,8 +232,8 @@ def generate_still(
     negative_prompt: str,
     width: int = 832,
     height: int = 480,
-    num_inference_steps: int = 30,
-    guidance_scale: float = 7.0,
+    num_inference_steps: int = 40,
+    guidance_scale: float = 6.0,
     seed: int = 42,
 ) -> Image.Image:
     """Generate a single still image."""
@@ -444,8 +444,8 @@ def main() -> int:
     ap.add_argument("--swapper-model", default="models/inswapper_128.onnx", help="InsightFace swapper")
     ap.add_argument("--width", type=int, default=832, help="Fallback width")
     ap.add_argument("--height", type=int, default=480, help="Fallback height")
-    ap.add_argument("--steps", type=int, default=30, help="Inference steps")
-    ap.add_argument("--guidance", type=float, default=7.0, help="Guidance scale")
+    ap.add_argument("--steps", type=int, default=40, help="Inference steps")
+    ap.add_argument("--guidance", type=float, default=6.0, help="Guidance scale")
     ap.add_argument("--seed", type=int, default=1000, help="Base seed")
     ap.add_argument("--gate", type=float, default=0.40, help="Identity accept threshold")
     ap.add_argument(
