@@ -10,7 +10,8 @@
   "dataset_sources": [
     "sofiya009/lora-train-faiz",
     "sofiya009/lora-train-juveriya",
-    "sofiya009/lora-weights-faiz-juv-v2"
+    "sofiya009/lora-weights-faiz-juv-v2",
+    "sofiya009/inswapper-128"
   ],
   "competition_sources": [],
   "kernel_sources": []

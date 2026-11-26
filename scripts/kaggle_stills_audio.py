@@ -38,6 +38,7 @@ DATASET_SOURCES = [
     "sofiya009/lora-train-faiz",
     "sofiya009/lora-train-juveriya",
     "sofiya009/lora-weights-faiz-juv-v2",
+    "sofiya009/inswapper-128",
 ]
 
 REPO_URL = "https://github.com/dudefaiz09boop/wan22-production-pipeline.git"
@@ -145,15 +146,17 @@ def build_notebook() -> dict:
 
     cells.append(_code_cell("\n".join([
         "# 5. InsightFace swapper model",
-        "import os, urllib.request",
+        "# Mounted from sofiya009/inswapper-128. The Hugging Face repo is gated",
+        "# (401) and the facefusion release path 404s, so neither can be fetched",
+        "# anonymously at runtime.",
+        "import glob, os, shutil",
         "",
         "SWAPPER = 'models/inswapper_128.onnx'",
         "if not os.path.isfile(SWAPPER):",
-        "    # The facefusion-assets release path 404s; this is the source the repo",
-        "    # documents in scripts/face_swap_video.py.",
-        "    url = ('https://huggingface.co/deepinsight/inswapper/resolve/main/'",
-        "           'inswapper_128.onnx')",
-        "    urllib.request.urlretrieve(url, SWAPPER)",
+        "    found = glob.glob('/kaggle/input/**/inswapper_128.onnx', recursive=True)",
+        "    if not found:",
+        "        raise SystemExit('inswapper_128.onnx not found; attach sofiya009/inswapper-128')",
+        "    shutil.copy2(found[0], SWAPPER)",
         "print('swapper', os.path.getsize(SWAPPER), 'bytes')",
     ])))
 
