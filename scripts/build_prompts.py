@@ -71,87 +71,6 @@ def apply_lora_triggers(lines: list[str], loras: list, registry: dict) -> str:
     return body
 
 
-# CLIP truncates at 77 tokens. A prompt longer than that loses its tail, and
-# the tail is where the explicit content and the LoRA triggers sit -- so the
-# model never saw "pussy", "cum" or "Skin morph" on any of the 70 beats. The
-# budget below keeps the whole prompt inside the window.
-CLIP_TOKEN_LIMIT = 77
-# Words are not tokens, but for this vocabulary ~1.25 tokens per word holds.
-TOKENS_PER_WORD = 1.25
-MAX_PROMPT_WORDS = int(CLIP_TOKEN_LIMIT / TOKENS_PER_WORD)  # 61
-
-
-def _trim_to_budget(text: str, budget: int) -> str:
-    """Fit the cam lines into the CLIP window, keeping the explicit content.
-
-    Three things were wrong with a naive trim:
-
-    * the "(At N seconds: ...)" wrapper costs four words per line -- a third of
-      the whole budget -- so it goes;
-    * dropping whole lines removed the ones that name the anatomy, because
-      those are the longest;
-    * squeezing all six lines to fit left no room for the explicit clauses, so
-      they were the first thing cut.
-
-    So: strip the wrapper, rank the lines by how explicit they are, keep the
-    opener, the payoff and the most explicit of the rest, then compress each
-    survivor to its camera verb plus the clauses that carry explicit terms.
-    """
-    lines = [line for line in text.split("\n") if line.strip()]
-    if len(" ".join(lines).split()) <= budget:
-        return "\n".join(lines)
-
-    explicit_terms = (
-        "pussy", "vulva", "labia", "clit", "cunt", "cock", "shaft", "cum",
-        "breast", "nipple", "arse", "ass", "fuck", "thrust", "pov",
-        "penetrat", "suck", "tongue", "wet", "naked", "bare",
-    )
-
-    def score(line: str) -> int:
-        lowered = line.lower()
-        return sum(1 for term in explicit_terms if term in lowered)
-
-    def strip_wrapper(line: str) -> str:
-        return re.sub(r"^\(At \d+ seconds:\s*", "", line).rstrip(")")
-
-    def compress(line: str, keep_words: int) -> str:
-        body = strip_wrapper(line)
-        # Split the camera verb from its clauses: "static medium: POV, Faiz
-        # crowding her" -> verb "static medium", clauses ["POV", "Faiz ..."].
-        if ":" in body:
-            verb, rest = body.split(":", 1)
-        else:
-            verb, rest = "", body
-        clauses = [c.strip() for c in rest.split(",") if c.strip()]
-
-        # Explicit clauses are mandatory: they are the whole point of the shot.
-        mandatory = [c for c in clauses if score(c)]
-        optional = [c for c in clauses if not score(c)]
-
-        kept = list(mandatory)
-        for clause in optional:
-            if len(" ".join(kept + [clause]).split()) > keep_words:
-                continue
-            kept.append(clause)
-
-        if not kept:
-            return ""
-        head = f"{verb.strip()}: " if verb.strip() else ""
-        return head + ", ".join(kept)
-
-    # Keep the opener, the payoff, and the most explicit of the middle lines.
-    middle = sorted(range(1, len(lines) - 1), key=lambda i: (-score(lines[i]), i))
-    for keep_count in range(len(lines), 2, -1):
-        chosen = sorted({0, len(lines) - 1, *middle[: max(0, keep_count - 2)]})
-        selected = [lines[i] for i in chosen]
-        for keep_words in range(16, 3, -1):
-            candidate = [c for c in (compress(line, keep_words) for line in selected) if c]
-            if len(" ".join(candidate).split()) <= budget:
-                return "\n".join(candidate)
-
-    return "\n".join(compress(line, 5) for line in (lines[0], lines[-1]))
-
-
 def effective_loras(loras: list, registry: dict, no_defaults: bool = False) -> list:
     """Shot LoRAs plus the registry's `default: true` entries.
 
@@ -238,31 +157,16 @@ def build_plan(
 
     registry = known_loras if isinstance(known_loras, dict) else {}
     no_defaults = bool(shot.get("no_default_loras"))
+    body = apply_lora_triggers(
+        lines, effective_loras(loras, registry, no_defaults), registry
+    )
     look = look_prefix(shot, meta)
-    effective = effective_loras(loras, registry, no_defaults)
-    prefixes, suffixes = lora_trigger_lists(effective, registry)
-
-    # Budget the cam lines against what the look and the triggers will add, so
-    # the final prompt fits the CLIP window. Trimming after assembly would cut
-    # the triggers, which is the bug this exists to prevent.
-    overhead = len(look.split()) if look else 0
-    overhead += len(", ".join(prefixes).split()) if prefixes else 0
-    overhead += len(", ".join(suffixes).split()) if suffixes else 0
-    cam_budget = max(20, MAX_PROMPT_WORDS - overhead)
-
-    trimmed = _trim_to_budget("\n".join(lines), cam_budget)
-    body = apply_lora_triggers(trimmed.split("\n"), effective, registry)
     if look:
         body = look + ", " + body
     body += "\n"
     if len(body.strip()) > MAX_PROMPT_CHARS:
         errors.append(
             f"{sid}: compiled prompt is {len(body.strip())} chars (max {MAX_PROMPT_CHARS})"
-        )
-    if len(body.split()) > MAX_PROMPT_WORDS:
-        errors.append(
-            f"{sid}: compiled prompt is {len(body.split())} words "
-            f"(max {MAX_PROMPT_WORDS}, CLIP truncates at {CLIP_TOKEN_LIMIT} tokens)"
         )
 
     start_frame = shot.get("start_frame")

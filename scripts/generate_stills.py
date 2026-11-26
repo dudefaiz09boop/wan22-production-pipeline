@@ -338,11 +338,22 @@ def process_beat(
 
 
 def load_beat_prompts(prompts_dir: Path) -> dict[str, str]:
-    """Load beat prompts from prompts/*.txt files."""
+    """Load beat prompts from prompts/*.txt files.
+
+    Prefers `<id>.still.txt` when present. The plain `<id>.txt` is the Wan 2.2
+    video prompt, encoded with umt5-xxl at 512 tokens; SDXL encodes with CLIP,
+    which truncates at 77, so the video prompt loses its tail -- and the tail is
+    where the explicit content and the LoRA triggers sit. build_still_prompts.py
+    writes the CLIP-sized variant.
+    """
     prompts = {}
     for txt_file in sorted(prompts_dir.glob("c*.txt")):
+        if txt_file.name.endswith(".still.txt"):
+            continue
         beat_id = txt_file.stem
-        prompts[beat_id] = txt_file.read_text(encoding="utf-8").strip()
+        still = txt_file.with_name(f"{beat_id}.still.txt")
+        source = still if still.is_file() else txt_file
+        prompts[beat_id] = source.read_text(encoding="utf-8").strip()
     return prompts
 
 

@@ -366,7 +366,10 @@ class LanguageScriptTests(unittest.TestCase):
 
         self.assertIsNotNone(romanized)
         self.assertIsNotNone(scripted)
-        self.assertEqual(romanized["body"].count("(At "), 6)
+        # The cam lines carry a compact "(Ns: ...)" marker rather than
+        # "(At N seconds: ...)": the long form cost 4-5 CLIP tokens per line and
+        # pushed every prompt past the 77-token window.
+        self.assertEqual(romanized["body"].count("s: "), 6)
         self.assertNotIn("नमस्ते", romanized["body"])
         self.assertEqual(romanized["cfg"]["say"], "namaste")
         self.assertEqual(romanized["cfg"]["say_script"], "नमस्ते")
