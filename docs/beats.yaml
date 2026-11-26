@@ -11,21 +11,17 @@ meta:
   # this the output reads as CG. Kept short -- long look strings dilute.
   looks:
     night_tube: >-
-      shot on a phone, 26mm, f/1.8, ISO 3200, sodium and tube light,
-      slight sensor noise, handheld
+      phone photo, 26mm, f/1.8, ISO 3200, sodium and tube light, sensor noise
     evening_tube: >-
-      shot on a phone, 26mm, f/2.0, warm tube light, soft falloff, handheld
+      phone photo, 26mm, f/2.0, warm tube light, soft falloff
     tube_flicker: >-
-      shot on a phone, 26mm, f/1.8, flickering tube light, mixed white balance,
-      handheld
+      phone photo, 26mm, f/1.8, flickering tube light, mixed white balance
     daylight: >-
-      shot on a phone, 26mm, f/2.2, overcast window light, soft shadows,
-      handheld
+      phone photo, 26mm, f/2.2, overcast window light, soft shadows
     blackout_moonlight: >-
-      shot on a phone, 26mm, f/1.8, ISO 6400, moonlight through a window,
-      crushed blacks, handheld
+      phone photo, 26mm, f/1.8, ISO 6400, moonlight, crushed blacks
   look_default: >-
-    shot on a phone, 26mm, f/2.0, available light, handheld
+    phone photo, 26mm, f/2.0, available light
 
 story:
   characters:

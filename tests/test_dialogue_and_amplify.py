@@ -105,5 +105,54 @@ class AmplifyTests(unittest.TestCase):
             )
 
 
+class PromptBudgetTests(unittest.TestCase):
+    """CLIP truncates at 77 tokens, and the tail is where the explicit content
+    and the LoRA triggers sit. A prompt over budget silently loses both."""
+
+    def test_every_compiled_prompt_fits_the_clip_window(self) -> None:
+        import glob
+
+        from scripts.build_prompts import MAX_PROMPT_WORDS
+
+        over: list[str] = []
+        for path in sorted(glob.glob(str(ROOT / "prompts" / "c*.txt"))):
+            words = len(Path(path).read_text(encoding="utf-8").split())
+            if words > MAX_PROMPT_WORDS:
+                over.append(f"{Path(path).stem}: {words} words")
+        self.assertEqual(over, [], f"prompts over {MAX_PROMPT_WORDS} words: {over}")
+
+    def test_explicit_terms_survive_the_budget(self) -> None:
+        import glob
+
+        terms = {
+            "pov": ("pov",),
+            "breasts": ("breast", "nipple"),
+            "pussy": ("pussy", "vulva", "labia", "clit", "cunt"),
+            "cum": ("cum", "spurt"),
+        }
+        floors = {"pov": 4, "breasts": 10, "pussy": 10, "cum": 4}
+        counts = {key: 0 for key in terms}
+        for path in sorted(glob.glob(str(ROOT / "prompts" / "c*.txt"))):
+            text = Path(path).read_text(encoding="utf-8").lower()
+            for key, words in terms.items():
+                if any(word in text for word in words):
+                    counts[key] += 1
+        for key, floor in floors.items():
+            self.assertGreaterEqual(
+                counts[key], floor, f"{key} survives in only {counts[key]} prompts"
+            )
+
+    def test_lora_triggers_are_not_truncated_away(self) -> None:
+        import glob
+
+        missing: list[str] = []
+        for path in sorted(glob.glob(str(ROOT / "prompts" / "c*.txt"))):
+            text = Path(path).read_text(encoding="utf-8")
+            # Every shot loads the two trained character LoRAs by default.
+            if "faiz" not in text or "juv" not in text:
+                missing.append(Path(path).stem)
+        self.assertEqual(missing, [], f"character triggers missing: {missing}")
+
+
 if __name__ == "__main__":
     unittest.main()
