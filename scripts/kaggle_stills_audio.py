@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """Build and deploy a Kaggle kernel that produces startframes and narration.
 
 The paid GPU is only needed for video rendering. Stills (SDXL + trained LoRAs +
@@ -161,7 +161,24 @@ def build_notebook() -> dict:
     ])))
 
     cells.append(_code_cell("\n".join([
-        "# 6. Generate the startframes",
+        "# 6. Build the prompts",
+        "# prompts/ is gitignored, so a fresh clone has none. build_prompts compiles",
+        "# docs/beats.yaml into prompts/c*.json. --lang hi keeps the Devanagari",
+        "# dialogue; the default used to be en, which selected the romanized text.",
+        "import subprocess, sys",
+        "",
+        "cmd = [sys.executable, 'scripts/build_prompts.py', '--no-frames', '--lang', 'hi']",
+        "print('RUN:', ' '.join(cmd), flush=True)",
+        "rc = subprocess.call(cmd, stdout=sys.stdout, stderr=sys.stderr)",
+        "print('build_prompts rc:', rc, flush=True)",
+        "import glob",
+        "prompts = sorted(glob.glob('prompts/c*.json'))",
+        "print('prompts built:', len(prompts))",
+        "assert prompts, 'no prompts built'",
+    ])))
+
+    cells.append(_code_cell("\n".join([
+        "# 7. Generate the startframes",
         "# SDXL + per-character LoRAs + InsightFace swap, per-shot resolution.",
         "import subprocess, sys",
         "",
@@ -183,7 +200,7 @@ def build_notebook() -> dict:
     ])))
 
     cells.append(_code_cell("\n".join([
-        "# 7. Generate the narration",
+        "# 8. Generate the narration",
         "# Chatterbox Hindi. The dialogue is Devanagari, so the script decides the",
         "# engine and the voice; Ammi's Urdu turns fall through to Edge ur-PK.",
         "import subprocess, sys",
@@ -203,7 +220,7 @@ def build_notebook() -> dict:
     ])))
 
     cells.append(_code_cell("\n".join([
-        "# 8. Package",
+        "# 9. Package",
         "import os, zipfile",
         "",
         "ZIP = '/kaggle/working/stills_audio.zip'",
