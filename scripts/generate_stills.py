@@ -307,21 +307,27 @@ def process_beat(
                 app, swapper, frame, ref_faces, characters, gate
             )
 
-        score = min(
-            (
-                face_similarity(app, frame, ref_faces[char])
-                for char in characters
-                if char in ref_faces
-            ),
-            default=0.0,
-        )
-        # A faceless ECU (a throat, a hand, a wet join) has no identity to
-        # score. Reporting 0.000 there is misleading: it reads as a failed
-        # swap when the shot simply has no face in it.
+        # Score the character that is actually in frame.
+        #
+        # This used to be min() over the shot's cast, which reports the ABSENT
+        # character's score. A single-person close-up then caps at ~0.2 no
+        # matter how good the swap is, because the missing face scores ~0.1
+        # against its reference. That is why c01 read 0.817 on one run and
+        # 0.152 on the next with the same weights.
+        #
+        # max() answers the question the gate is asking: did the character who
+        # is in this frame come out looking like themselves?
+        per_character = {
+            char: face_similarity(app, frame, ref_faces[char])
+            for char in characters
+            if char in ref_faces
+        }
+        score = max(per_character.values(), default=0.0)
         if not app.get(frame):
             print(f"  candidate {attempt + 1}: no face in frame (ECU shot)")
         else:
-            print(f"  candidate {attempt + 1}: identity score {score:.3f}")
+            detail = " ".join(f"{c}={s:.2f}" for c, s in per_character.items())
+            print(f"  candidate {attempt + 1}: identity score {score:.3f} ({detail})")
 
         if best is None or score > best[0]:
             best = (score, frame)

@@ -209,6 +209,14 @@ def fit_to_clip(
     return assemble([render(parsed)])
 
 
+# Every startframe gets this. The startframe seeds the video, so it must
+# establish who is in the shot even when the beat itself is a hand or a wet
+# join. Keyword detection was tried and abandoned: "her hair swinging" and
+# "his forearm braced by her head" both read as face references but put no face
+# in frame, so the anchor was skipped exactly where it was needed.
+FACE_ANCHOR_TEXT = "both faces visible"
+
+
 def build_still_prompt(shot: dict, meta: dict, registry: dict) -> str:
     cam = [line for line in (shot.get("cam") or []) if isinstance(line, str)]
     look = look_prefix(shot, meta)
@@ -228,6 +236,11 @@ def build_still_prompt(shot: dict, meta: dict, registry: dict) -> str:
             prefixes.append(trigger.strip())
         elif scope == "prompt_suffix":
             suffixes.append(trigger.strip())
+
+    # Always anchor the face. The prefix is never trimmed, so this survives the
+    # budget; a cam line carrying it would be dropped as non-explicit.
+    look = f"{look}, {FACE_ANCHOR_TEXT}" if look else FACE_ANCHOR_TEXT
+
     return fit_to_clip(cam, look, prefixes, suffixes)
 
 
