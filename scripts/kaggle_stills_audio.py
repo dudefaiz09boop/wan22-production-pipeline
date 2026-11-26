@@ -43,6 +43,18 @@ DATASET_SOURCES = [
 
 REPO_URL = "https://github.com/dudefaiz09boop/wan22-production-pipeline.git"
 
+# Beats to render. Empty means all 70. Set this to a short list to preview the
+# problem beats before committing to a full run.
+# The beats that failed or were swapped in v12/v15:
+#   c02  POV, only one face in frame
+#   c10  ECU framing, no face
+#   c11  ECU framing, no face
+#   c15  ECU framing, no face
+#   c31  ECU framing, no face
+#   c37  ECU framing, no face
+#   c01  POV, needed 2 candidates
+BEATS: list[str] = ["c01", "c02", "c10", "c11", "c15", "c31", "c37"]
+
 
 def _code_cell(text: str) -> dict:
     lines = text.split("\n")
@@ -100,7 +112,15 @@ def build_notebook() -> dict:
     ])))
 
     cells.append(_code_cell("\n".join([
-        "# 3. Clone the pipeline",
+        "# 3. Which beats to render",
+        "# Empty means all 70. A short list previews the problem beats before",
+        "# committing to a full run.",
+        f"BEATS = {BEATS!r}",
+        "print('beats:', BEATS or 'all')",
+    ])))
+
+    cells.append(_code_cell("\n".join([
+        "# 4. Clone the pipeline",
         "import os, subprocess",
         "",
         "REPO = '/kaggle/working/repo'",
@@ -200,6 +220,8 @@ def build_notebook() -> dict:
         "       '--swapper-model', 'models/inswapper_128.onnx',",
         "       '--spec', 'docs/beats.yaml',",
         "       '--device', 'cuda']",
+        "if BEATS:",
+        "    cmd += ['--beats', *BEATS]",
         "print('RUN:', ' '.join(cmd), flush=True)",
         "rc = subprocess.call(cmd, stdout=sys.stdout, stderr=sys.stderr)",
         "print('stills rc:', rc, flush=True)",
@@ -215,6 +237,9 @@ def build_notebook() -> dict:
         "# engine and the voice; Ammi's Urdu turns fall through to Edge ur-PK.",
         "import subprocess, sys",
         "",
+        "if BEATS:",
+        "    print('preview run: skipping narration', flush=True)",
+        "    raise SystemExit(0)",
         "cmd = [sys.executable, 'scripts/generate_narration.py',",
         "       '--prompts', 'prompts',",
         "       '--output', 'audio',",
