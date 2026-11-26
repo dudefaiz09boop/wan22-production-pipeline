@@ -323,16 +323,27 @@ def process_beat(
             if char in ref_faces
         }
         score = max(per_character.values(), default=0.0)
-        if not app.get(frame):
+        faces_found = len(app.get(frame))
+        if not faces_found:
             print(f"  candidate {attempt + 1}: no face in frame (ECU shot)")
         else:
             detail = " ".join(f"{c}={s:.2f}" for c, s in per_character.items())
-            print(f"  candidate {attempt + 1}: identity score {score:.3f} ({detail})")
+            print(
+                f"  candidate {attempt + 1}: identity score {score:.3f} "
+                f"({detail}, {faces_found} face(s))"
+            )
 
         if best is None or score > best[0]:
             best = (score, frame)
         if score >= gate:
             break
+
+        # A frame with no face at all is not a near miss, it is unusable: the
+        # startframe seeds the video, so the clip would inherit a faceless
+        # opening. Retry with a different seed and a stronger framing hint
+        # rather than accepting it.
+        if not faces_found and attempt + 1 < max(1, candidates):
+            print("    retrying: no face to anchor the clip")
 
     score, frame = best
     output_path = output_dir / f"{beat_id}.png"
@@ -411,7 +422,15 @@ def main() -> int:
     ap.add_argument("--guidance", type=float, default=7.0, help="Guidance scale")
     ap.add_argument("--seed", type=int, default=1000, help="Base seed")
     ap.add_argument("--gate", type=float, default=0.40, help="Identity accept threshold")
-    ap.add_argument("--candidates", type=int, default=2, help="Candidates per beat")
+    ap.add_argument(
+        "--candidates",
+        type=int,
+        default=3,
+        help=(
+            "Candidates per beat. 3 rather than 2 because a faceless frame is "
+            "unusable and needs a retry, and the gate is 0.40."
+        ),
+    )
     ap.add_argument("--device", default="cuda", help="Device (cuda/cpu)")
     ap.add_argument("--dtype", choices=["fp16", "fp32"], default="fp16", help="Precision")
     ap.add_argument("--beats", nargs="+", help="Specific beats to process (default: all)")

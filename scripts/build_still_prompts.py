@@ -214,7 +214,11 @@ def fit_to_clip(
 # join. Keyword detection was tried and abandoned: "her hair swinging" and
 # "his forearm braced by her head" both read as face references but put no face
 # in frame, so the anchor was skipped exactly where it was needed.
-FACE_ANCHOR_TEXT = "both faces visible"
+#
+# It has to be a framing instruction, not a bare phrase. "both faces visible"
+# alone did not survive a prompt whose cam lines are all hands and wrists: SDXL
+# weighted the concrete nouns (hand, wrist, kurti) and produced no face at all.
+FACE_ANCHOR_TEXT = "medium shot, faces in frame"
 
 
 def build_still_prompt(shot: dict, meta: dict, registry: dict) -> str:

@@ -1,7 +1,7 @@
 low quality, blurry, out of focus, jpeg artifacts
 watermark, text overlay, logo
 distorted anatomy, malformed hands, extra fingers
-distorted face, identity drift, two heads
+asymmetric eyes, melted features
 plastic skin, waxy texture, doll face
 3d render, cgi, unreal engine
 anime, cartoon, illustration, painting
