@@ -324,28 +324,54 @@ def process_beat(
         }
         score = max(per_character.values(), default=0.0)
         faces_found = len(app.get(frame))
+
+        # Cast completeness. max() alone lets a beat pass while missing a
+        # character the story requires: c02 scored 0.922 with only Faiz in
+        # frame, and every beat's cast is ["faiz", "juv"]. A startframe that
+        # drops one of them seeds a clip with the wrong cast for its whole
+        # duration, so this is a failure regardless of how good the score is.
+        missing_cast = [
+            char
+            for char in characters
+            if char in ref_faces and per_character.get(char, 0.0) < gate
+        ]
+        cast_complete = not missing_cast
+
         if not faces_found:
             print(f"  candidate {attempt + 1}: no face in frame (ECU shot)")
         else:
             detail = " ".join(f"{c}={s:.2f}" for c, s in per_character.items())
+            status = "cast OK" if cast_complete else f"MISSING {','.join(missing_cast)}"
             print(
                 f"  candidate {attempt + 1}: identity score {score:.3f} "
-                f"({detail}, {faces_found} face(s))"
+                f"({detail}, {faces_found} face(s), {status})"
             )
 
-        if best is None or score > best[0]:
-            best = (score, frame)
-        if score >= gate:
+        # Rank candidates by cast completeness first, then by score. A complete
+        # cast at 0.55 beats a single character at 0.92, because the single
+        # character is the wrong shot.
+        rank = (1 if cast_complete else 0, score)
+        if best is None or rank > best[0]:
+            best = (rank, frame, score, cast_complete, missing_cast)
+        if cast_complete and score >= gate:
             break
 
         # A frame with no face at all is not a near miss, it is unusable: the
         # startframe seeds the video, so the clip would inherit a faceless
         # opening. Retry with a different seed and a stronger framing hint
         # rather than accepting it.
-        if not faces_found and attempt + 1 < max(1, candidates):
-            print("    retrying: no face to anchor the clip")
+        if attempt + 1 < max(1, candidates):
+            if not faces_found:
+                print("    retrying: no face to anchor the clip")
+            elif not cast_complete:
+                print(f"    retrying: cast incomplete ({','.join(missing_cast)})")
 
-    score, frame = best
+    _, frame, score, cast_complete, missing_cast = best
+    if not cast_complete:
+        print(
+            f"  WARNING: {beat_id} saved with an incomplete cast "
+            f"(missing {','.join(missing_cast)}); the clip will not match the story"
+        )
     output_path = output_dir / f"{beat_id}.png"
     output_dir.mkdir(parents=True, exist_ok=True)
     cv2.imwrite(str(output_path), frame)

@@ -216,5 +216,68 @@ class PromptBudgetTests(unittest.TestCase):
         self.assertEqual(missing, [], f"character triggers missing: {missing}")
 
 
+class CastAndActTests(unittest.TestCase):
+    """The story needs both characters and the act, not just a good score."""
+
+    def test_every_beat_declares_both_characters(self) -> None:
+        """A startframe that drops a character seeds a clip with the wrong cast."""
+        import sys as _sys
+
+        _sys.path.insert(0, str(ROOT / "scripts"))
+        from generate_stills import BEAT_CHARACTERS
+
+        wrong = {
+            beat: cast
+            for beat, cast in BEAT_CHARACTERS.items()
+            if set(cast) != {"faiz", "juv"}
+        }
+        self.assertEqual(wrong, {}, f"beats with the wrong cast: {wrong}")
+
+    def test_act_coverage_meets_the_floor(self) -> None:
+        """The film is explicit penetrative sex; the cam lines must say so."""
+        data = _load()
+        acts = {
+            "penetration": (
+                "penetrat", "inside her", "buried", "hilt", "driving in",
+                "driving hard", "thrust", "pounding", "sliding in",
+            ),
+            "oral": (
+                "mouth on", "sucking", "tongue", "lick",
+                "takes him in her mouth", "down to his cock",
+            ),
+            "cum": ("cum", "creampie", "spurt", "spilling"),
+        }
+        floors = {"penetration": 15, "oral": 8, "cum": 4}
+        counts = {key: 0 for key in acts}
+        for shot in data["shots"]:
+            text = " ".join(shot.get("cam") or []).lower()
+            for key, words in acts.items():
+                if any(word in text for word in words):
+                    counts[key] += 1
+        for key, floor in floors.items():
+            self.assertGreaterEqual(
+                counts[key], floor, f"{key} appears in only {counts[key]} beats"
+            )
+
+    def test_story_guards_hold(self) -> None:
+        """Adults, siblings, Ammi off-screen: the canon the render depends on."""
+        data = _load()
+        story = data["story"]
+        self.assertTrue(story["boundaries"]["characters_are_adults"])
+        self.assertEqual(story["relations"]["faiz_juveriya"], "siblings")
+        self.assertFalse(story["relations"]["on_screen"])
+
+    def test_captions_carry_the_identity_tokens(self) -> None:
+        """The LoRAs were trained on 'indian muslim'; the captions must say it."""
+        import glob
+
+        missing: list[str] = []
+        for path in sorted(glob.glob(str(ROOT / "training_data_v2" / "*" / "*.txt"))):
+            text = Path(path).read_text(encoding="utf-8").lower()
+            if "indian muslim" not in text:
+                missing.append(Path(path).name)
+        self.assertEqual(missing[:5], [], f"captions without identity tokens: {missing[:5]}")
+
+
 if __name__ == "__main__":
     unittest.main()
