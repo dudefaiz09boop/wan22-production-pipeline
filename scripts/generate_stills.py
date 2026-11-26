@@ -388,7 +388,15 @@ def main() -> int:
     ap.add_argument("--references", default="references", help="Character reference images directory")
     ap.add_argument("--loras", default="models/loras/trained", help="Trained LoRAs directory")
     ap.add_argument("--sdxl-model", default="models/sdxl_base.safetensors", help="SDXL base model path")
-    ap.add_argument("--negative", default="negatives/artifact_neg.txt", help="Negative prompt file")
+    ap.add_argument(
+        "--negative",
+        default="negatives/still_neg.txt",
+        help=(
+            "Negative prompt file. Defaults to the CLIP-sized stills list: "
+            "artifact_neg.txt is 268 tokens and CLIP truncates at 77, so most "
+            "of it never reached the model."
+        ),
+    )
     ap.add_argument("--spec", default="docs/beats.yaml", help="Spec for per-shot resolution")
     ap.add_argument("--swapper-model", default="models/inswapper_128.onnx", help="InsightFace swapper")
     ap.add_argument("--width", type=int, default=832, help="Fallback width")
@@ -404,6 +412,19 @@ def main() -> int:
     args = ap.parse_args()
 
     negative_prompt = Path(args.negative).read_text(encoding="utf-8").strip()
+    neg_tokens = None
+    try:
+        from transformers import CLIPTokenizer
+
+        _tok = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
+        neg_tokens = len(_tok(negative_prompt, truncation=False)["input_ids"])
+    except Exception:  # noqa: BLE001 - offline
+        pass
+    if neg_tokens is not None and neg_tokens > 77:
+        print(
+            f"  WARNING: negative prompt is {neg_tokens} CLIP tokens; only the "
+            f"first 77 reach the model. Use negatives/still_neg.txt."
+        )
     beat_prompts = load_beat_prompts(Path(args.prompts))
     if args.beats:
         beat_prompts = {k: v for k, v in beat_prompts.items() if k in args.beats}
