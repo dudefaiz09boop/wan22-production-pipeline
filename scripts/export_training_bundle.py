@@ -122,22 +122,29 @@ def write_bundle(
         config = {
             "concept": character,
             "trigger": trigger,
-            "instance_prompt": f"{trigger}, south asian, detailed face, photorealistic",
+            "instance_prompt": (
+                f"{trigger}, indian muslim, south asian, detailed face, photorealistic"
+            ),
             "image_count": len(images),
-            "network_dim": 32,
-            "network_alpha": 16,
+            "network_dim": 64,
+            "network_alpha": 32,
             "resolution": 1024,
-            "max_train_steps": 1200,
+            "max_train_steps": 2000,
             "learning_rate": 1e-4,
             "text_encoder_lr": 5e-5,
             "train_batch_size": 1,
             "gradient_accumulation_steps": 2,
             "lr_scheduler": "cosine",
             "optimizer": "AdamW8bit",
-            "save_every_n_steps": 400,
+            "save_every_n_steps": 500,
+            "keep_tokens": 2,
+            "shuffle_caption": True,
+            "min_snr_gamma": 5,
             "note": (
                 "One character per LoRA. network_alpha is half of network_dim "
-                "because the dataset is small; alpha == dim over-saturates."
+                "because the dataset is small; alpha == dim over-saturates. "
+                "keep_tokens pins '<trigger>, indian muslim' so the identity "
+                "tokens cannot be shuffled away from the trigger."
             ),
         }
         archive.writestr(

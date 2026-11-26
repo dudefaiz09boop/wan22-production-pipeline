@@ -101,7 +101,7 @@ def build_notebook() -> dict:
         "import os",
         "",
         "WORK = '/kaggle/working'",
-        "LORA_DIR = '/kaggle/input/lora-nuke-faiz-juveriya-sdxl'",
+        "LORA_DIR = '/kaggle/input/lora-weights-faiz-juv-v2'",
         "",
         "def find_lora(name):",
         "    for base in (LORA_DIR, WORK, '/kaggle/input'):",
@@ -328,6 +328,7 @@ def build_metadata() -> dict:
         "dataset_sources": [
             "sofiya009/lora-train-faiz",
             "sofiya009/lora-train-juveriya",
+            "sofiya009/lora-weights-faiz-juv-v2",
         ],
         "competition_sources": [],
         "kernel_sources": [],

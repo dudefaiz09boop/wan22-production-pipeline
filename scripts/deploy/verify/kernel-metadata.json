@@ -9,7 +9,8 @@
   "enable_internet": true,
   "dataset_sources": [
     "sofiya009/lora-train-faiz",
-    "sofiya009/lora-train-juveriya"
+    "sofiya009/lora-train-juveriya",
+    "sofiya009/lora-weights-faiz-juv-v2"
   ],
   "competition_sources": [],
   "kernel_sources": []

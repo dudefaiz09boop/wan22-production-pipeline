@@ -224,25 +224,59 @@ def extract_faces_from_image(
     return results
 
 
+# Identity tokens per character, taken from bible/<character>.json. These are
+# the canonical, always-true features. They are what makes the LoRA read as this
+# specific Indian Muslim sibling rather than a generic "south asian" face, which
+# is all the old two-string caption set taught.
+IDENTITY_TOKENS = {
+    "faiz": {
+        "face": "short boxed beard, connected moustache, black hair, thick dark brows, warm brown skin, dark brown eyes",
+        "body": "short boxed beard, lean build, warm brown skin, wristwatch",
+    },
+    "juv": {
+        "face": "very long straight black hair, dark kajal, full lips, warm light-brown skin, dark brown eyes",
+        "body": "very long straight black hair, slim petite build, gold jhumka, taveez, bangles",
+    },
+}
+
+# Rotated so the dataset is not 333 copies of one string. Each entry is true of
+# the household canon, so a rotation cannot contradict the image.
+CONTEXT_TOKENS = (
+    "modest indian flat",
+    "warm indoor light",
+    "everyday household setting",
+)
+
+
 def create_caption_file(
     image_path: Path,
     character: str,
     output_dir: Path,
     kind: str = "face",
+    variant: int = 0,
 ) -> None:
     """Create a caption file for a training image.
 
     Face and body samples get different captions on purpose. A body caption that
     repeats "detailed face" teaches the LoRA to expect a face close-up, so the
     body framing never gets its own signal.
+
+    The caption leads with the trigger, then the Indian Muslim identity, then the
+    canonical features from the bible. Without the identity block the LoRA only
+    learns "a south asian person" and drifts to a generic face.
     """
+    tokens = IDENTITY_TOKENS.get(character, {}).get(kind, "")
+    context = CONTEXT_TOKENS[variant % len(CONTEXT_TOKENS)]
     if kind == "body":
         caption = (
-            f"{character}, south asian, full body, photorealistic, "
-            "natural skin texture, film still"
+            f"{character}, indian muslim, south asian, full body, {tokens}, "
+            f"{context}, photorealistic, natural skin texture, film still"
         )
     else:
-        caption = f"{character}, south asian, detailed face, photorealistic"
+        caption = (
+            f"{character}, indian muslim, south asian, detailed face, {tokens}, "
+            f"{context}, photorealistic"
+        )
     caption_path = output_dir / f"{image_path.stem}.txt"
     caption_path.write_text(caption, encoding="utf-8")
 
@@ -333,7 +367,9 @@ def _emit_sample(
     crop, bbox = cropped
     output_name = f"{character}_{stem}_{kind}{index:02d}.jpg"
     _save_crop(crop, output_dir / output_name, upscale_to)
-    create_caption_file(output_dir / output_name, character, output_dir, kind)
+    create_caption_file(
+        output_dir / output_name, character, output_dir, kind, variant=index
+    )
 
     return {
         "file": output_name,
@@ -613,7 +649,11 @@ def main() -> int:
         char_dir = faiz_dir if character == "faiz" else juv_dir
         for img_path in char_dir.glob("*.jpg"):
             shutil.copy2(img_path, combined_dir / img_path.name)
-            create_caption_file(combined_dir / img_path.name, character, combined_dir)
+            # Keep the body/face framing signal in the combined set too.
+            kind = "body" if "_body" in img_path.stem else "face"
+            create_caption_file(
+                combined_dir / img_path.name, character, combined_dir, kind
+            )
 
     # Save metadata
     metadata = {

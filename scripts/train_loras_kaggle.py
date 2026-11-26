@@ -79,6 +79,8 @@ def build_notebook(only: str = "all") -> dict:
     cells.append(_code_cell("\n".join([
         "# 2. Install dependencies (full sd-scripts requirement set)",
         "# Keep numpy 2.x: Kaggle's preinstalled pandas requires it.",
+        "import sys",
+        "print('kernel interpreter:', sys.executable)",
         "!pip install -q --upgrade pip",
         "!pip install -q 'numpy>=2.0' 'ftfy>=6.1' 'voluptuous>=0.14' 'toml>=0.10' \\",
         "    'accelerate>=0.30' 'transformers>=4.41' 'diffusers>=0.30' \\",
@@ -105,6 +107,11 @@ def build_notebook(only: str = "all") -> dict:
     # 3. Preflight: verify sd-scripts imports before spending GPU time
     cells.append(_code_cell("\n".join([
         "# 3. Preflight: verify sd-scripts imports before spending GPU time",
+        "# The trainer is launched with sys.executable (see the trainer helper), so",
+        "# this check runs on the SAME interpreter the trainer will use. Launching",
+        "# via `accelerate launch` picked /usr/bin/python3, which never saw the",
+        "# packages pip installed into the kernel interpreter, and every run died",
+        "# on ModuleNotFoundError: voluptuous.",
         "import subprocess, sys",
         "",
         "check = subprocess.run(",
@@ -196,9 +203,9 @@ def build_notebook(only: str = "all") -> dict:
         "print('datasets OK')",
     ])))
 
-    # 4. Download base model
+    # 5. Download base model
     cells.append(_code_cell("\n".join([
-        "# 4. Download the SDXL base model",
+        "# 5. Download the SDXL base model",
         "import os",
         "from huggingface_hub import hf_hub_download",
         "",
@@ -215,21 +222,23 @@ def build_notebook(only: str = "all") -> dict:
 
     # 5. Training config
     cells.append(_code_cell("\n".join([
-        "# 5. Training configuration",
-        "# Tuned so all three LoRAs finish inside one Kaggle session.",
+        "# 6. Training configuration",
+        "# Tuned for identity fidelity on a small, single-character dataset.",
+        "# dim 64 / alpha 32 gives the face enough capacity to bind; alpha stays at",
+        "# half of dim so a ~150-image set does not over-saturate.",
         "import json",
         "",
         "CONFIG = {",
         "    'pretrained_model_name_or_path': model_path,",
         "    'network_module': 'networks.lora',",
-        "    'network_dim': 32,",
-        "    'network_alpha': 16,",
+        "    'network_dim': 64,",
+        "    'network_alpha': 32,",
         "    'learning_rate': 1e-4,",
         "    'text_encoder_lr': 5e-5,",
         "    'lr_scheduler': 'cosine',",
-        "    'lr_warmup_steps': 50,",
-        "    'max_train_steps': 1200,",
-        "    'save_every_n_steps': 400,",
+        "    'lr_warmup_steps': 100,",
+        "    'max_train_steps': 2000,",
+        "    'save_every_n_steps': 500,",
         "    'train_batch_size': 1,",
         "    'gradient_accumulation_steps': 2,",
         "    'mixed_precision': 'fp16',",
@@ -240,13 +249,19 @@ def build_notebook(only: str = "all") -> dict:
         "    'save_precision': 'fp16',",
         "    'save_model_as': 'safetensors',",
         "    'logging_dir': '/kaggle/working/logs',",
+        "    # The caption leads with '<trigger>, indian muslim'. keep_tokens pins",
+        "    # those two so shuffling cannot separate the trigger from the identity",
+        "    # tokens, which is what makes the LoRA read as this specific person.",
+        "    'keep_tokens': 2,",
+        "    'shuffle_caption': True,",
+        "    'min_snr_gamma': 5,",
         "}",
         "print(json.dumps(CONFIG, indent=2))",
     ])))
 
     # 6. Trainer helper
     cells.append(_code_cell("\n".join([
-        "# 6. Trainer helper",
+        "# 7. Trainer helper",
         "# Output is streamed (not captured) so progress is visible in the live log.",
         "import glob, os, shutil, subprocess, sys",
         "",
@@ -255,12 +270,11 @@ def build_notebook(only: str = "all") -> dict:
         "def train(name, train_dir, reg_dir=None, steps=None):",
         "    out_dir = f'/kaggle/working/output/{name}'",
         "    os.makedirs(out_dir, exist_ok=True)",
+        "    # Launch on sys.executable, not `accelerate launch`. accelerate resolves",
+        "    # its own interpreter (/usr/bin/python3) which never saw the pip installs,",
+        "    # so every run died on ModuleNotFoundError: voluptuous.",
         "    cmd = [",
-        "        'accelerate', 'launch',",
-        "        '--num_cpu_threads_per_process', '2',",
-        "        '--num_processes', '1',",
-        "        '--mixed_precision', 'fp16',",
-        "        '/kaggle/working/sd-scripts/sdxl_train_network.py',",
+        "        sys.executable, '/kaggle/working/sd-scripts/sdxl_train_network.py',",
         "        '--pretrained_model_name_or_path', CONFIG['pretrained_model_name_or_path'],",
         "        '--network_module', CONFIG['network_module'],",
         "        '--network_dim', str(CONFIG['network_dim']),",
@@ -290,6 +304,9 @@ def build_notebook(only: str = "all") -> dict:
         "        '--save_model_as', CONFIG['save_model_as'],",
         "        '--logging_dir', CONFIG['logging_dir'],",
         "        '--train_data_dir', train_dir,",
+        "        '--keep_tokens', str(CONFIG['keep_tokens']),",
+        "        '--shuffle_caption',",
+        "        '--min_snr_gamma', str(CONFIG['min_snr_gamma']),",
         "    ]",
         "    if reg_dir:",
         "        cmd += ['--reg_data_dir', reg_dir]",
@@ -311,7 +328,7 @@ def build_notebook(only: str = "all") -> dict:
 
     # 7. Smoke test: 1 step to validate the whole trainer path
     cells.append(_code_cell("\n".join([
-        "# 7. Smoke test: run 1 training step to validate the full path",
+        "# 8. Smoke test: run 1 training step to validate the full path",
         "smoke_ok = train('smoke', FAIZ_DIR, steps=1)",
         "print('smoke_ok =', smoke_ok)",
         "assert smoke_ok, 'smoke test failed - see stderr above'",
@@ -320,28 +337,28 @@ def build_notebook(only: str = "all") -> dict:
     # 8-10. Training cells, filtered by the requested target
     if only in ("all", "faiz"):
         cells.append(_code_cell("\n".join([
-            "# 8. Train the Faiz LoRA (skipped if already produced)",
+            "# 9. Train the Faiz LoRA (skipped if already produced)",
             "faiz_ok = os.path.exists('/kaggle/working/faiz_lora.safetensors') or train('faiz', FAIZ_DIR)",
             "print('faiz_ok =', faiz_ok)",
         ])))
 
     if only in ("all", "juv"):
         cells.append(_code_cell("\n".join([
-            "# 9. Train the Juveriya LoRA (skipped if already produced)",
+            "# 10. Train the Juveriya LoRA (skipped if already produced)",
             "juv_ok = os.path.exists('/kaggle/working/juv_lora.safetensors') or train('juv', JUV_DIR)",
             "print('juv_ok =', juv_ok)",
         ])))
 
     if only in ("all", "combined"):
         cells.append(_code_cell("\n".join([
-            "# 10. Train the combined LoRA (skipped if already produced)",
+            "# 11. Train the combined LoRA (skipped if already produced)",
             "combined_ok = os.path.exists('/kaggle/working/faiz_juv_lora.safetensors') or train('faiz_juv', COMBINED_DIR)",
             "print('combined_ok =', combined_ok)",
         ])))
 
     # 11. Package
     cells.append(_code_cell("\n".join([
-        "# 11. Package whatever LoRAs exist",
+        "# 12. Package whatever LoRAs exist",
         "import os, zipfile",
         "",
         "LORA_FILES = [",
