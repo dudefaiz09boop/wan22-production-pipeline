@@ -80,7 +80,16 @@ def build_notebook() -> dict:
         "    print(' gpu', i, torch.cuda.get_device_name(i),",
         "          round(torch.cuda.get_device_properties(i).total_memory/1024**3,1), 'GB')",
         "print('working free GB', round(shutil.disk_usage('/kaggle/working').free/1024**3,1))",
-        "print('temp free GB', round(shutil.disk_usage('/kaggle/temp').free/1024**3,1))",
+        "# /kaggle/temp does not exist on every image; create it and fall back.",
+        "TEMP = '/kaggle/temp'",
+        "try:",
+        "    os.makedirs(TEMP, exist_ok=True)",
+        "    print('temp free GB', round(shutil.disk_usage(TEMP).free/1024**3,1))",
+        "except OSError:",
+        "    TEMP = '/kaggle/working/temp'",
+        "    os.makedirs(TEMP, exist_ok=True)",
+        "    print('temp fallback', TEMP)",
+        "print('TEMP =', TEMP)",
     ])))
 
     cells.append(_code_cell("\n".join([
@@ -104,7 +113,7 @@ def build_notebook() -> dict:
         "# Weights go to /kaggle/temp so they do not count against the 20 GB",
         "# working quota; /kaggle/working only holds the repo and the outputs.",
         "import os, subprocess",
-        "COMFY = '/kaggle/temp/ComfyUI'",
+        "COMFY = os.path.join(TEMP, 'ComfyUI')",
         "if not os.path.isdir(COMFY):",
         "    subprocess.run(['git','clone','--depth','1',",
         "        'https://github.com/comfyanonymous/ComfyUI.git', COMFY], check=True)",
@@ -125,7 +134,7 @@ def build_notebook() -> dict:
         "import os",
         "from huggingface_hub import hf_hub_download",
         "",
-        "COMFY = '/kaggle/temp/ComfyUI'",
+        "COMFY = os.path.join(TEMP, 'ComfyUI')",
         "DIRS = {",
         "    'diffusion_models': f'{COMFY}/models/diffusion_models',",
         "    'text_encoders': f'{COMFY}/models/text_encoders',",
@@ -155,8 +164,8 @@ def build_notebook() -> dict:
     cells.append(_code_cell("\n".join([
         "# 6. Start ComfyUI",
         "import os, subprocess, time, urllib.request",
-        "COMFY = '/kaggle/temp/ComfyUI'",
-        "log = open('/kaggle/temp/comfy.log','w')",
+        "COMFY = os.path.join(TEMP, 'ComfyUI')",
+        "log = open(os.path.join(TEMP, 'comfy.log'),'w')",
         "proc = subprocess.Popen([sys.executable,'main.py','--listen','127.0.0.1',",
         "    '--port','8188','--highvram'], cwd=COMFY, stdout=log, stderr=subprocess.STDOUT)",
         "for i in range(120):",
@@ -166,7 +175,7 @@ def build_notebook() -> dict:
         "    except Exception:",
         "        time.sleep(2)",
         "else:",
-        "    print(open('/kaggle/temp/comfy.log').read()[-3000:])",
+        "    print(open(os.path.join(TEMP, 'comfy.log')).read()[-3000:])",
         "    raise SystemExit('ComfyUI did not start')",
     ])))
 
