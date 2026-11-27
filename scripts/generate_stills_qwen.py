@@ -136,7 +136,7 @@ def build_workflow(
 
     wf["1"] = {
         "class_type": "UnetLoaderGGUF",
-        "inputs": {"unet_name": "qwen_image-Q4_K_M.gguf"},
+        "inputs": {"unet_name": "qwen-image-Q4_K_M.gguf"},
     }
     wf["2"] = {
         "class_type": "CLIPLoaderGGUF",
@@ -151,7 +151,11 @@ def build_workflow(
     }
     wf["4"] = {
         "class_type": "QwenImage21Cache",
-        "inputs": {"model": ["1", 0]},
+        "inputs": {
+            "model": ["1", 0],
+            "dtype": "bf16",
+            "device": "cuda",
+        },
     }
 
     # Reference images, one LoadImage per plate.
@@ -168,6 +172,7 @@ def build_workflow(
         "vae": ["3", 0],
         "prompt": prompt,
         "negative_prompt": negative,
+        "resolution": 1024,
     }
     for slot, link in enumerate(image_links, start=1):
         encode_inputs[f"images.image_{slot}"] = link
