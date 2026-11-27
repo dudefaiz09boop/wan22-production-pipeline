@@ -52,9 +52,9 @@ done
 log "checking reference plates"
 for f in \
   "refs/Faiz/01_front_standing_straight_00001.png" \
-  "refs/Faiz/02_front_relaxed_00001.png" \
+  "refs/Faiz/IMG_3026.JPG" \
   "refs/Juvi/01_front_standing_00001.png" \
-  "refs/Juvi/02_front_relaxed_00001.png"
+  "refs/Juvi/IMG_3049.jpg"
 do
   [ -f "$f" ] || die "missing reference: $f"
 done

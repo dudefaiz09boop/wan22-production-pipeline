@@ -68,5 +68,38 @@ class GraphShapeTests(unittest.TestCase):
         self.assertEqual(build(seed=1234)["22"]["inputs"]["seed"], 1234)
 
 
+class ReferencePlateTests(unittest.TestCase):
+    """The face plate is what Qwen reads identity from.
+
+    A 100px face in a full-body frame carries far less detail than a 750px one,
+    and the first version of REFS pointed at full-body plates for both. These
+    tests keep the face plate a real portrait.
+    """
+
+    def test_every_reference_plate_exists(self):
+        from pathlib import Path as P
+
+        from scripts.generate_stills_qwen import REFS
+
+        missing = [
+            f"{char}/{kind}: {path}"
+            for char, plates in REFS.items()
+            for kind, path in plates.items()
+            if not P(path).is_file()
+        ]
+        self.assertEqual(missing, [], f"missing reference plates: {missing}")
+
+    def test_face_plate_is_not_the_body_plate(self):
+        """A full-body frame is a poor face reference."""
+        from scripts.generate_stills_qwen import REFS
+
+        for char, plates in REFS.items():
+            self.assertNotEqual(
+                plates["face"],
+                plates["body"],
+                f"{char}: face and body reference are the same file",
+            )
+
+
 if __name__ == "__main__":
     unittest.main()

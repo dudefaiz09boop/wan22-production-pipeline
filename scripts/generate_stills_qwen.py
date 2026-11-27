@@ -56,14 +56,20 @@ OUTPUT = Path("startframes")
 
 # Reference plates. One body shot and one face shot per character, which is
 # what the template uses: <image1> for body and posture, <image2> for the face.
+# Reference plates. The body shot is a full-length standing frame; the face
+# shot is the tightest portrait available.
+#
+# The face plate matters most: Qwen reads identity from it, and a 100px face in
+# a full-body frame carries far less detail than a 750px one. These are the
+# largest single-face plates in each folder, measured with InsightFace.
 REFS = {
     "faiz": {
         "body": "refs/Faiz/01_front_standing_straight_00001.png",
-        "face": "refs/Faiz/02_front_relaxed_00001.png",
+        "face": "refs/Faiz/IMG_3026.JPG",   # 863px face
     },
     "juv": {
         "body": "refs/Juvi/01_front_standing_00001.png",
-        "face": "refs/Juvi/02_front_relaxed_00001.png",
+        "face": "refs/Juvi/IMG_3049.jpg",   # 750px face
     },
 }
 
