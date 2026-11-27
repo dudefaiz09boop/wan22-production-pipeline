@@ -82,41 +82,52 @@ NEGATIVE = (
 
 
 def build_prompt(beat_id: str, cam_lines: list[str], cast: list[str]) -> str:
-    """Compose a Qwen-Image prompt from the beat's cam lines and its cast.
+    """Compose a Qwen-Image prompt in the template's style.
 
-    Qwen takes a long natural-language prompt, so the cam lines go in whole --
-    no trimming, no fragments. The reference instructions come first because
-    that is what binds identity.
+    The template writes a natural-language instruction, not a tag list: it names
+    the reference images, states what each one is for, then describes the shot.
+    Qwen-Image is an instruction-following model, so that structure is what it
+    was trained to read.
+
+    The cam lines go in whole. There is no token budget to fight -- the encoder
+    is an 8B vision-language model.
     """
-    parts: list[str] = []
+    shot = " ".join(cam_lines)
 
     if len(cast) == 2:
-        parts.append(
-            "Create a photorealistic photograph of two people, a brother and "
+        return (
+            "Create a new photograph of the same two people, a brother and "
             "sister, both adults, in a modest Indian Muslim flat. "
-            "Use <image1> as the reference for the man's body, build and "
-            "posture, and <image2> for his exact face, beard, skin tone and "
-            "hair. Use <image3> as the reference for the woman's body, build "
-            "and posture, and <image4> for her exact face, skin tone and long "
-            "straight black hair. Keep both faces identical to the references."
-        )
-    else:
-        char = cast[0]
-        parts.append(
-            f"Create a photorealistic photograph of one person, an adult "
-            f"Indian Muslim {'man' if char == 'faiz' else 'woman'}, in a modest "
-            f"Indian Muslim flat. Use <image1> as the reference for the body, "
-            f"build and posture, and <image2> for the exact face, skin tone and "
-            f"hair. Keep the face identical to the reference."
+            "Use <image1> as the primary reference for the man's body "
+            "proportions, build, posture and overall identity, and <image2> for "
+            "his exact face, short boxed beard, connected moustache, black hair, "
+            "warm brown skin and dark brown eyes. "
+            "Use <image3> as the primary reference for the woman's body "
+            "proportions, build, posture and overall identity, and <image4> for "
+            "her exact face, very long straight black hair, dark kajal, full "
+            "lips, warm light-brown skin and dark brown eyes. "
+            "Keep both faces identical to the references, at the same age, with "
+            "the same skin tone and texture. "
+            f"The shot: {shot}. "
+            "Both faces clearly visible and in frame, natural human anatomy, "
+            "photorealistic DSLR photograph, 35mm lens, sharp focus, high detail "
+            "skin texture, natural available light, film grain, ultra realistic."
         )
 
-    parts.append("The shot: " + " ".join(cam_lines))
-    parts.append(
-        "Photorealistic DSLR photograph, 35mm lens, natural skin texture, "
-        "sharp focus, film grain, available light, both faces clearly visible "
-        "and in frame."
+    char = cast[0]
+    who = "man" if char == "faiz" else "woman"
+    return (
+        f"Create a new photograph of the same person, an adult Indian Muslim "
+        f"{who}, in a modest Indian Muslim flat. "
+        f"Use <image1> as the primary reference for the body proportions, "
+        f"build, posture and overall identity, and <image2> for the exact face, "
+        f"skin tone and texture, and hairstyle. "
+        f"Keep the face identical to the reference, at the same age. "
+        f"The shot: {shot}. "
+        "Face clearly visible and in frame, natural human anatomy, "
+        "photorealistic DSLR photograph, 35mm lens, sharp focus, high detail "
+        "skin texture, natural available light, film grain, ultra realistic."
     )
-    return " ".join(parts)
 
 
 def build_workflow(
@@ -129,9 +140,21 @@ def build_workflow(
 ) -> dict:
     """Qwen-Image 2.1 text-to-image with reference images.
 
-    Mirrors the node graph in the attached template: UNETLoader(GGUF) ->
-    QwenImage21Cache -> KSampler, with TextEncodeQwenImage21 taking the
-    reference images and the VAE.
+    Node graph and every input name taken from the working template
+    (Image generation.json), not guessed:
+
+        UnetLoaderGGUF        unet_name
+        CLIPLoaderGGUF        clip_name, type
+        VAELoader             vae_name
+        QwenImage21Cache      model, device, dtype   (widgets: auto, default)
+        LoadImage             image
+        TextEncodeQwenImage21 clip, vae, prompt, negative_prompt, resolution,
+                              images.image_1..N
+        EmptyLatentImage      width, height, batch_size
+        KSampler              model, positive, negative, latent_image,
+                              seed, steps, cfg, sampler_name, scheduler, denoise
+        VAEDecode             samples, vae
+        SaveImage             images, filename_prefix
     """
     wf: dict = {}
 
@@ -154,12 +177,12 @@ def build_workflow(
         "class_type": "QwenImage21Cache",
         "inputs": {
             "model": ["1", 0],
-            "dtype": "default",
             "device": "auto",
+            "dtype": "default",
         },
     }
 
-    # Reference images, one LoadImage per plate.
+    # Reference images. The template links images.image_N to LoadImage slot 0.
     image_links = []
     for index, name in enumerate(ref_images, start=10):
         wf[str(index)] = {
