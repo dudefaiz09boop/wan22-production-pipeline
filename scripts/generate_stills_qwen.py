@@ -246,11 +246,91 @@ def _fetch_image(server: str, item: dict, dest: Path) -> Path:
     return dest
 
 
+def _render_one(
+    shot: dict,
+    server: str,
+    out: Path,
+    seed: int,
+    upload_cache: dict,
+) -> bool:
+    """Render one beat on one server. Returns True on success."""
+    beat_id = shot.get("id")
+    cam = [line for line in (shot.get("cam") or []) if isinstance(line, str)]
+    cast = ["faiz", "juv"]
+
+    ref_images = [
+        upload(server, Path(REFS["faiz"]["body"]), upload_cache),
+        upload(server, Path(REFS["faiz"]["face"]), upload_cache),
+        upload(server, Path(REFS["juv"]["body"]), upload_cache),
+        upload(server, Path(REFS["juv"]["face"]), upload_cache),
+    ]
+    prompt = build_prompt(beat_id, cam, cast)
+    wf = build_workflow(prompt, NEGATIVE, ref_images, WIDTH, HEIGHT, seed)
+
+    try:
+        prompt_id = post(server, wf)
+        history = wait_for(server, prompt_id)
+
+        status = history.get("status") or {}
+        if status.get("status_str") == "error":
+            for msg in status.get("messages") or []:
+                if msg and msg[0] == "execution_error":
+                    print(f"  {beat_id}: {msg[1].get('exception_message')}",
+                          file=sys.stderr)
+            return False
+
+        entry = (history.get("outputs") or {}).get("24") or {}
+        images = entry.get("images") or []
+        if not images:
+            print(f"  {beat_id}: no image in outputs", file=sys.stderr)
+            return False
+
+        dest = out / f"{beat_id}.png"
+        _fetch_image(server, images[0], dest)
+        print(f"  {beat_id}: saved {dest} [{server}]")
+        return True
+    except (urllib.error.URLError, TimeoutError) as error:
+        print(f"  {beat_id}: {error}", file=sys.stderr)
+        return False
+
+
+def _render_parallel(
+    shots: list[dict],
+    servers: list[str],
+    out: Path,
+    args,
+    upload_cache: dict,
+) -> int:
+    """Render beats across several ComfyUI instances at once.
+
+    Each server owns one GPU. Beats are dealt round-robin so the two queues
+    finish at roughly the same time.
+    """
+    from concurrent.futures import ThreadPoolExecutor
+
+    def work(item: tuple[int, dict]) -> bool:
+        index, shot = item
+        server = servers[index % len(servers)]
+        return _render_one(shot, server, out, args.seed, upload_cache)
+
+    with ThreadPoolExecutor(max_workers=len(servers)) as pool:
+        results = list(pool.map(work, enumerate(shots)))
+
+    made = sum(1 for ok in results if ok)
+    print(f"generated {made} startframe(s) across {len(servers)} GPU(s)")
+    return 0 if made else 1
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Generate startframes with Qwen-Image 2.1")
     ap.add_argument("--spec", default=str(SPEC))
     ap.add_argument("--output", default=str(OUTPUT))
     ap.add_argument("--server", default=DEFAULT_SERVER)
+    ap.add_argument(
+        "--servers",
+        default=DEFAULT_SERVER,
+        help="Comma-separated ComfyUI URLs, one per GPU, for parallel rendering",
+    )
     ap.add_argument("--beats", nargs="+")
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--dry-run", action="store_true")
@@ -274,6 +354,15 @@ def main() -> int:
 
     upload_cache: dict = {}
     made = 0
+
+    # Two ComfyUI instances, one per GPU. ComfyUI cannot shard a single model
+    # across devices, but two instances can render different beats at the same
+    # time, which halves the wall time. Beats are interleaved so both GPUs get a
+    # similar mix of cheap and expensive shots.
+    servers = [s.strip() for s in args.servers.split(",") if s.strip()]
+    if len(servers) > 1 and not args.dry_run:
+        return _render_parallel(shots, servers, out, args, upload_cache)
+
     for shot in shots:
         beat_id = shot.get("id")
         cam = [line for line in (shot.get("cam") or []) if isinstance(line, str)]
