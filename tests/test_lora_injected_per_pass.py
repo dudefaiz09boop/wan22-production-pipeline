@@ -168,7 +168,7 @@ class DefaultLoraTests(unittest.TestCase):
             registry=real_registry(),
         )
         names = {n["inputs"]["lora_name"] for n in lora_nodes(wf).values()}
-        self.assertIn("realism_wan22_high.safetensors", names)
+        self.assertIn("skin_morph_wan22_high.safetensors", names)
         self.assertIn("skin_morph_wan22_low.safetensors", names)
 
     def test_no_default_loras_opts_out(self):
@@ -196,7 +196,7 @@ class DefaultLoraTests(unittest.TestCase):
         )
         names = [n["inputs"]["lora_name"] for n in lora_nodes(wf).values()]
         self.assertLess(
-            names.index("realism_wan22_high.safetensors"),
+            names.index("skin_morph_wan22_high.safetensors"),
             names.index("vag_detail_wan22_high.safetensors"),
         )
 

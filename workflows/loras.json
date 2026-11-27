@@ -1,27 +1,4 @@
 {
-  "realism": {
-    "high": "loras/realism_wan22_high.safetensors",
-    "low": "loras/realism_wan22_low.safetensors",
-    "w": 0.7,
-    "trigger": null,
-    "trigger_scope": null,
-    "default": true,
-    "source": {
-      "high": {
-        "civitai_model": 2001317,
-        "civitai_version": 2272139
-      },
-      "low": {
-        "civitai_model": 2001317,
-        "civitai_version": 2272164
-      },
-      "sha256": {
-        "high": "C62578B84F715941",
-        "low": "32FD4F8289B1F3FE"
-      },
-      "note": "WAN 25 Realistic. Photoreal skin and lens response. Applied to every shot."
-    }
-  },
   "skin_morph": {
     "high": "loras/skin_morph_wan22_high.safetensors",
     "low": "loras/skin_morph_wan22_low.safetensors",
