@@ -16,7 +16,7 @@ Hardware
 --------
 T4 x2 = 32 GB VRAM. The GGUF quants fit:
     qwen_image-Q4_K_M.gguf                    12.2 GB
-    Qwen2.5-VL-7B-Instruct-Q4_NL.gguf          4.1 GB
+    Qwen2.5-VL-7B-Instruct-Q4_K_M.gguf          4.1 GB
     qwen_image_vae.safetensors                 0.2 GB
 Weights are staged in /kaggle/temp, which is not counted against the 20 GB
 working quota.
@@ -146,7 +146,7 @@ def build_notebook() -> dict:
         "WANT = [",
         "    ('city96/Qwen-Image-gguf', 'qwen-image-Q4_K_M.gguf', 'diffusion_models'),",
         "    ('unsloth/Qwen2.5-VL-7B-Instruct-GGUF',",
-        "     'Qwen2.5-VL-7B-Instruct-Q4_NL.gguf', 'text_encoders'),",
+        "     'Qwen2.5-VL-7B-Instruct-Q4_K_M.gguf', 'text_encoders'),",
         "    ('Comfy-Org/Qwen-Image_ComfyUI',",
         "     'split_files/vae/qwen_image_vae.safetensors', 'vae'),",
         "]",

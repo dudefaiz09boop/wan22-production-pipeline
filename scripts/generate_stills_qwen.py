@@ -26,7 +26,7 @@ Usage
 
 Requires ComfyUI running with:
     models/diffusion_models/qwen_image-Q4_K_M.gguf
-    models/text_encoders/Qwen2.5-VL-7B-Instruct-Q4_NL.gguf
+    models/text_encoders/Qwen2.5-VL-7B-Instruct-Q4_K_M.gguf
     models/vae/qwen_image_vae.safetensors
     custom_nodes/ComfyUI-GGUF
 """
@@ -141,7 +141,7 @@ def build_workflow(
     wf["2"] = {
         "class_type": "CLIPLoaderGGUF",
         "inputs": {
-            "clip_name": "Qwen2.5-VL-7B-Instruct-Q4_NL.gguf",
+            "clip_name": "Qwen2.5-VL-7B-Instruct-Q4_K_M.gguf",
             "type": "qwen_image",
         },
     }
