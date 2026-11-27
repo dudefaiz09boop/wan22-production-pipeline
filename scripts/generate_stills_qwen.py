@@ -46,7 +46,7 @@ HERE = Path(__file__).parent
 sys.path.insert(0, str(HERE))
 
 from comfy_api import DEFAULT_SERVER, upload  # noqa: E402
-from render import post_prompt, wait_for, download_output  # noqa: E402
+from render import post, wait_for, download_output  # noqa: E402
 
 SPEC = Path("docs/beats.yaml")
 PROMPTS = Path("prompts")
@@ -252,7 +252,7 @@ def main() -> int:
             continue
 
         try:
-            prompt_id = post_prompt(wf, args.server)
+            prompt_id = post(args.server, wf)
             history = wait_for(args.server, prompt_id)
             entry = (history.get("outputs") or {}).get("24") or {}
             images = entry.get("images") or []
