@@ -153,8 +153,8 @@ def build_workflow(
         "class_type": "QwenImage21Cache",
         "inputs": {
             "model": ["1", 0],
-            "dtype": "bf16",
-            "device": "cuda",
+            "dtype": "default",
+            "device": "auto",
         },
     }
 
