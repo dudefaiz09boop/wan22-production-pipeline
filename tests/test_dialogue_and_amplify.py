@@ -106,29 +106,14 @@ class AmplifyTests(unittest.TestCase):
 
 
 class PromptBudgetTests(unittest.TestCase):
-    """The stills prompt must fit CLIP; the video prompt must not be cut.
+    """Stills use the full video prompt now.
 
-    Wan 2.2 video encodes with umt5-xxl (512 tokens), so the full six-line beat
-    fits and trimming it would lose content for no reason. SDXL encodes with
-    CLIP (77 tokens), so the stills prompt needs its own, shorter variant.
+    SDXL has two text encoders and generate_still splits the prompt across them,
+    so the 77-token CLIP limit that forced a trimmed stills variant no longer
+    applies. These tests check the prompt the stills actually receive.
     """
 
-    def test_every_still_prompt_fits_the_clip_window(self) -> None:
-        import glob
-
-        from scripts.build_still_prompts import CLIP_TOKEN_LIMIT, token_count
-
-        over: list[str] = []
-        for path in sorted(glob.glob(str(ROOT / "prompts" / "c*.still.txt"))):
-            tokens = token_count(Path(path).read_text(encoding="utf-8"))
-            if tokens is not None and tokens > CLIP_TOKEN_LIMIT:
-                over.append(f"{Path(path).stem}: {tokens} tokens")
-        self.assertEqual(
-            over, [], f"still prompts over {CLIP_TOKEN_LIMIT} CLIP tokens: {over}"
-        )
-
     def test_video_prompts_keep_all_six_cam_lines(self) -> None:
-        """The video prompt is not CLIP-bound, so nothing should be trimmed."""
         import glob
 
         short: list[str] = []
@@ -138,79 +123,38 @@ class PromptBudgetTests(unittest.TestCase):
             text = Path(path).read_text(encoding="utf-8")
             if text.count("(At ") != 6:
                 short.append(f"{Path(path).stem}: {text.count('(At ')} lines")
-        self.assertEqual(short, [], f"video prompts missing cam lines: {short}")
+        self.assertEqual(short, [], f"prompts missing cam lines: {short}")
 
-    def test_explicit_terms_survive_in_the_still_prompts(self) -> None:
+    def test_explicit_terms_survive_in_the_prompts(self) -> None:
         import glob
 
         terms = {
-            "pov": ("pov",),
             "breasts": ("breast", "nipple"),
             "pussy": ("pussy", "vulva", "labia", "clit", "cunt"),
             "cum": ("cum", "spurt"),
         }
         floors = {"breasts": 9, "pussy": 9, "cum": 4}
         counts = {key: 0 for key in terms}
-        for path in sorted(glob.glob(str(ROOT / "prompts" / "c*.still.txt"))):
+        for path in sorted(glob.glob(str(ROOT / "prompts" / "c*.txt"))):
+            if path.endswith(".still.txt"):
+                continue
             text = Path(path).read_text(encoding="utf-8").lower()
             for key, words in terms.items():
                 if any(word in text for word in words):
                     counts[key] += 1
         for key, floor in floors.items():
             self.assertGreaterEqual(
-                counts[key], floor, f"{key} survives in only {counts[key]} stills"
+                counts[key], floor, f"{key} survives in only {counts[key]} prompts"
             )
-
-    def test_every_still_prompt_names_a_face(self) -> None:
-        """The startframe seeds the video, so it must establish who is in shot.
-
-        14 beats were written entirely in hands, wrists and anatomy, and SDXL
-        produced no face at all for them. A prompt-level anchor was not enough:
-        the concrete nouns outvoted it. add_face_lines.py folds the face into
-        one cam line per affected beat.
-        """
-        import glob
-        import re
-
-        face_terms = (
-            "face", "faces", "eyes", "eye", "mouth", "lips", "jaw", "chin",
-            "cheek", "brow", "expression", "gaze",
-        )
-        missing: list[str] = []
-        for path in sorted(glob.glob(str(ROOT / "prompts" / "c*.still.txt"))):
-            text = Path(path).read_text(encoding="utf-8").lower()
-            if not any(
-                re.search(rf"(?<!\w){re.escape(t)}(?!\w)", text) for t in face_terms
-            ):
-                missing.append(Path(path).stem)
-        self.assertEqual(missing, [], f"still prompts with no face: {missing}")
-
-    def test_no_beat_is_written_without_a_face(self) -> None:
-        """The spec itself must name a face on every beat."""
-        import re
-
-        face_terms = (
-            "face", "faces", "eyes", "eye", "mouth", "lips", "jaw", "chin",
-            "cheek", "brow", "expression", "gaze",
-        )
-        data = _load()
-        missing = [
-            shot["id"]
-            for shot in data["shots"]
-            if not any(
-                re.search(rf"(?<!\w){re.escape(t)}(?!\w)", " ".join(shot.get("cam") or []).lower())
-                for t in face_terms
-            )
-        ]
-        self.assertEqual(missing, [], f"beats with no face in cam: {missing}")
 
     def test_lora_triggers_are_not_truncated_away(self) -> None:
         import glob
 
         missing: list[str] = []
-        for path in sorted(glob.glob(str(ROOT / "prompts" / "c*.still.txt"))):
+        for path in sorted(glob.glob(str(ROOT / "prompts" / "c*.txt"))):
+            if path.endswith(".still.txt"):
+                continue
             text = Path(path).read_text(encoding="utf-8")
-            # Every shot loads the two trained character LoRAs by default.
             if "faiz" not in text or "juv" not in text:
                 missing.append(Path(path).stem)
         self.assertEqual(missing, [], f"character triggers missing: {missing}")

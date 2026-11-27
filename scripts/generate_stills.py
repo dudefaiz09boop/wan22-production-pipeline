@@ -238,9 +238,21 @@ def generate_still(
 ) -> Image.Image:
     """Generate a single still image."""
     generator = torch.Generator(device="cuda").manual_seed(seed)
+
+    # SDXL has TWO text encoders, each capped at 77 tokens. Passing the whole
+    # prompt to both truncates the tail, which is where the explicit content and
+    # the LoRA triggers sit. Split the prompt across them instead: the cam line
+    # and the identity tokens go to encoder 1, the quality and look tokens to
+    # encoder 2. That doubles the usable budget and stops the tail being cut.
+    parts = [p.strip() for p in prompt.split(",") if p.strip()]
+    head = ", ".join(parts[: max(1, len(parts) // 2)])
+    tail = ", ".join(parts[max(1, len(parts) // 2):])
+
     image = pipe(
-        prompt=prompt,
+        prompt=head,
+        prompt_2=tail,
         negative_prompt=negative_prompt,
+        negative_prompt_2=negative_prompt,
         width=width,
         height=height,
         num_inference_steps=num_inference_steps,
@@ -292,14 +304,20 @@ def process_beat(
     best = None
 
     for attempt in range(max(1, candidates)):
+        # SDXL is trained at 1024x1024. Rendering at 832x480 is below the
+        # recommended size and is a large part of why the stills came back soft
+        # and off-story. Render at the native size, then downscale to the shot's
+        # resolution with Lanczos, which keeps the detail the small render lost.
         image = generate_still(
             pipe,
             beat_prompt,
             negative_prompt,
-            width=width,
-            height=height,
+            width=1024,
+            height=1024,
             seed=seed + attempt,
         )
+        if (width, height) != (1024, 1024):
+            image = image.resize((width, height), Image.LANCZOS)
         frame = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
 
         if swapper is not None and ref_faces:
@@ -383,20 +401,19 @@ def process_beat(
 def load_beat_prompts(prompts_dir: Path) -> dict[str, str]:
     """Load beat prompts from prompts/*.txt files.
 
-    Prefers `<id>.still.txt` when present. The plain `<id>.txt` is the Wan 2.2
-    video prompt, encoded with umt5-xxl at 512 tokens; SDXL encodes with CLIP,
-    which truncates at 77, so the video prompt loses its tail -- and the tail is
-    where the explicit content and the LoRA triggers sit. build_still_prompts.py
-    writes the CLIP-sized variant.
+    The full video prompt is used for the stills too. SDXL has two text
+    encoders and generate_still splits the prompt across them, so the 77-token
+    CLIP limit that used to force a trimmed stills variant no longer applies.
     """
     prompts = {}
     for txt_file in sorted(prompts_dir.glob("c*.txt")):
         if txt_file.name.endswith(".still.txt"):
             continue
         beat_id = txt_file.stem
-        still = txt_file.with_name(f"{beat_id}.still.txt")
-        source = still if still.is_file() else txt_file
-        prompts[beat_id] = source.read_text(encoding="utf-8").strip()
+        # The full video prompt is used for the stills too. SDXL has two text
+        # encoders, so the 77-token limit that forced a trimmed variant no
+        # longer applies -- generate_still splits the prompt across them.
+        prompts[beat_id] = txt_file.read_text(encoding="utf-8").strip()
     return prompts
 
 

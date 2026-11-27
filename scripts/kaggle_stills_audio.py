@@ -189,9 +189,11 @@ def build_notebook() -> dict:
         "# the explicit content and the LoRA triggers -- is truncated by CLIP.",
         "import subprocess, sys",
         "",
+        # build_still_prompts.py is no longer needed: SDXL has two text
+        # encoders and generate_still splits the full prompt across them, so the
+        # 77-token limit that forced a trimmed variant no longer applies.
         "for script, extra in (",
         "    ('scripts/build_prompts.py', ['--no-frames', '--lang', 'hi']),",
-        "    ('scripts/build_still_prompts.py', []),",
         "):",
         "    cmd = [sys.executable, script, *extra]",
         "    print('RUN:', ' '.join(cmd), flush=True)",
@@ -201,10 +203,8 @@ def build_notebook() -> dict:
         "",
         "import glob",
         "prompts = sorted(glob.glob('prompts/c*.json'))",
-        "stills = sorted(glob.glob('prompts/c*.still.txt'))",
-        "print('video prompts:', len(prompts), 'still prompts:', len(stills))",
+        "print('prompts:', len(prompts))",
         "assert prompts, 'no prompts built'",
-        "assert stills, 'no still prompts built'",
     ])))
 
     cells.append(_code_cell("\n".join([
