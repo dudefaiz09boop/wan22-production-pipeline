@@ -37,6 +37,7 @@ import json
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -209,6 +210,19 @@ def build_workflow(
     return wf
 
 
+def _fetch_image(server: str, item: dict, dest: Path) -> Path:
+    """Download one SaveImage output from ComfyUI's /view endpoint."""
+    query = urllib.parse.urlencode({
+        "filename": item.get("filename", ""),
+        "subfolder": item.get("subfolder", ""),
+        "type": item.get("type", "output"),
+    })
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    with urllib.request.urlopen(f"{server}/view?{query}") as r:
+        dest.write_bytes(r.read())
+    return dest
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Generate startframes with Qwen-Image 2.1")
     ap.add_argument("--spec", default=str(SPEC))
@@ -259,13 +273,25 @@ def main() -> int:
         try:
             prompt_id = post(args.server, wf)
             history = wait_for(args.server, prompt_id)
+
+            # Surface an execution error instead of silently returning nothing.
+            status = history.get("status") or {}
+            if status.get("status_str") == "error":
+                for msg in status.get("messages") or []:
+                    if msg and msg[0] == "execution_error":
+                        print(f"  {beat_id}: {msg[1].get('exception_message')}",
+                              file=sys.stderr)
+                continue
+
             entry = (history.get("outputs") or {}).get("24") or {}
             images = entry.get("images") or []
             if not images:
-                print(f"  {beat_id}: no image returned", file=sys.stderr)
+                print(f"  {beat_id}: no image in outputs {list((history.get('outputs') or {}).keys())}",
+                      file=sys.stderr)
                 continue
+
             dest = out / f"{beat_id}.png"
-            download_output(args.server, images[0], dest)
+            _fetch_image(args.server, images[0], dest)
             print(f"  {beat_id}: saved {dest}")
             made += 1
         except (urllib.error.URLError, TimeoutError) as error:
