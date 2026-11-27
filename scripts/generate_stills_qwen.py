@@ -163,9 +163,9 @@ def build_workflow(
         "inputs": {"unet_name": "qwen-image-Q4_K_M.gguf"},
     }
     wf["2"] = {
-        "class_type": "CLIPLoaderGGUF",
+        "class_type": "CLIPLoader",
         "inputs": {
-            "clip_name": "Qwen3-VL-8B-Instruct-Q4_K_M.gguf",
+            "clip_name": "qwen_2.5_vl_7b_fp8_scaled.safetensors",
             "type": "qwen_image",
         },
     }
