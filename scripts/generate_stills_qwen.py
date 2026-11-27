@@ -36,6 +36,7 @@ import argparse
 import json
 import sys
 import time
+import threading
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -163,9 +164,9 @@ def build_workflow(
         "inputs": {"unet_name": "qwen-image-Q3_K_S.gguf"},
     }
     wf["2"] = {
-        "class_type": "CLIPLoaderGGUF",
+        "class_type": "CLIPLoader",
         "inputs": {
-            "clip_name": "Qwen2.5-VL-7B-Instruct-IQ4_XS.gguf",
+            "clip_name": "qwen_2.5_vl_7b_fp8_scaled.safetensors",
             "type": "qwen_image",
         },
     }
@@ -252,18 +253,20 @@ def _render_one(
     out: Path,
     seed: int,
     upload_cache: dict,
+    upload_lock: threading.Lock,
 ) -> bool:
     """Render one beat on one server. Returns True on success."""
     beat_id = shot.get("id")
     cam = [line for line in (shot.get("cam") or []) if isinstance(line, str)]
     cast = ["faiz", "juv"]
 
-    ref_images = [
-        upload(server, Path(REFS["faiz"]["body"]), upload_cache),
-        upload(server, Path(REFS["faiz"]["face"]), upload_cache),
-        upload(server, Path(REFS["juv"]["body"]), upload_cache),
-        upload(server, Path(REFS["juv"]["face"]), upload_cache),
-    ]
+    with upload_lock:
+        ref_images = [
+            upload(server, Path(REFS["faiz"]["body"]), upload_cache),
+            upload(server, Path(REFS["faiz"]["face"]), upload_cache),
+            upload(server, Path(REFS["juv"]["body"]), upload_cache),
+            upload(server, Path(REFS["juv"]["face"]), upload_cache),
+        ]
     prompt = build_prompt(beat_id, cam, cast)
     wf = build_workflow(prompt, NEGATIVE, ref_images, WIDTH, HEIGHT, seed)
 
@@ -300,6 +303,7 @@ def _render_parallel(
     out: Path,
     args,
     upload_cache: dict,
+    upload_lock: threading.Lock,
 ) -> int:
     """Render beats across several ComfyUI instances at once.
 
@@ -311,7 +315,7 @@ def _render_parallel(
     def work(item: tuple[int, dict]) -> bool:
         index, shot = item
         server = servers[index % len(servers)]
-        return _render_one(shot, server, out, args.seed, upload_cache)
+        return _render_one(shot, server, out, args.seed, upload_cache, upload_lock)
 
     with ThreadPoolExecutor(max_workers=len(servers)) as pool:
         results = list(pool.map(work, enumerate(shots)))
@@ -353,6 +357,7 @@ def main() -> int:
         return 1
 
     upload_cache: dict = {}
+    upload_lock = threading.Lock()
     made = 0
 
     # Two ComfyUI instances, one per GPU. ComfyUI cannot shard a single model
@@ -361,7 +366,7 @@ def main() -> int:
     # similar mix of cheap and expensive shots.
     servers = [s.strip() for s in args.servers.split(",") if s.strip()]
     if len(servers) > 1 and not args.dry_run:
-        return _render_parallel(shots, servers, out, args, upload_cache)
+        return _render_parallel(shots, servers, out, args, upload_cache, upload_lock)
 
     for shot in shots:
         beat_id = shot.get("id")
