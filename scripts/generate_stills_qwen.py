@@ -160,12 +160,12 @@ def build_workflow(
 
     wf["1"] = {
         "class_type": "UnetLoaderGGUF",
-        "inputs": {"unet_name": "qwen-image-Q4_K_M.gguf"},
+        "inputs": {"unet_name": "qwen-image-Q3_K_S.gguf"},
     }
     wf["2"] = {
-        "class_type": "CLIPLoader",
+        "class_type": "CLIPLoaderGGUF",
         "inputs": {
-            "clip_name": "qwen_2.5_vl_7b_fp8_scaled.safetensors",
+            "clip_name": "Qwen2.5-VL-7B-Instruct-IQ4_XS.gguf",
             "type": "qwen_image",
         },
     }
