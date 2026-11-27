@@ -168,7 +168,7 @@ def build_notebook() -> dict:
         "COMFY = os.path.join(TEMP, 'ComfyUI')",
         "log = open(os.path.join(TEMP, 'comfy.log'),'w')",
         "proc = subprocess.Popen([sys.executable,'main.py','--listen','127.0.0.1',",
-        "    '--port','8188','--normalvram'], cwd=COMFY, stdout=log, stderr=subprocess.STDOUT)",
+        "    '--port','8188'], cwd=COMFY, stdout=log, stderr=subprocess.STDOUT)",
         "for i in range(120):",
         "    try:",
         "        urllib.request.urlopen('http://127.0.0.1:8188/system_stats', timeout=2)",
