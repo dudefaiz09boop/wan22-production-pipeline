@@ -226,6 +226,56 @@ def activate_adapters(
     return wanted
 
 
+_CLIP_TOK = None
+
+
+def _clip_tokenizer():
+    global _CLIP_TOK
+    if _CLIP_TOK is None:
+        try:
+            from transformers import CLIPTokenizer
+
+            _CLIP_TOK = CLIPTokenizer.from_pretrained(
+                "openai/clip-vit-large-patch14"
+            )
+        except Exception:  # noqa: BLE001 - offline
+            _CLIP_TOK = False
+    return _CLIP_TOK or None
+
+
+def _split_for_encoders(prompt: str, limit: int = 75) -> tuple[str, str]:
+    """Split a prompt into two halves that each fit one 77-token encoder.
+
+    Splits on clause boundaries and balances by real token count, so neither
+    half is truncated. Falls back to a word split when no tokenizer is
+    available.
+    """
+    clauses = [c.strip() for c in prompt.split(",") if c.strip()]
+    tok = _clip_tokenizer()
+
+    def count(text: str) -> int:
+        if tok is None:
+            return len(text.split())
+        return len(tok(text, truncation=False)["input_ids"])
+
+    if count(prompt) <= limit:
+        return prompt, prompt
+
+    head: list[str] = []
+    tail: list[str] = []
+    for clause in clauses:
+        if count(", ".join(head + [clause])) <= limit:
+            head.append(clause)
+        else:
+            tail.append(clause)
+
+    # If the tail is still over, drop its least important clauses from the end.
+    while tail and count(", ".join(tail)) > limit:
+        tail.pop()
+
+    return ", ".join(head), ", ".join(tail) or ", ".join(head)
+
+
 def generate_still(
     pipe: StableDiffusionXLPipeline,
     prompt: str,
@@ -241,12 +291,11 @@ def generate_still(
 
     # SDXL has TWO text encoders, each capped at 77 tokens. Passing the whole
     # prompt to both truncates the tail, which is where the explicit content and
-    # the LoRA triggers sit. Split the prompt across them instead: the cam line
-    # and the identity tokens go to encoder 1, the quality and look tokens to
-    # encoder 2. That doubles the usable budget and stops the tail being cut.
-    parts = [p.strip() for p in prompt.split(",") if p.strip()]
-    head = ", ".join(parts[: max(1, len(parts) // 2)])
-    tail = ", ".join(parts[max(1, len(parts) // 2):])
+    # the LoRA triggers sit. Split the prompt across them instead.
+    #
+    # The split must be balanced by TOKENS, not by comma count: splitting on
+    # commas left the first half at 114 tokens, so it was still truncated.
+    head, tail = _split_for_encoders(prompt)
 
     image = pipe(
         prompt=head,
