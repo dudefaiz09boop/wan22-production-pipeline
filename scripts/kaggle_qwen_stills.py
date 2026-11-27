@@ -7,7 +7,7 @@ SDXL encodes text with CLIP at 77 tokens and has no native image reference, so
 identity had to come from a LoRA plus an InsightFace paste. That produced
 fragments, swapped characters and soft images.
 
-Qwen-Image 2.1 encodes with an 8B Qwen2.5-VL vision model and takes reference
+Qwen-Image 2.1 encodes with an 8B Qwen3-VL vision model and takes reference
 images directly, so the prompt can say "use <image1> for his body, <image2> for
 his exact face" and the model reads the face from the photo. This is the
 approach the attached ComfyUI template uses.
@@ -16,7 +16,7 @@ Hardware
 --------
 T4 x2 = 32 GB VRAM. The GGUF quants fit:
     qwen_image-Q4_K_M.gguf                    12.2 GB
-    Qwen2.5-VL-7B-Instruct-Q4_K_M.gguf          4.1 GB
+    Qwen3-VL-8B-Instruct-Q4_K_M.gguf          4.1 GB
     qwen_image_vae.safetensors                 0.2 GB
 Weights are staged in /kaggle/temp, which is not counted against the 20 GB
 working quota.
@@ -145,8 +145,8 @@ def build_notebook() -> dict:
         "",
         "WANT = [",
         "    ('city96/Qwen-Image-gguf', 'qwen-image-Q4_K_M.gguf', 'diffusion_models'),",
-        "    ('unsloth/Qwen2.5-VL-7B-Instruct-GGUF',",
-        "     'Qwen2.5-VL-7B-Instruct-Q4_K_M.gguf', 'text_encoders'),",
+        "    ('unsloth/Qwen3-VL-8B-Instruct-GGUF',",
+        "     'Qwen3-VL-8B-Instruct-Q4_K_M.gguf', 'text_encoders'),",
         "    ('Comfy-Org/Qwen-Image_ComfyUI',",
         "     'split_files/vae/qwen_image_vae.safetensors', 'vae'),",
         "]",

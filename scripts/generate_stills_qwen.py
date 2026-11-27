@@ -8,7 +8,7 @@ tokens, so the prompt had to be trimmed to fragments, and identity came from a
 LoRA plus an InsightFace paste -- which swapped the characters when the wrong
 face was picked.
 
-Qwen-Image 2.1 does not work that way. It encodes with an 8B Qwen2.5-VL vision
+Qwen-Image 2.1 does not work that way. It encodes with an 8B Qwen3-VL vision
 model and accepts reference images directly:
 
     TextEncodeQwenImage21(clip, images.image_1, images.image_2, vae)
@@ -26,7 +26,7 @@ Usage
 
 Requires ComfyUI running with:
     models/diffusion_models/qwen_image-Q4_K_M.gguf
-    models/text_encoders/Qwen2.5-VL-7B-Instruct-Q4_K_M.gguf
+    models/text_encoders/Qwen3-VL-8B-Instruct-Q4_K_M.gguf
     models/vae/qwen_image_vae.safetensors
     custom_nodes/ComfyUI-GGUF
 """
@@ -165,7 +165,7 @@ def build_workflow(
     wf["2"] = {
         "class_type": "CLIPLoaderGGUF",
         "inputs": {
-            "clip_name": "Qwen2.5-VL-7B-Instruct-Q4_K_M.gguf",
+            "clip_name": "Qwen3-VL-8B-Instruct-Q4_K_M.gguf",
             "type": "qwen_image",
         },
     }
