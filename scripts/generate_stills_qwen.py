@@ -81,6 +81,13 @@ NEGATIVE = (
     "cartoon, anime, 3d render, cgi, plastic skin"
 )
 
+# Model files. Defaults are the 24 GB tier: Q3_K_S (8.3 GB) plus the fp8
+# encoder (8.7 GB) is 17.2 GB resident, which leaves room for the VAE and
+# activations at 896x1344. A 48 GB card can afford Q4_K_M (12.2 GB) instead.
+UNET = "qwen_image_fp8_e4m3fn.safetensors"
+CLIP = "qwen_2.5_vl_7b_fp8_scaled.safetensors"
+VAE = "qwen_image_vae.safetensors"
+
 
 def build_prompt(beat_id: str, cam_lines: list[str], cast: list[str]) -> str:
     """Compose a Qwen-Image prompt in the template's style.
@@ -138,13 +145,16 @@ def build_workflow(
     width: int,
     height: int,
     seed: int,
+    unet: str = UNET,
+    clip: str = CLIP,
+    vae: str = VAE,
 ) -> dict:
     """Qwen-Image 2.1 text-to-image with reference images.
 
     Node graph and every input name taken from the working template
     (Image generation.json), not guessed:
 
-        UnetLoaderGGUF        unet_name
+        UNETLoader            unet_name, weight_dtype
         CLIPLoaderGGUF        clip_name, type
         VAELoader             vae_name
         QwenImage21Cache      model, device, dtype   (widgets: auto, default)
@@ -160,19 +170,19 @@ def build_workflow(
     wf: dict = {}
 
     wf["1"] = {
-        "class_type": "UnetLoaderGGUF",
-        "inputs": {"unet_name": "qwen-image-Q3_K_S.gguf"},
+        "class_type": "UNETLoader",
+        "inputs": {"unet_name": unet, "weight_dtype": "default"},
     }
     wf["2"] = {
         "class_type": "CLIPLoader",
         "inputs": {
-            "clip_name": "qwen_2.5_vl_7b_fp8_scaled.safetensors",
+            "clip_name": clip,
             "type": "qwen_image",
         },
     }
     wf["3"] = {
         "class_type": "VAELoader",
-        "inputs": {"vae_name": "qwen_image_vae.safetensors"},
+        "inputs": {"vae_name": vae},
     }
     wf["4"] = {
         "class_type": "QwenImage21Cache",
@@ -254,6 +264,9 @@ def _render_one(
     seed: int,
     upload_cache: dict,
     upload_lock: threading.Lock,
+    unet: str = UNET,
+    clip: str = CLIP,
+    vae: str = VAE,
 ) -> bool:
     """Render one beat on one server. Returns True on success."""
     beat_id = shot.get("id")
@@ -268,7 +281,10 @@ def _render_one(
             upload(server, Path(REFS["juv"]["face"]), upload_cache),
         ]
     prompt = build_prompt(beat_id, cam, cast)
-    wf = build_workflow(prompt, NEGATIVE, ref_images, WIDTH, HEIGHT, seed)
+    wf = build_workflow(
+        prompt, NEGATIVE, ref_images, WIDTH, HEIGHT, seed,
+        unet=unet, clip=clip, vae=vae,
+    )
 
     try:
         prompt_id = post(server, wf)
@@ -315,7 +331,10 @@ def _render_parallel(
     def work(item: tuple[int, dict]) -> bool:
         index, shot = item
         server = servers[index % len(servers)]
-        return _render_one(shot, server, out, args.seed, upload_cache, upload_lock)
+        return _render_one(
+            shot, server, out, args.seed, upload_cache, upload_lock,
+            unet=args.unet, clip=args.clip, vae=args.vae,
+        )
 
     with ThreadPoolExecutor(max_workers=len(servers)) as pool:
         results = list(pool.map(work, enumerate(shots)))
@@ -337,6 +356,9 @@ def main() -> int:
     )
     ap.add_argument("--beats", nargs="+")
     ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--unet", default=UNET, help="GGUF diffusion model filename")
+    ap.add_argument("--clip", default=CLIP, help="Text encoder filename")
+    ap.add_argument("--vae", default=VAE, help="VAE filename")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
@@ -380,7 +402,10 @@ def main() -> int:
             upload(args.server, Path(REFS["juv"]["face"]), upload_cache),
         ]
         prompt = build_prompt(beat_id, cam, cast)
-        wf = build_workflow(prompt, NEGATIVE, ref_images, WIDTH, HEIGHT, args.seed)
+        wf = build_workflow(
+            prompt, NEGATIVE, ref_images, WIDTH, HEIGHT, args.seed,
+            unet=args.unet, clip=args.clip, vae=args.vae,
+        )
 
         if args.dry_run:
             print(f"--- {beat_id} ---")
