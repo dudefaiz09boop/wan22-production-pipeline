@@ -48,7 +48,7 @@ MODEL_DIR="${MODEL_DIR:-$ROOT/models}"
 LORA_DIR="${LORA_DIR:-$ROOT/loras}"
 OUTPUT_DIR="${OUTPUT_DIR:-$ROOT/output}"
 MIN_VRAM_GB=44          # 48 GB card, allow for driver overhead
-MIN_DISK_GB=140
+MIN_DISK_GB=150
 
 # Wan 2.2 I2V 14B, FP16. One pair, no FP8/GGUF fallbacks.
 WAN_REPO="Comfy-Org/Wan-2.2"

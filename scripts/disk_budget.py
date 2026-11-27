@@ -28,12 +28,16 @@ HF_FILES = {
         "InfiniteTalk/Wan2_1-InfiniteTalk-Multi_fp8_e4m3fn_scaled_KJ.safetensors"),
     "wav2vec2 audio encoder": ("Comfy-Org/Wan-2.2",
         "split_files/audio_encoders/wav2vec2_large_english_fp16.safetensors"),
-    "Juggernaut XL v9 (stills)": ("RunDiffusion/Juggernaut-XL-v9",
-        "Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors"),
+    "Qwen-Image 2.1 fp8 (stills)": ("Comfy-Org/Qwen-Image_ComfyUI",
+        "split_files/diffusion_models/qwen_image_fp8_e4m3fn.safetensors"),
+    "Qwen2.5-VL 7B fp8 (stills encoder)": ("Comfy-Org/Qwen-Image_ComfyUI",
+        "split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors"),
+    "Qwen-Image VAE": ("Comfy-Org/Qwen-Image_ComfyUI",
+        "split_files/vae/qwen_image_vae.safetensors"),
 }
 
 # Files served from the repo root, not a subdirectory.
-ROOT_FILES = {"Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors"}
+ROOT_FILES: set[str] = set()
 
 
 def remote_size(repo: str, path: str) -> int:
