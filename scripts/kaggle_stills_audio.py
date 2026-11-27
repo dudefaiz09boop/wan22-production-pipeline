@@ -256,7 +256,15 @@ def build_notebook() -> dict:
 
     cells.append(_code_cell("\n".join([
         "# 9. Package",
-        "import os, zipfile",
+        "# Only the stills and audio are packaged. The working directory also",
+        "# holds the 7 GB base model, both LoRAs and the repo clone, and",
+        "# `kaggle kernels output` downloads all of it -- 8 GB for 7 PNGs.",
+        "import os, shutil, zipfile",
+        "",
+        "for root in ('startframes', 'audio'):",
+        "    dest = f'/kaggle/working/{root}'",
+        "    if os.path.isdir(root) and os.path.abspath(root) != os.path.abspath(dest):",
+        "        shutil.copytree(root, dest, dirs_exist_ok=True)",
         "",
         "ZIP = '/kaggle/working/stills_audio.zip'",
         "with zipfile.ZipFile(ZIP, 'w', zipfile.ZIP_DEFLATED) as zf:",
